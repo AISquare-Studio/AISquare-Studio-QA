@@ -1,0 +1,7 @@
+crewai[tools]
+playwright
+pytest
+python-dotenv
+rich
+pyyaml
+jinja2

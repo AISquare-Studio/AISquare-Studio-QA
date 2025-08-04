@@ -1,0 +1,70 @@
+{
+  "valid_login": {
+    "scenario": {
+      "name": "Valid Login Test",
+      "description": "Test successful login with correct credentials",
+      "steps": [
+        "Navigate to the login page",
+        "Enter valid email address",
+        "Enter valid password",
+        "Click login button",
+        "Verify successful login (check for dashboard/profile page)"
+      ],
+      "expected_result": "User should be logged in successfully"
+    },
+    "config": {
+      "login_url": "https://stg-home.aisquare.studio/login",
+      "base_url": "https://stg-home.aisquare.studio/dashboard",
+      "valid_email": "rabia.tahirr+stg2@opengrowth.com",
+      "valid_password": "#Testing2",
+      "invalid_email": "invalid_user@example.com",
+      "invalid_password": "wrong_password",
+      "headless": false,
+      "timeout": 30000,
+      "scenario_name": "valid_login",
+      "scenario_type": "login",
+      "email": "rabia.tahirr+stg2@opengrowth.com",
+      "password": "#Testing2"
+    },
+    "generated_code": "def run_test(page, config):\n    # Navigate to the login page\n    page.goto(config['login_url'])\n    \n    # Wait for the email input to be visible\n    page.wait_for_selector(\"input[type='email']\", timeout=config.get('timeout', 30000))\n    \n    # Enter valid email address\n    page.fill(\"input[type='email']\", config['email'])\n    \n    # Wait for the password input to be visible\n    page.wait_for_selector(\"input[type='password']\", timeout=config.get('timeout', 30000))\n    \n    # Enter valid password\n    page.fill(\"input[type='password']\", config['password'])\n    \n    # Wait for the login button to be visible and enabled\n    page.wait_for_selector(\"button[type='submit']\", timeout=config.get('timeout', 30000))\n    \n    # Click login button\n    page.click(\"button[type='submit']\")\n    \n    # Wait for the dashboard/profile page to load\n    page.wait_for_load_state('networkidle')\n    \n    # Assert successful login by checking for success indicator\n    assert page.is_visible(\".dashboard\") or page.is_visible(\".profile\"), \"User is not logged in successfully.\"",
+    "validation_result": "Code validation passed",
+    "execution_result": {
+      "success": false,
+      "message": "Test execution failed",
+      "error": "Page.wait_for_selector: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"input[type='email']\") to be visible\n",
+      "screenshot_path": null
+    },
+    "success": false
+  },
+  "invalid_login": {
+    "scenario": {
+      "name": "Invalid Login Test",
+      "description": "Test failed login with incorrect password",
+      "steps": [
+        "Navigate to the login page",
+        "Enter valid email address",
+        "Enter invalid password",
+        "Click login button",
+        "Verify error message is displayed"
+      ],
+      "expected_result": "Error message should be shown for invalid credentials"
+    },
+    "config": {
+      "login_url": "https://stg-home.aisquare.studio/login",
+      "base_url": "https://stg-home.aisquare.studio/dashboard",
+      "valid_email": "rabia.tahirr+stg2@opengrowth.com",
+      "valid_password": "#Testing2",
+      "invalid_email": "invalid_user@example.com",
+      "invalid_password": "wrong_password",
+      "headless": false,
+      "timeout": 30000,
+      "scenario_name": "invalid_login",
+      "scenario_type": "login",
+      "email": "rabia.tahirr+stg2@opengrowth.com",
+      "password": "wrong_password"
+    },
+    "success": false,
+    "error": "Code validation failed: Syntax error in generated code: invalid syntax (<unknown>, line 1)",
+    "generated_code": "```python\ndef run_test(page, config):\n    # Navigate to the login page\n    page.goto(config['login_url'])\n\n    # Wait for the page to load fully\n    page.wait_for_load_state('networkidle')\n\n    # Enter valid email address\n    email_selector = \"input[type='email'], input[name='email'], #email\"\n    page.wait_for_selector(email_selector, timeout=config['timeout'])\n    page.fill(email_selector, config['email'])\n\n    # Enter invalid password\n    password_selector = \"input[type='password'], input[name='password'], #password\"\n    page.wait_for_selector(password_selector, timeout=config['timeout'])\n    page.fill(password_selector, 'InvalidPassword123!')\n\n    # Click login button\n    login_button_selector = \"button[type='submit'], input[type='submit'], button:has-text('Login'), button:has-text('Sign In')\"\n    page.wait_for_selector(login_button_selector, timeout=config['timeout'])\n    page.click(login_button_selector)\n\n    # Wait for error message to be displayed\n    error_message_selector = \".error, .alert-danger, [data-testid='error'], .error-message\"\n    page.wait_for_selector(error_message_selector, timeout=config['timeout'])\n\n    # Assert that the error message is displayed\n    error_message = page.inner_text(error_message_selector)\n    assert error_message != \"\", \"Error message should be shown for invalid credentials\"\n```"
+  }
+}
