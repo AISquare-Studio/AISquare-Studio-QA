@@ -1,0 +1,31 @@
+test_scenarios:
+  login:
+    valid_login:
+      name: "Valid Login Test"
+      description: "Test successful login with correct credentials"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address"
+        - "Enter valid password"
+        - "Click login button"
+        - "Verify successful login (check for dashboard/profile page)"
+      expected_result: "User should be logged in successfully"
+      
+    invalid_login:
+      name: "Invalid Login Test"
+      description: "Test failed login with incorrect password"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address"
+        - "Enter invalid password"
+        - "Click login button"
+        - "Verify error message is displayed"
+      expected_result: "Error message should be shown for invalid credentials"
+
+selectors:
+  login_page:
+    email_input: "input[name='email'], input[type='email'], #email"
+    password_input: "input[type='password'], input[name='password'], #password"
+    login_button: "button[type='submit'], input[type='submit'], button:has-text('Login'), button:has-text('Sign In')"
+    error_message: "#errorMessage, .error, .alert-danger, [data-testid='error'], .error-message"
+    success_indicator: "body, .dashboard, .profile, [data-testid='dashboard'], h1:has-text('Dashboard')"

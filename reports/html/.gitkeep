@@ -1,0 +1,2 @@
+# This file ensures the html reports directory is tracked by git
+# HTML test reports will be generated here during test execution

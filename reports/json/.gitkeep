@@ -1,0 +1,2 @@
+# This file ensures the json reports directory is tracked by git
+# JSON test reports will be generated here during test execution
