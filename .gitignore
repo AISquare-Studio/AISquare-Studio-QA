@@ -247,3 +247,17 @@ checkpoints/
 test-results/
 playwright-report/
 playwright/.cache/
+
+# Generated test reports and screenshots (keep directory structure with .gitkeep)
+reports/*.html
+reports/*.json
+reports/*.png
+reports/*.jpg
+reports/*.jpeg
+reports/*.gif
+reports/html/*
+reports/json/*
+reports/screenshots/*
+!reports/html/.gitkeep
+!reports/json/.gitkeep
+!reports/screenshots/.gitkeep

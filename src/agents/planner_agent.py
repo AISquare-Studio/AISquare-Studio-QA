@@ -32,15 +32,18 @@ class PlannerAgent:
         3. Use proper waits (page.wait_for_selector, page.wait_for_load_state)
         4. Include assertions using standard Python assert statements
         5. Handle timeouts gracefully
-        6. Use robust selectors (prefer data-testid, then CSS selectors)
-        7. Add comments for key steps
-        8. Return ONLY the function code, no markdown or explanations
+        6. Use the EXACT selectors provided in the AVAILABLE SELECTORS list (use first selector in each list)
+        7. Add page.wait_for_timeout(5000) after clicking login button for processing time
+        8. For login success verification, check if '/dashboard' is in page.url after login
+        9. Add comments for key steps
+        10. Return ONLY the function code, no markdown or explanations
         
         FORBIDDEN:
         - No imports other than playwright.sync_api
         - No os, subprocess, eval, exec calls
         - No file operations
         - No network requests outside of page interactions
+        - Do not use selectors not provided in AVAILABLE SELECTORS
         
         Example structure:
         ```python
@@ -52,6 +55,10 @@ class PlannerAgent:
             page.wait_for_load_state('networkidle')
             
             # Your test steps here
+            
+            # Assert success condition
+            assert condition, "Test assertion message"
+        ```
             
             # Assert success condition
             assert condition, "Test assertion message"

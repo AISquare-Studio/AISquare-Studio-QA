@@ -1,6 +1,8 @@
 crewai[tools]
 playwright
 pytest
+pytest-html
+pytest-json-report
 python-dotenv
 rich
 pyyaml

@@ -37,16 +37,49 @@ class QACrew:
         from dotenv import load_dotenv
         load_dotenv()
         
+        # Use staging environment configuration
         return {
             'login_url': os.getenv('STAGING_LOGIN_URL', 'https://example.com/login'),
             'base_url': os.getenv('STAGING_URL', 'https://example.com'),
-            'valid_email': os.getenv('VALID_EMAIL', 'test@example.com'),
-            'valid_password': os.getenv('VALID_PASSWORD', 'password123'),
+            'valid_email': os.getenv('STAGING_EMAIL', 'test@example.com'),
+            'valid_password': os.getenv('STAGING_PASSWORD', 'password123'),
             'invalid_email': os.getenv('INVALID_EMAIL', 'invalid@example.com'),
             'invalid_password': os.getenv('INVALID_PASSWORD', 'wrongpassword'),
             'headless': os.getenv('HEADLESS_MODE', 'false').lower() == 'true',
             'timeout': int(os.getenv('TIMEOUT', '30000'))
         }
+    
+    def _clean_generated_code(self, raw_code: str) -> str:
+        """Clean generated code by removing markdown blocks and extra formatting."""
+        code = str(raw_code).strip()
+        
+        # Remove markdown code blocks
+        if code.startswith('```python'):
+            code = code[9:]  # Remove ```python
+        elif code.startswith('```'):
+            code = code[3:]  # Remove ```
+        
+        if code.endswith('```'):
+            code = code[:-3]  # Remove trailing ```
+        
+        # Remove any remaining backticks at the start/end
+        code = code.strip('`').strip()
+        
+        # Split into lines and clean each line
+        lines = code.split('\n')
+        cleaned_lines = []
+        
+        for line in lines:
+            # Skip empty lines at the beginning
+            if not cleaned_lines and not line.strip():
+                continue
+            cleaned_lines.append(line)
+        
+        # Remove trailing empty lines
+        while cleaned_lines and not cleaned_lines[-1].strip():
+            cleaned_lines.pop()
+        
+        return '\n'.join(cleaned_lines)
     
     def run_test_scenario(self, scenario_type: str, scenario_name: str) -> Dict[str, Any]:
         """
@@ -105,11 +138,14 @@ class QACrew:
         )
         
         # Generate the code
-        generated_code = planning_crew.kickoff()
+        generated_code_raw = planning_crew.kickoff()
+        
+        # Clean the generated code by removing markdown blocks
+        generated_code = self._clean_generated_code(str(generated_code_raw))
         
         # Step 2: Validate and execute the code
         print(f"🔒 Validating generated code...")
-        is_safe, validation_message = self.executor_agent_wrapper.validate_code_safety(str(generated_code))
+        is_safe, validation_message = self.executor_agent_wrapper.validate_code_safety(generated_code)
         
         if not is_safe:
             return {
@@ -117,14 +153,14 @@ class QACrew:
                 'config': test_config,
                 'success': False,
                 'error': f"Code validation failed: {validation_message}",
-                'generated_code': str(generated_code)
+                'generated_code': generated_code
             }
         
         print(f"✅ Code validation passed")
         print(f"🎭 Executing test scenario...")
         
         # Step 3: Execute the validated code
-        execution_result = self.playwright_executor(str(generated_code), test_config)
+        execution_result = self.playwright_executor(generated_code, test_config)
         
         # Parse execution result
         try:
@@ -135,7 +171,7 @@ class QACrew:
         return {
             'scenario': scenario,
             'config': test_config,
-            'generated_code': str(generated_code),
+            'generated_code': generated_code,
             'validation_result': validation_message,
             'execution_result': execution_data,
             'success': execution_data.get('success', False)

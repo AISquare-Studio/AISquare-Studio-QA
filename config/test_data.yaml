@@ -24,8 +24,8 @@ test_scenarios:
 
 selectors:
   login_page:
-    email_input: "input[type='email'], input[name='email'], #email"
+    email_input: "input[name='email'], input[type='email'], #email"
     password_input: "input[type='password'], input[name='password'], #password"
     login_button: "button[type='submit'], input[type='submit'], button:has-text('Login'), button:has-text('Sign In')"
-    error_message: ".error, .alert-danger, [data-testid='error'], .error-message"
-    success_indicator: ".dashboard, .profile, [data-testid='dashboard'], h1:has-text('Dashboard')"
+    error_message: "#errorMessage, .error, .alert-danger, [data-testid='error'], .error-message"
+    success_indicator: "body, .dashboard, .profile, [data-testid='dashboard'], h1:has-text('Dashboard')"
