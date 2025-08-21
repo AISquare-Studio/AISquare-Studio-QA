@@ -11,7 +11,8 @@ class AutoQAParser:
     """Parser for AutoQA tags and test steps in PR descriptions"""
     
     def __init__(self):
-        self.autoqa_pattern = re.compile(r'AutoQA\s*\n(.*?)(?=\n\n|\n#|\Z)', re.DOTALL | re.IGNORECASE)
+        # Updated pattern to match AutoQA:scenario-name format and stop at next section
+        self.autoqa_pattern = re.compile(r'AutoQA:([^\n]+)\n(.*?)(?=\n\s*###|\n\s*##|\n\s*#|\nAutoQA:|\Z)', re.DOTALL | re.IGNORECASE)
         self.steps_pattern = re.compile(r'(?:Steps?:?\s*\n)?((?:\d+\..*?\n?)+)', re.DOTALL | re.IGNORECASE)
     
     def has_autoqa_tag(self, pr_body: str) -> bool:
@@ -19,43 +20,43 @@ class AutoQAParser:
         if not pr_body:
             return False
         
-        return bool(self.autoqa_pattern.search(pr_body))
+        # Check for AutoQA:scenario-name format
+        return bool(re.search(r'AutoQA:[^\n]+', pr_body, re.IGNORECASE))
     
     def parse_test_steps(self, pr_body: str) -> List[str]:
         """Extract test steps from AutoQA section"""
-        autoqa_match = self.autoqa_pattern.search(pr_body)
-        if not autoqa_match:
+        autoqa_matches = self.autoqa_pattern.findall(pr_body)
+        if not autoqa_matches:
             return []
         
-        autoqa_content = autoqa_match.group(1).strip()
+        all_steps = []
         
-        # Extract numbered steps
-        steps_match = self.steps_pattern.search(autoqa_content)
-        if not steps_match:
-            # Try to parse lines that start with numbers
+        for scenario_name, autoqa_content in autoqa_matches:
+            autoqa_content = autoqa_content.strip()
+            
+            # Split content and stop at next markdown section
             lines = autoqa_content.split('\n')
-            steps = []
+            step_lines = []
+            
             for line in lines:
                 line = line.strip()
+                # Stop if we hit a markdown heading
+                if re.match(r'^\s*#{1,6}\s', line):
+                    break
+                # Stop if we hit a markdown list that's not numbered
+                if re.match(r'^\s*[-*]\s', line):
+                    break
+                step_lines.append(line)
+            
+            # Extract numbered steps from the relevant lines
+            for line in step_lines:
                 if re.match(r'^\d+\.', line):
                     # Remove number prefix and clean up
                     step = re.sub(r'^\d+\.\s*', '', line).strip()
                     if step:
-                        steps.append(step)
-            return steps
+                        all_steps.append(step)
         
-        steps_text = steps_match.group(1)
-        steps = []
-        
-        for line in steps_text.split('\n'):
-            line = line.strip()
-            if re.match(r'^\d+\.', line):
-                # Remove number prefix and clean up
-                step = re.sub(r'^\d+\.\s*', '', line).strip()
-                if step:
-                    steps.append(step)
-        
-        return steps
+        return all_steps
     
     def steps_to_scenario(self, steps: List[str]) -> Dict[str, Any]:
         """Convert parsed steps to test scenario format"""
@@ -140,8 +141,8 @@ if __name__ == "__main__":
     
     This PR adds new login validation features.
     
-    AutoQA
-    Steps:
+    ### Login Flow Test
+    AutoQA:login-flow
     1. Navigate to the login page
     2. Enter valid email credentials
     3. Enter valid password

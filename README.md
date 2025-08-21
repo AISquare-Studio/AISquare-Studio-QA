@@ -205,10 +205,7 @@ AISquare-Studio-QA/
 │   ├── WEEK1_DEMO_CHECKLIST.md # Demo preparation checklist
 │   └── SECURITY.md             # Security & compliance guide
 ├── scripts/               # 🛠️ Utility scripts and tools
-│   ├── README.md          # Scripts documentation
-│   ├── setup_staging.py   # Environment setup wizard
-│   ├── test_staging_connection.py
-│   └── ...                # Additional utility scripts
+│   └── README.md          # Scripts documentation
 ├── reports/               # 📊 Test reports and screenshots
 └── requirements.txt       # 📦 Python dependencies
 ```
