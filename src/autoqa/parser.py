@@ -11,8 +11,11 @@ class AutoQAParser:
     """Parser for AutoQA tags and test steps in PR descriptions"""
     
     def __init__(self):
-        # Updated pattern to match AutoQA:scenario-name format and stop at next section
-        self.autoqa_pattern = re.compile(r'AutoQA:([^\n]+)\n(.*?)(?=\n\s*###|\n\s*##|\n\s*#|\nAutoQA:|\Z)', re.DOTALL | re.IGNORECASE)
+        # Support both old and new AutoQA formats
+        # Old format: AutoQA\n1. step1\n2. step2
+        # New format: AutoQA:scenario-name\n1. step1\n2. step2
+        self.autoqa_pattern_new = re.compile(r'AutoQA:([^\n]+)\n(.*?)(?=\n\s*###|\n\s*##|\n\s*#|\nAutoQA:|\Z)', re.DOTALL | re.IGNORECASE)
+        self.autoqa_pattern_old = re.compile(r'AutoQA\s*\n(.*?)(?=\n\s*###|\n\s*##|\n\s*#|\nAutoQA|\Z)', re.DOTALL | re.IGNORECASE)
         self.steps_pattern = re.compile(r'(?:Steps?:?\s*\n)?((?:\d+\..*?\n?)+)', re.DOTALL | re.IGNORECASE)
     
     def has_autoqa_tag(self, pr_body: str) -> bool:
@@ -20,43 +23,60 @@ class AutoQAParser:
         if not pr_body:
             return False
         
-        # Check for AutoQA:scenario-name format
-        return bool(re.search(r'AutoQA:[^\n]+', pr_body, re.IGNORECASE))
+        # Check for both old and new AutoQA formats
+        has_new_format = bool(re.search(r'AutoQA:[^\n]+', pr_body, re.IGNORECASE))
+        has_old_format = bool(re.search(r'AutoQA\s*\n', pr_body, re.IGNORECASE))
+        
+        return has_new_format or has_old_format
     
     def parse_test_steps(self, pr_body: str) -> List[str]:
         """Extract test steps from AutoQA section"""
-        autoqa_matches = self.autoqa_pattern.findall(pr_body)
-        if not autoqa_matches:
-            return []
-        
         all_steps = []
         
-        for scenario_name, autoqa_content in autoqa_matches:
-            autoqa_content = autoqa_content.strip()
-            
-            # Split content and stop at next markdown section
-            lines = autoqa_content.split('\n')
-            step_lines = []
-            
-            for line in lines:
-                line = line.strip()
-                # Stop if we hit a markdown heading
-                if re.match(r'^\s*#{1,6}\s', line):
-                    break
-                # Stop if we hit a markdown list that's not numbered
-                if re.match(r'^\s*[-*]\s', line):
-                    break
-                step_lines.append(line)
-            
-            # Extract numbered steps from the relevant lines
-            for line in step_lines:
-                if re.match(r'^\d+\.', line):
-                    # Remove number prefix and clean up
-                    step = re.sub(r'^\d+\.\s*', '', line).strip()
-                    if step:
-                        all_steps.append(step)
+        # Try new format first (AutoQA:scenario-name)
+        autoqa_matches_new = self.autoqa_pattern_new.findall(pr_body)
+        if autoqa_matches_new:
+            for scenario_name, autoqa_content in autoqa_matches_new:
+                steps = self._extract_steps_from_content(autoqa_content)
+                all_steps.extend(steps)
+        
+        # Try old format (AutoQA)
+        autoqa_matches_old = self.autoqa_pattern_old.findall(pr_body)
+        if autoqa_matches_old:
+            for autoqa_content in autoqa_matches_old:
+                steps = self._extract_steps_from_content(autoqa_content)
+                all_steps.extend(steps)
         
         return all_steps
+    
+    def _extract_steps_from_content(self, autoqa_content: str) -> List[str]:
+        """Extract numbered steps from AutoQA content"""
+        autoqa_content = autoqa_content.strip()
+        
+        # Split content and stop at next markdown section
+        lines = autoqa_content.split('\n')
+        step_lines = []
+        
+        for line in lines:
+            line = line.strip()
+            # Stop if we hit a markdown heading
+            if re.match(r'^\s*#{1,6}\s', line):
+                break
+            # Stop if we hit a markdown list that's not numbered
+            if re.match(r'^\s*[-*]\s', line):
+                break
+            step_lines.append(line)
+        
+        # Extract numbered steps from the relevant lines
+        steps = []
+        for line in step_lines:
+            if re.match(r'^\d+\.', line):
+                # Remove number prefix and clean up
+                step = re.sub(r'^\d+\.\s*', '', line).strip()
+                if step:
+                    steps.append(step)
+        
+        return steps
     
     def steps_to_scenario(self, steps: List[str]) -> Dict[str, Any]:
         """Convert parsed steps to test scenario format"""

@@ -81,8 +81,9 @@ staging-url: 'https://staging.yourcompany.com'
 
 ## Step 4: Create Your First AutoQA Test
 
-In your PR description, add AutoQA tags to generate tests:
+In your PR description, add AutoQA tags to generate tests. Both formats are supported:
 
+**New Format (Recommended)**:
 ```markdown
 ## AutoQA Test Cases
 
@@ -104,6 +105,18 @@ AutoQA:cart-functionality
 5. Verify product is listed in cart
 6. Click "Remove" button
 7. Verify cart is empty
+```
+
+**Legacy Format (Also Supported)**:
+```markdown
+## AutoQA Test Cases
+
+AutoQA
+1. Navigate to login page
+2. Enter valid email "user@example.com"
+3. Enter valid password "password123"
+4. Click login button
+5. Verify user is redirected to dashboard
 ```
 
 ## Step 5: Understanding Generated Tests
