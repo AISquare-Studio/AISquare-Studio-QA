@@ -1,0 +1,123 @@
+name: 'AISquare Studio AutoQA'
+description: 'AI-powered test generation and execution using CrewAI + Playwright'
+author: 'AISquare Studio'
+
+branding:
+  icon: 'zap'
+  color: 'blue'
+
+inputs:
+  github-token:
+    description: 'GitHub token for repository operations'
+    required: true
+    default: ${{ github.token }}
+  
+  openai-api-key:
+    description: 'OpenAI API key for CrewAI test generation'
+    required: true
+  
+  staging-login-url:
+    description: 'Staging environment login URL for testing'
+    required: true
+  
+  staging-email:
+    description: 'Staging environment test email'
+    required: true
+  
+  staging-password:
+    description: 'Staging environment test password'
+    required: true
+  
+  pr-body:
+    description: 'Pull request description to parse for AutoQA steps'
+    required: true
+    default: ${{ github.event.pull_request.body }}
+  
+  pr-number:
+    description: 'Pull request number for status updates'
+    required: true
+    default: ${{ github.event.pull_request.number }}
+  
+  target-branch:
+    description: 'Target branch to commit generated tests to'
+    required: false
+    default: ${{ github.head_ref }}
+  
+  test-directory:
+    description: 'Directory to store generated tests'
+    required: false
+    default: 'tests/autoQA'
+  
+  run-existing-tests:
+    description: 'Whether to run existing tests after generation'
+    required: false
+    default: 'true'
+
+outputs:
+  test-generated:
+    description: 'Whether a test was successfully generated'
+    value: ${{ steps.autoqa.outputs.test-generated }}
+  
+  test-file-path:
+    description: 'Path to the generated test file'
+    value: ${{ steps.autoqa.outputs.test-file-path }}
+  
+  test-results:
+    description: 'JSON string of test execution results'
+    value: ${{ steps.autoqa.outputs.test-results }}
+  
+  suite-results:
+    description: 'JSON string of full test suite results'
+    value: ${{ steps.autoqa.outputs.suite-results }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 🔍 Checkout AutoQA Action Repository
+      uses: actions/checkout@v4
+      with:
+        repository: 'AISquare-Studio/AISquare-Studio-QA'
+        path: '.autoqa-action'
+        ref: 'main'
+    
+    - name: 🐍 Setup Python Environment
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+        cache-dependency-path: '.autoqa-action/requirements.txt'
+    
+    - name: 📦 Install AutoQA Dependencies
+      shell: bash
+      run: |
+        cd .autoqa-action
+        pip install -r requirements.txt
+        playwright install chromium
+        playwright install-deps chromium
+    
+    - name: 🤖 Execute AutoQA Workflow
+      id: autoqa
+      shell: bash
+      run: |
+        cd .autoqa-action
+        python src/autoqa/action_runner.py
+      env:
+        # Action inputs as environment variables
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        OPENAI_API_KEY: ${{ inputs.openai-api-key }}
+        STAGING_LOGIN_URL: ${{ inputs.staging-login-url }}
+        STAGING_EMAIL: ${{ inputs.staging-email }}
+        STAGING_PASSWORD: ${{ inputs.staging-password }}
+        PR_BODY: ${{ inputs.pr-body }}
+        PR_NUMBER: ${{ inputs.pr-number }}
+        TARGET_BRANCH: ${{ inputs.target-branch }}
+        TEST_DIRECTORY: ${{ inputs.test-directory }}
+        RUN_EXISTING_TESTS: ${{ inputs.run-existing-tests }}
+        
+        # GitHub context for cross-repo operations
+        TARGET_REPOSITORY: ${{ github.repository }}
+        GITHUB_WORKSPACE: ${{ github.workspace }}
+        GITHUB_SHA: ${{ github.sha }}
+        
+        # Action working directory
+        ACTION_PATH: ${{ github.workspace }}/.autoqa-action

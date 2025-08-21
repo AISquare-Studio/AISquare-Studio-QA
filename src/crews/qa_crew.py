@@ -11,6 +11,7 @@ import yaml
 import os
 import json
 from pathlib import Path
+from datetime import datetime
 
 
 class QACrew:
@@ -176,6 +177,142 @@ class QACrew:
             'execution_result': execution_data,
             'success': execution_data.get('success', False)
         }
+    
+    def run_autoqa_scenario(self, scenario: Dict[str, Any]) -> Dict[str, Any]:
+        """Run AutoQA scenario with generated steps."""
+        print(f"🤖 Running AutoQA scenario: {scenario.get('name', 'Unknown')}")
+        
+        # Load selectors (use login selectors as default for now)
+        test_data = self.load_test_data()
+        selectors = test_data['selectors']['login_page']
+        env_config = self.load_environment_config()
+        
+        # Create test configuration
+        test_config = env_config.copy()
+        test_config.update({
+            'scenario_name': 'autoqa_generated',
+            'scenario_type': 'autoqa',
+            'email': test_config['valid_email'],
+            'password': test_config['valid_password']
+        })
+        
+        try:
+            # Generate test code using existing Planner Agent
+            print(f"🤖 Generating test code for AutoQA scenario...")
+            code_prompt = self.planner_agent_wrapper.generate_test_code(scenario, selectors)
+            
+            # Create planning task
+            planning_task = Task(
+                description=code_prompt,
+                expected_output="Playwright Python code for AutoQA scenario",
+                agent=self.planner_agent
+            )
+            
+            # Create crew for code generation
+            planning_crew = Crew(
+                agents=[self.planner_agent],
+                tasks=[planning_task],
+                verbose=True
+            )
+            
+            # Generate the code
+            generated_code_raw = planning_crew.kickoff()
+            generated_code = self._clean_generated_code(str(generated_code_raw))
+            
+            # Validate the code
+            print(f"🔒 Validating generated code...")
+            is_safe, validation_message = self.executor_agent_wrapper.validate_code_safety(generated_code)
+            
+            if not is_safe:
+                return {
+                    'success': False,
+                    'error': f"Code validation failed: {validation_message}",
+                    'generated_code': generated_code,
+                    'validation_result': validation_message
+                }
+            
+            print(f"✅ Code validation passed")
+            
+            return {
+                'success': True,
+                'generated_code': generated_code,
+                'validation_result': validation_message,
+                'scenario': scenario,
+                'config': test_config,
+                'timestamp': datetime.now().isoformat()
+            }
+            
+        except Exception as e:
+            print(f"❌ AutoQA scenario failed: {str(e)}")
+            return {
+                'success': False,
+                'error': str(e),
+                'scenario': scenario
+            }
+    
+    def execute_generated_test(self, test_code: str, test_config: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute generated test code with configuration."""
+        print(f"🎭 Executing generated test...")
+        
+        try:
+            # Execute using the playwright executor tool
+            execution_result = self.playwright_executor(test_code, test_config)
+            
+            # Parse execution result
+            try:
+                execution_data = json.loads(execution_result) if isinstance(execution_result, str) else execution_result
+            except:
+                execution_data = {
+                    'success': False, 
+                    'error': 'Failed to parse execution result', 
+                    'raw_result': str(execution_result)
+                }
+            
+            return execution_data
+            
+        except Exception as e:
+            return {
+                'success': False,
+                'error': f"Test execution failed: {str(e)}"
+            }
+    
+    def run_all_tests(self) -> Dict[str, Any]:
+        """Run all available tests (existing + generated)."""
+        print("🏃 Running complete test suite...")
+        
+        results = {
+            'login_tests': {},
+            'generated_tests': {},
+            'summary': {
+                'total': 0,
+                'passed': 0,
+                'failed': 0
+            }
+        }
+        
+        # Run existing login scenarios
+        login_scenarios = ['valid_login', 'invalid_login']
+        
+        for scenario_name in login_scenarios:
+            try:
+                result = self.run_test_scenario('login', scenario_name)
+                results['login_tests'][scenario_name] = result
+                
+                results['summary']['total'] += 1
+                if result.get('success', False):
+                    results['summary']['passed'] += 1
+                else:
+                    results['summary']['failed'] += 1
+                    
+            except Exception as e:
+                results['login_tests'][scenario_name] = {
+                    'error': str(e),
+                    'success': False
+                }
+                results['summary']['total'] += 1
+                results['summary']['failed'] += 1
+        
+        return results
     
     def run_all_login_tests(self) -> Dict[str, Any]:
         """Run all login test scenarios."""
