@@ -130,7 +130,6 @@ jobs:
         uses: AISquare-Studio/AISquare-Studio-QA@main
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
           staging-login-url: ${{ secrets.STAGING_LOGIN_URL }}
           staging-email: ${{ secrets.STAGING_EMAIL }}
           staging-password: ${{ secrets.STAGING_PASSWORD }}

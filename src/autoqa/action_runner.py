@@ -45,7 +45,7 @@ class ActionRunner:
         """Load configuration from environment variables"""
         return {
             'github_token': os.getenv('GITHUB_TOKEN'),
-            'openai_api_key': os.getenv('OPENAI_API_KEY'),
+            'openai_api_key': os.getenv('OPENAI_API_KEY'),  # Accessed from repository secrets automatically
             'staging_login_url': os.getenv('STAGING_LOGIN_URL'),
             'staging_email': os.getenv('STAGING_EMAIL'),
             'staging_password': os.getenv('STAGING_PASSWORD'),
@@ -60,6 +60,13 @@ class ActionRunner:
         """Main execution flow for AutoQA action"""
         try:
             print(f"🚀 AutoQA Action starting for repository: {self.target_repo}")
+            
+            # Validate required configuration
+            if not self.config['openai_api_key']:
+                return self._set_outputs({
+                    'test_generated': 'false',
+                    'error': 'OPENAI_API_KEY not found in repository secrets'
+                })
             
             # Step 1: Check for AutoQA tag
             if not self.parser.has_autoqa_tag(self.config['pr_body']):

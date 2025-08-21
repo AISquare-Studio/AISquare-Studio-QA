@@ -30,7 +30,6 @@ jobs:
         uses: AISquare-Studio/AISquare-Studio-QA@main
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
           staging-login-url: ${{ secrets.STAGING_LOGIN_URL }}
           staging-email: ${{ secrets.STAGING_EMAIL }}
           staging-password: ${{ secrets.STAGING_PASSWORD }}
@@ -58,6 +57,8 @@ STAGING_LOGIN_URL=https://your-staging.com/login
 STAGING_EMAIL=test@staging.com
 STAGING_PASSWORD=your-staging-password
 ```
+
+**Note**: The OpenAI API key is automatically accessed from repository secrets - you don't need to pass it as an input parameter.
 
 ### **3. Use AutoQA in Pull Requests**
 
@@ -214,7 +215,6 @@ Customize action behavior with additional inputs:
   with:
     # Required
     github-token: ${{ secrets.GITHUB_TOKEN }}
-    openai-api-key: ${{ secrets.OPENAI_API_KEY }}
     staging-login-url: ${{ secrets.STAGING_LOGIN_URL }}
     staging-email: ${{ secrets.STAGING_EMAIL }}
     staging-password: ${{ secrets.STAGING_PASSWORD }}
@@ -262,7 +262,7 @@ AutoQA
 - Verify workflow file is in `.github/workflows/`
 
 **Test generation failing?**
-- Check OpenAI API key is valid and has credits
+- Check OpenAI API key is valid and has credits (automatically accessed from `OPENAI_API_KEY` repository secret)
 - Verify AutoQA steps are numbered and clear
 - Review GitHub Actions logs for detailed errors
 

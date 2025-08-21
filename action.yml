@@ -12,10 +12,6 @@ inputs:
     required: true
     default: ${{ github.token }}
   
-  openai-api-key:
-    description: 'OpenAI API key for CrewAI test generation'
-    required: true
-  
   staging-login-url:
     description: 'Staging environment login URL for testing'
     required: true
@@ -104,7 +100,7 @@ runs:
       env:
         # Action inputs as environment variables
         GITHUB_TOKEN: ${{ inputs.github-token }}
-        OPENAI_API_KEY: ${{ inputs.openai-api-key }}
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         STAGING_LOGIN_URL: ${{ inputs.staging-login-url }}
         STAGING_EMAIL: ${{ inputs.staging-email }}
         STAGING_PASSWORD: ${{ inputs.staging-password }}
