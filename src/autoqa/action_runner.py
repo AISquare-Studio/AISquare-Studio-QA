@@ -43,17 +43,6 @@ class ActionRunner:
     
     def _load_config(self) -> Dict[str, Any]:
         """Load configuration from environment variables"""
-        # Debug: Print all environment variables that start with STAGING or OPENAI
-        import os
-        print("🔍 Debug - Environment variables:")
-        for key, value in os.environ.items():
-            if key.startswith(('STAGING', 'OPENAI', 'GITHUB')):
-                # Hide sensitive values
-                display_value = value[:10] + "..." if len(value) > 10 else value
-                if 'API_KEY' in key or 'PASSWORD' in key:
-                    display_value = "***HIDDEN***"
-                print(f"  {key}: {display_value}")
-        
         config = {
             'github_token': os.getenv('GITHUB_TOKEN'),
             'openai_api_key': os.getenv('OPENAI_API_KEY'),  # Accessed from repository secrets automatically
@@ -173,10 +162,6 @@ class ActionRunner:
     def _execute_test(self, test_code: str) -> Dict[str, Any]:
         """Execute generated test on staging environment"""
         try:
-            # Debug: Check what we have in config
-            print(f"🔍 Debug - Config staging_url: {self.config.get('staging_url')}")
-            print(f"🔍 Debug - Config keys: {list(self.config.keys())}")
-            
             # Validate required config
             if not self.config.get('staging_url'):
                 return {
