@@ -61,19 +61,19 @@ inputs:
     default: 'false'
 
 outputs:
-  test-generated:
+  test_generated:
     description: 'Whether a test was successfully generated'
     value: ${{ steps.autoqa.outputs.test_generated }}
   
-  test-file-path:
+  test_file_path:
     description: 'Path to the generated test file'
     value: ${{ steps.autoqa.outputs.test_file_path }}
   
-  test-results:
+  test_results:
     description: 'JSON string of test execution results'
     value: ${{ steps.autoqa.outputs.test_results }}
   
-  generation-metadata:
+  generation_metadata:
     description: 'JSON string of test generation metadata'
     value: ${{ steps.autoqa.outputs.generation_metadata }}
   
