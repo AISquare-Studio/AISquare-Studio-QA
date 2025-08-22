@@ -17,6 +17,5 @@ jobs:
         uses: AISquare-Studio/AISquare-Studio-QA@main
         with:
           target-repo-path: '.'
-          staging-url: 'https://stg-home.aisquare.studio/dashboard'
           git-user-name: 'AutoQA Bot'
           git-user-email: 'rabia.tahirr@opengrowth.com'

@@ -10,14 +10,17 @@ This guide shows how to integrate the AISquare AutoQA GitHub Action into your Re
 
 ## Step 1: Configure Repository Secrets
 
-In your React repository, add the required secret:
+In your React repository, add the required secrets:
 
 1. Go to your React repository on GitHub
 2. Navigate to **Settings** → **Secrets and variables** → **Actions**
 3. Click **New repository secret**
-4. Add the following secret:
+4. Add the following secrets:
    - **Name**: `OPENAI_API_KEY`
    - **Value**: Your OpenAI API key (starts with `sk-`)
+   
+   - **Name**: `STAGING_URL`
+   - **Value**: Your staging environment URL (e.g., `https://your-staging-app.vercel.app`)
 
 ## Step 2: Create GitHub Workflow
 
@@ -43,9 +46,8 @@ jobs:
         uses: AISquare-Studio/AISquare-Studio-QA@setup-playwright
         with:
           target-repo-path: '.'
-          staging-url: 'https://your-staging-app.vercel.app'  # Your staging URL
           git-user-name: 'AutoQA Bot'
-          git-user-email: 'autoqa@yourcompany.com'
+          git-user-email: 'rabia.tahirr@opengrowth.com'
 ```
 
 ## Step 3: Configure Staging Environment
@@ -61,22 +63,23 @@ jobs:
    ```
 
 2. **Update workflow with Vercel URL**:
-   ```yaml
-   staging-url: 'https://your-app-name.vercel.app'
+   Add to your repository secrets:
+   ```
+   STAGING_URL=https://your-app-name.vercel.app
    ```
 
 ### Option B: Netlify Deployment
 
 1. **Connect Netlify to your React repo**
-2. **Update workflow with Netlify URL**:
-   ```yaml
-   staging-url: 'https://your-app-name.netlify.app'
+2. **Add Netlify URL to repository secrets**:
+   ```
+   STAGING_URL=https://your-app-name.netlify.app
    ```
 
 ### Option C: Custom Staging Server
 
-```yaml
-staging-url: 'https://staging.yourcompany.com'
+```
+STAGING_URL=https://staging.yourcompany.com
 ```
 
 ## Step 4: Create Your First AutoQA Test

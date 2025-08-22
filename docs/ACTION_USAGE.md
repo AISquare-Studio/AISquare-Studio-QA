@@ -29,12 +29,10 @@ jobs:
       - name: 🤖 Run AutoQA
         uses: AISquare-Studio/AISquare-Studio-QA@main
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          staging-login-url: ${{ secrets.STAGING_LOGIN_URL }}
-          staging-email: ${{ secrets.STAGING_EMAIL }}
-          staging-password: ${{ secrets.STAGING_PASSWORD }}
-          test-directory: 'tests/autoQA'
-          run-existing-tests: true
+          target-repo-path: '.'
+          git-user-name: 'AutoQA Bot'
+          git-user-email: 'rabia.tahirr@opengrowth.com'
+          test-directory: 'tests/generated'
       
       - name: 📊 Upload Test Reports
         if: always()
@@ -42,7 +40,7 @@ jobs:
         with:
           name: autoqa-reports
           path: |
-            tests/autoQA/
+            tests/generated/
             reports/
           retention-days: 30
 ```
@@ -53,12 +51,10 @@ Add these secrets to your repository (`Settings → Secrets and variables → Ac
 
 ```
 OPENAI_API_KEY=sk-your-openai-api-key-here
-STAGING_LOGIN_URL=https://your-staging.com/login
-STAGING_EMAIL=test@staging.com
-STAGING_PASSWORD=your-staging-password
+STAGING_URL=https://your-staging-environment.com
 ```
 
-**Note**: The OpenAI API key is automatically accessed from repository secrets - you don't need to pass it as an input parameter.
+**Note**: Both the OpenAI API key and staging URL are automatically accessed from repository secrets for security.
 
 ### **3. Use AutoQA in Pull Requests**
 
@@ -213,15 +209,13 @@ Customize action behavior with additional inputs:
 - name: 🤖 Run AutoQA (Advanced)
   uses: AISquare-Studio/AISquare-Studio-QA@main
   with:
-    # Required
-    github-token: ${{ secrets.GITHUB_TOKEN }}
-    staging-login-url: ${{ secrets.STAGING_LOGIN_URL }}
-    staging-email: ${{ secrets.STAGING_EMAIL }}
-    staging-password: ${{ secrets.STAGING_PASSWORD }}
+    # Repository configuration
+    target-repo-path: '.'
     
     # Optional customization
+    git-user-name: 'AutoQA Bot'
+    git-user-email: 'rabia.tahirr@opengrowth.com'
     test-directory: 'tests/qa-generated'        # Custom directory
-    run-existing-tests: false                   # Skip suite execution
     target-branch: ${{ github.head_ref }}       # Explicit branch
 ```
 

@@ -161,7 +161,7 @@ if __name__ == "__main__":
             # Configure git for the action
             subprocess.run(['git', 'config', 'user.name', 'AutoQA Bot'], 
                          cwd=self.target_workspace, check=True)
-            subprocess.run(['git', 'config', 'user.email', 'autoqa@aisquare.com'], 
+            subprocess.run(['git', 'config', 'user.email', 'rabia.tahirr@opengrowth.com'], 
                          cwd=self.target_workspace, check=True)
             
             # Add the test file

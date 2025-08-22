@@ -53,7 +53,7 @@ jobs:
   test-self-autoqa:
     name: 🚀 Test Self AutoQA
     runs-on: ubuntu-latest
-    if: contains(github.event.pull_request.body, 'AutoQA') || github.event_name == 'workflow_dispatch'
+    # if: contains(github.event.pull_request.body, 'AutoQA') || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     
     steps:
       - name: 📋 Checkout Code
@@ -65,10 +65,9 @@ jobs:
       - name: 🤖 Test AutoQA Action (Self)
         uses: ./
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          staging-login-url: ${{ secrets.STAGING_LOGIN_URL }}
-          staging-email: ${{ secrets.STAGING_EMAIL }}
-          staging-password: ${{ secrets.STAGING_PASSWORD }}
+          target-repo-path: '.'
+          git-user-name: 'AutoQA Test Bot'
+          git-user-email: 'rabia.tahirr@opengrowth.com'
           pr-body: |
             ## Test PR for AutoQA
             
@@ -79,7 +78,6 @@ jobs:
             4. Click login button
             5. Verify successful login
           test-directory: 'tests/autoQA-self-test'
-          run-existing-tests: false
       
       - name: 📊 Verify Test Generation
         run: |
@@ -129,7 +127,7 @@ jobs:
       
       - name: 📊 Check Action Inputs
         run: |
-          required_inputs=("github-token" "staging-login-url" "staging-email" "staging-password")
+          required_inputs=("target-repo-path" "git-user-name" "git-user-email" "test-directory")
           
           for input in "${required_inputs[@]}"; do
             if ! grep -q "$input:" action.yml; then

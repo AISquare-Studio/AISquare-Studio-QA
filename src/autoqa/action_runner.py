@@ -46,14 +46,12 @@ class ActionRunner:
         return {
             'github_token': os.getenv('GITHUB_TOKEN'),
             'openai_api_key': os.getenv('OPENAI_API_KEY'),  # Accessed from repository secrets automatically
-            'staging_login_url': os.getenv('STAGING_LOGIN_URL'),
-            'staging_email': os.getenv('STAGING_EMAIL'),
-            'staging_password': os.getenv('STAGING_PASSWORD'),
+            'target_repo_path': os.getenv('TARGET_REPO_PATH', '.'),
+            'staging_url': os.getenv('STAGING_URL'),
+            'git_user_name': os.getenv('GIT_USER_NAME', 'AutoQA Bot'),
+            'git_user_email': os.getenv('GIT_USER_EMAIL', 'rabia.tahirr@opengrowth.com'),
             'pr_body': os.getenv('PR_BODY', ''),
-            'pr_number': int(os.getenv('PR_NUMBER', '0')),
-            'target_branch': os.getenv('TARGET_BRANCH'),
-            'test_directory': os.getenv('TEST_DIRECTORY', 'tests/autoQA'),
-            'run_existing_tests': os.getenv('RUN_EXISTING_TESTS', 'true').lower() == 'true'
+            'test_directory': os.getenv('TEST_DIRECTORY', 'tests/generated')
         }
     
     def execute(self) -> Dict[str, Any]:
@@ -66,6 +64,12 @@ class ActionRunner:
                 return self._set_outputs({
                     'test_generated': 'false',
                     'error': 'OPENAI_API_KEY not found in repository secrets'
+                })
+            
+            if not self.config['staging_url']:
+                return self._set_outputs({
+                    'test_generated': 'false',
+                    'error': 'STAGING_URL is required'
                 })
             
             # Step 1: Check for AutoQA tag
@@ -155,9 +159,7 @@ class ActionRunner:
         try:
             # Create test configuration for staging
             test_config = {
-                'login_url': self.config['staging_login_url'],
-                'email': self.config['staging_email'],
-                'password': self.config['staging_password'],
+                'base_url': self.config['staging_url'],
                 'headless': True,
                 'timeout': 30000
             }
