@@ -193,7 +193,7 @@ class QACrew:
         test_data = self.load_test_data()
         selectors = test_data['selectors']['login_page']
         env_config = self.load_environment_config()
-        
+        print(f"🔍 Debug - Loaded environment config: {env_config}")
         # Create test configuration
         test_config = env_config.copy()
         test_config.update({
@@ -202,6 +202,7 @@ class QACrew:
             'email': test_config['valid_email'],
             'password': test_config['valid_password']
         })
+        print(f"🔍 Debug - Loaded test config: {test_config}")
         
         try:
             # Generate test code using existing Planner Agent
