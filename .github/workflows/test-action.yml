@@ -38,7 +38,7 @@ jobs:
           ## Feature Test
           
           AutoQA
-          1. Navigate to login page
+          1. Navigate to login page at "/login"
           2. Enter valid credentials
           3. Click login button
           4. Verify dashboard appears
@@ -74,11 +74,11 @@ jobs:
             ## Test PR for AutoQA
             
             AutoQA
-            1. Navigate to login page
+            1. Navigate to login page at "/login"
             2. Enter valid email credentials
             3. Enter valid password
             4. Click login button
-            5. Verify successful login
+            5. Verify successful login and dashboard redirect
           test-directory: 'tests/autoQA-self-test'
       
       - name: 📊 Verify Test Generation

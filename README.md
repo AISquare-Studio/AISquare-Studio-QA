@@ -51,7 +51,7 @@ cp env.template .env
 Edit the `.env` file with your actual values:
 ```bash
 # Required: Your staging environment
-STAGING_LOGIN_URL=https://your-staging.com/login
+STAGING_LOGIN_URL=https://stg-home.aisquare.studio/login
 STAGING_EMAIL=your-test-email@domain.com
 STAGING_PASSWORD=your-test-password
 
@@ -80,7 +80,7 @@ cp env.template .env
 Edit the `.env` file with your actual values:
 ```bash
 # Required: Your staging environment
-STAGING_LOGIN_URL=https://your-staging.com/login
+STAGING_LOGIN_URL=https://stg-home.aisquare.studio/login
 STAGING_EMAIL=your-test-email@domain.com
 STAGING_PASSWORD=your-test-password
 
@@ -140,7 +140,7 @@ jobs:
 
 ```markdown
 AutoQA
-1. Navigate to login page
+1. Navigate to login page at "/login"
 2. Enter valid credentials  
 3. Click login button
 4. Verify dashboard appears

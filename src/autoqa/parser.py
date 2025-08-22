@@ -163,11 +163,11 @@ if __name__ == "__main__":
     
     ### Login Flow Test
     AutoQA:login-flow
-    1. Navigate to the login page
+    1. Navigate to the login page at "/login"
     2. Enter valid email credentials
     3. Enter valid password
     4. Click login button
-    5. Verify dashboard redirect
+    5. Verify dashboard redirect to "/dashboard"
     6. Verify welcome message appears
     
     ## Other PR Details

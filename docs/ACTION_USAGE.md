@@ -68,7 +68,7 @@ Add the AutoQA tag to your PR descriptions:
 This PR adds new dashboard functionality.
 
 AutoQA
-1. Navigate to login page
+1. Navigate to login page at "/login"
 2. Enter valid credentials
 3. Click login button
 4. Verify dashboard loads
@@ -124,7 +124,7 @@ Steps: 6
 Scenario Type: dashboard
 
 Test Steps:
-1. Navigate to login page
+1. Navigate to login page at "/login"
 2. Enter valid credentials
 3. Click login button
 4. Verify dashboard loads
@@ -236,7 +236,7 @@ Customize action behavior with additional inputs:
 #### **Good Example:**
 ```
 AutoQA
-1. Navigate to user profile page
+1. Navigate to user profile page at "/profile"
 2. Click edit profile button
 3. Update email address field
 4. Click save changes button

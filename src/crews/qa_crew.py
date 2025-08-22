@@ -39,9 +39,13 @@ class QACrew:
         load_dotenv()
         
         # Use staging environment configuration
+        base_url = os.getenv('STAGING_URL', 'https://stg-home.aisquare.studio')
+        # Remove trailing slash to ensure consistent URL construction
+        base_url = base_url.rstrip('/')
+        
         return {
-            'login_url': os.getenv('STAGING_LOGIN_URL', 'https://example.com/login'),
-            'base_url': os.getenv('STAGING_URL', 'https://example.com'),
+            'base_url': base_url,
+            'login_url': f"{base_url}/login",
             'valid_email': os.getenv('STAGING_EMAIL', 'test@example.com'),
             'valid_password': os.getenv('STAGING_PASSWORD', 'password123'),
             'invalid_email': os.getenv('INVALID_EMAIL', 'invalid@example.com'),

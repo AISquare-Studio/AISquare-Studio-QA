@@ -113,7 +113,8 @@ class TestAutoQA:
         
         # Test configuration (customize as needed)
         config = {{
-            'login_url': '{os.getenv("STAGING_LOGIN_URL", "https://staging.example.com/login")}',
+            'base_url': '{os.getenv("STAGING_URL", "https://stg-home.aisquare.studio").rstrip("/")}',
+            'login_url': '{os.getenv("STAGING_URL", "https://stg-home.aisquare.studio").rstrip("/") + "/login"}',
             'email': '{os.getenv("STAGING_EMAIL", "test@example.com")}',
             'password': '{os.getenv("STAGING_PASSWORD", "password123")}',
             'headless': True,
