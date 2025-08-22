@@ -1,4 +1,4 @@
-# AISquare S## 🚀 Quick Start
+# AISquare Studio 🚀 Quick Start
 
 ### 1. Setup ## 🚀 How It Works
 
