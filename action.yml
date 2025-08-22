@@ -7,47 +7,48 @@ branding:
   color: 'blue'
 
 inputs:
-  github-token:
-    description: 'GitHub token for repository operations'
+  openai-api-key:
+    description: 'OpenAI API key for test generation'
     required: true
-    default: ${{ github.token }}
   
-  staging-login-url:
-    description: 'Staging environment login URL for testing'
+  staging-url:
+    description: 'Staging environment URL for testing'
     required: true
   
   staging-email:
-    description: 'Staging environment test email'
-    required: true
+    description: 'Test email for staging environment login'
+    required: false
+    default: 'test@example.com'
   
   staging-password:
-    description: 'Staging environment test password'
-    required: true
+    description: 'Test password for staging environment login'
+    required: false
+    default: 'password123'
+  
+  target-repo-path:
+    description: 'Path to the target repository (usually ".")'
+    required: false
+    default: '.'
+  
+  git-user-name:
+    description: 'Git user name for commits'
+    required: false
+    default: 'AutoQA Bot'
+  
+  git-user-email:
+    description: 'Git user email for commits'
+    required: false
+    default: 'rabia.tahirr@opengrowth.com'
   
   pr-body:
     description: 'Pull request description to parse for AutoQA steps'
-    required: true
-    default: ${{ github.event.pull_request.body }}
-  
-  pr-number:
-    description: 'Pull request number for status updates'
-    required: true
-    default: ${{ github.event.pull_request.number }}
-  
-  target-branch:
-    description: 'Target branch to commit generated tests to'
     required: false
-    default: ${{ github.head_ref }}
+    default: ${{ github.event.pull_request.body }}
   
   test-directory:
     description: 'Directory to store generated tests'
     required: false
-    default: 'tests/autoQA'
-  
-  run-existing-tests:
-    description: 'Whether to run existing tests after generation'
-    required: false
-    default: 'true'
+    default: 'tests/generated'
 
 outputs:
   test-generated:
@@ -61,14 +62,19 @@ outputs:
   test-results:
     description: 'JSON string of test execution results'
     value: ${{ steps.autoqa.outputs.test-results }}
-  
-  suite-results:
-    description: 'JSON string of full test suite results'
-    value: ${{ steps.autoqa.outputs.suite-results }}
 
 runs:
   using: 'composite'
   steps:
+    # Cache the AutoQA action repository to avoid repeated clones
+    - name: 🗂️ Cache AutoQA Repository
+      uses: actions/cache@v3
+      with:
+        path: .autoqa-action
+        key: ${{ runner.os }}-autoqa-repo-${{ github.sha }}-v1
+        restore-keys: |
+          ${{ runner.os }}-autoqa-repo-v1
+          
     - name: 🔍 Checkout AutoQA Action Repository
       uses: actions/checkout@v4
       with:
@@ -76,6 +82,7 @@ runs:
         path: '.autoqa-action'
         ref: 'main'
     
+    # Setup Python with pip caching based on requirements.txt hash
     - name: 🐍 Setup Python Environment
       uses: actions/setup-python@v4
       with:
@@ -83,12 +90,52 @@ runs:
         cache: 'pip'
         cache-dependency-path: '.autoqa-action/requirements.txt'
     
+    # Additional caching for Python packages and site-packages
+    - name: 📦 Cache Additional Dependencies  
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/pip
+          ~/.local/lib/python3.11/site-packages
+        key: ${{ runner.os }}-autoqa-deps-${{ hashFiles('.autoqa-action/requirements.txt') }}-v1
+        restore-keys: |
+          ${{ runner.os }}-autoqa-deps-v1
+          ${{ runner.os }}-autoqa-deps-
+    
+    # Cache Playwright browsers to avoid downloading ~100MB each run
+    - name: 🎭 Cache Playwright Browsers
+      uses: actions/cache@v3
+      id: playwright-cache
+      with:
+        path: ~/.cache/ms-playwright
+        key: ${{ runner.os }}-autoqa-playwright-${{ hashFiles('.autoqa-action/requirements.txt') }}-v1
+        restore-keys: |
+          ${{ runner.os }}-autoqa-playwright-v1
+          ${{ runner.os }}-playwright-v1
+          ${{ runner.os }}-playwright-
+    
+    # Install Python dependencies (pip packages cached above)
     - name: 📦 Install AutoQA Dependencies
       shell: bash
       run: |
         cd .autoqa-action
         pip install -r requirements.txt
+        
+    # Only install browsers if not cached (saves ~2-3 minutes per run)
+    - name: 🎭 Install Playwright Browsers
+      if: steps.playwright-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        cd .autoqa-action
         playwright install chromium
+        playwright install-deps chromium
+    
+    # For cached browsers, only install system dependencies
+    - name: 🎭 Setup Playwright (cached browsers)
+      if: steps.playwright-cache.outputs.cache-hit == 'true'
+      shell: bash
+      run: |
+        cd .autoqa-action
         playwright install-deps chromium
     
     - name: 🤖 Execute AutoQA Workflow
@@ -98,17 +145,19 @@ runs:
         cd .autoqa-action
         python src/autoqa/action_runner.py
       env:
-        # Action inputs as environment variables
-        GITHUB_TOKEN: ${{ inputs.github-token }}
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        STAGING_LOGIN_URL: ${{ inputs.staging-login-url }}
+        # Core configuration
+        GITHUB_TOKEN: ${{ github.token }}
+        OPENAI_API_KEY: ${{ inputs.openai-api-key }}
+        STAGING_URL: ${{ inputs.staging-url }}
         STAGING_EMAIL: ${{ inputs.staging-email }}
         STAGING_PASSWORD: ${{ inputs.staging-password }}
+        
+        # Action inputs as environment variables
+        TARGET_REPO_PATH: ${{ inputs.target-repo-path }}
+        GIT_USER_NAME: ${{ inputs.git-user-name }}
+        GIT_USER_EMAIL: ${{ inputs.git-user-email }}
         PR_BODY: ${{ inputs.pr-body }}
-        PR_NUMBER: ${{ inputs.pr-number }}
-        TARGET_BRANCH: ${{ inputs.target-branch }}
         TEST_DIRECTORY: ${{ inputs.test-directory }}
-        RUN_EXISTING_TESTS: ${{ inputs.run-existing-tests }}
         
         # GitHub context for cross-repo operations
         TARGET_REPOSITORY: ${{ github.repository }}

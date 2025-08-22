@@ -37,6 +37,7 @@ class PlannerAgent:
         8. For login success verification, check if '/dashboard' is in page.url after login
         9. Add comments for key steps
         10. Return ONLY the function code, no markdown or explanations
+        11. IMPORTANT: Use config['login_url'] directly - do NOT add /login to it as it's already included
         
         FORBIDDEN:
         - No imports other than playwright.sync_api
@@ -48,7 +49,7 @@ class PlannerAgent:
         Example structure:
         ```python
         def run_test(page, config):
-            # Navigate to login page
+            # Navigate to login page (login_url is complete URL, don't add /login)
             page.goto(config['login_url'])
             
             # Wait for page to load
@@ -59,6 +60,9 @@ class PlannerAgent:
             # Assert success condition
             assert condition, "Test assertion message"
         ```
+        
+        CRITICAL: config['login_url'] contains the full URL including /login path.
+        Do NOT concatenate or add /login to it.
             
             # Assert success condition
             assert condition, "Test assertion message"

@@ -29,12 +29,14 @@ jobs:
       - name: 🤖 Run AutoQA
         uses: AISquare-Studio/AISquare-Studio-QA@main
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          staging-login-url: ${{ secrets.STAGING_LOGIN_URL }}
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          staging-url: ${{ secrets.STAGING_URL }}
           staging-email: ${{ secrets.STAGING_EMAIL }}
           staging-password: ${{ secrets.STAGING_PASSWORD }}
-          test-directory: 'tests/autoQA'
-          run-existing-tests: true
+          target-repo-path: '.'
+          git-user-name: 'AutoQA Bot'
+          git-user-email: 'rabia.tahirr@opengrowth.com'
+          test-directory: 'tests/generated'
       
       - name: 📊 Upload Test Reports
         if: always()
@@ -42,7 +44,7 @@ jobs:
         with:
           name: autoqa-reports
           path: |
-            tests/autoQA/
+            tests/generated/
             reports/
           retention-days: 30
 ```
@@ -53,12 +55,12 @@ Add these secrets to your repository (`Settings → Secrets and variables → Ac
 
 ```
 OPENAI_API_KEY=sk-your-openai-api-key-here
-STAGING_LOGIN_URL=https://your-staging.com/login
-STAGING_EMAIL=test@staging.com
-STAGING_PASSWORD=your-staging-password
+STAGING_URL=https://your-staging-environment.com
+STAGING_EMAIL=test@example.com
+STAGING_PASSWORD=your-test-password
 ```
 
-**Note**: The OpenAI API key is automatically accessed from repository secrets - you don't need to pass it as an input parameter.
+**Note**: All secrets are passed as inputs to the action for maximum flexibility and security.
 
 ### **3. Use AutoQA in Pull Requests**
 
@@ -70,7 +72,7 @@ Add the AutoQA tag to your PR descriptions:
 This PR adds new dashboard functionality.
 
 AutoQA
-1. Navigate to login page
+1. Navigate to login page at "/login"
 2. Enter valid credentials
 3. Click login button
 4. Verify dashboard loads
@@ -126,7 +128,7 @@ Steps: 6
 Scenario Type: dashboard
 
 Test Steps:
-1. Navigate to login page
+1. Navigate to login page at "/login"
 2. Enter valid credentials
 3. Click login button
 4. Verify dashboard loads
@@ -213,15 +215,19 @@ Customize action behavior with additional inputs:
 - name: 🤖 Run AutoQA (Advanced)
   uses: AISquare-Studio/AISquare-Studio-QA@main
   with:
-    # Required
-    github-token: ${{ secrets.GITHUB_TOKEN }}
-    staging-login-url: ${{ secrets.STAGING_LOGIN_URL }}
+    # Required secrets
+    openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+    staging-url: ${{ secrets.STAGING_URL }}
     staging-email: ${{ secrets.STAGING_EMAIL }}
     staging-password: ${{ secrets.STAGING_PASSWORD }}
     
+    # Repository configuration
+    target-repo-path: '.'
+    
     # Optional customization
+    git-user-name: 'AutoQA Bot'
+    git-user-email: 'rabia.tahirr@opengrowth.com'
     test-directory: 'tests/qa-generated'        # Custom directory
-    run-existing-tests: false                   # Skip suite execution
     target-branch: ${{ github.head_ref }}       # Explicit branch
 ```
 
@@ -236,7 +242,7 @@ Customize action behavior with additional inputs:
 #### **Good Example:**
 ```
 AutoQA
-1. Navigate to user profile page
+1. Navigate to user profile page at "/profile"
 2. Click edit profile button
 3. Update email address field
 4. Click save changes button

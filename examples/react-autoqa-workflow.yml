@@ -16,7 +16,10 @@ jobs:
       - name: Generate AutoQA Tests
         uses: AISquare-Studio/AISquare-Studio-QA@main
         with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          staging-url: ${{ secrets.STAGING_URL }}
+          staging-email: ${{ secrets.STAGING_EMAIL }}
+          staging-password: ${{ secrets.STAGING_PASSWORD }}
           target-repo-path: '.'
-          staging-url: 'https://stg-home.aisquare.studio/dashboard'
           git-user-name: 'AutoQA Bot'
           git-user-email: 'rabia.tahirr@opengrowth.com'

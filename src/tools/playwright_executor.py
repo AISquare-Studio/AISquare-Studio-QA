@@ -47,7 +47,7 @@ def create_playwright_executor_tool():
                     'assert': safe_assert
                 }
                 
-                # Execute the code
+                # Execute the code (define the function)
                 exec(code, exec_globals)
                 
                 # Call the run_test function
@@ -84,9 +84,12 @@ def create_playwright_executor_tool():
                 pass
                 
         except Exception as e:
+            # Include config info in error for debugging
+            config_info = f"Config keys: {list(config.keys()) if config else 'None'}, login_url: {config.get('login_url', 'NOT_FOUND') if config else 'No config'}"
+            
             result.update({
                 'success': False,
-                'error': str(e),
+                'error': f"{str(e)} | Debug: {config_info}",
                 'message': 'Test execution failed'
             })
             

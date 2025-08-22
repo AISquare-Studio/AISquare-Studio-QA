@@ -92,5 +92,5 @@ cross_repo:
     
     commit_settings:
       author_name: "AutoQA Bot"
-      author_email: "autoqa@aisquare.com"
+      author_email: "rabia.tahirr@opengrowth.com"
       branch_protection: true  # Never commit to main/master

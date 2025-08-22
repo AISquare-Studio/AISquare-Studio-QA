@@ -43,18 +43,21 @@ class ActionRunner:
     
     def _load_config(self) -> Dict[str, Any]:
         """Load configuration from environment variables"""
-        return {
+        config = {
             'github_token': os.getenv('GITHUB_TOKEN'),
             'openai_api_key': os.getenv('OPENAI_API_KEY'),  # Accessed from repository secrets automatically
-            'staging_login_url': os.getenv('STAGING_LOGIN_URL'),
-            'staging_email': os.getenv('STAGING_EMAIL'),
-            'staging_password': os.getenv('STAGING_PASSWORD'),
+            'target_repo_path': os.getenv('TARGET_REPO_PATH', '.'),
+            'staging_url': os.getenv('STAGING_URL'),
+            'staging_email': os.getenv('STAGING_EMAIL', 'test@example.com'),
+            'staging_password': os.getenv('STAGING_PASSWORD', 'password123'),
+            'git_user_name': os.getenv('GIT_USER_NAME', 'AutoQA Bot'),
+            'git_user_email': os.getenv('GIT_USER_EMAIL', 'rabia.tahirr@opengrowth.com'),
             'pr_body': os.getenv('PR_BODY', ''),
-            'pr_number': int(os.getenv('PR_NUMBER', '0')),
-            'target_branch': os.getenv('TARGET_BRANCH'),
-            'test_directory': os.getenv('TEST_DIRECTORY', 'tests/autoQA'),
-            'run_existing_tests': os.getenv('RUN_EXISTING_TESTS', 'true').lower() == 'true'
+            'test_directory': os.getenv('TEST_DIRECTORY', 'tests/generated'),
+            'run_existing_tests': os.getenv('RUN_EXISTING_TESTS', 'false').lower() == 'true'
         }
+        
+        return config
     
     def execute(self) -> Dict[str, Any]:
         """Main execution flow for AutoQA action"""
@@ -67,6 +70,11 @@ class ActionRunner:
                     'test_generated': 'false',
                     'error': 'OPENAI_API_KEY not found in repository secrets'
                 })
+            
+            if not self.config['staging_url']:
+                print("⚠️ Warning: STAGING_URL not provided, using default for testing")
+                # Use default staging URL for testing
+                self.config['staging_url'] = 'https://stg-home.aisquare.studio'
             
             # Step 1: Check for AutoQA tag
             if not self.parser.has_autoqa_tag(self.config['pr_body']):
@@ -153,11 +161,20 @@ class ActionRunner:
     def _execute_test(self, test_code: str) -> Dict[str, Any]:
         """Execute generated test on staging environment"""
         try:
+            # Validate required config
+            if not self.config.get('staging_url'):
+                return {
+                    'success': False,
+                    'error': 'STAGING_URL is required but not provided'
+                }
+            
             # Create test configuration for staging
+            base_url = self.config['staging_url'].rstrip('/')
             test_config = {
-                'login_url': self.config['staging_login_url'],
-                'email': self.config['staging_email'],
-                'password': self.config['staging_password'],
+                'base_url': base_url,
+                'login_url': f"{base_url}/login",
+                'email': self.config.get('staging_email', 'test@example.com'),
+                'password': self.config.get('staging_password', 'password123'),
                 'headless': True,
                 'timeout': 30000
             }
@@ -168,9 +185,10 @@ class ActionRunner:
             return result
             
         except Exception as e:
+            config_debug = f"staging_url: {self.config.get('staging_url')}, test_config_created: {locals().get('test_config', 'Not created')}"
             return {
                 'success': False,
-                'error': f"Test execution failed: {str(e)}"
+                'error': f"Test execution failed: {str(e)} | Debug: {config_debug}"
             }
     
     def _run_test_suite(self) -> Dict[str, Any]:

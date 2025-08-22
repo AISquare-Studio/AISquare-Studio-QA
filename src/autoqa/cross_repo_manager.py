@@ -112,10 +112,13 @@ class TestAutoQA:
         """Generated test method"""
         
         # Test configuration (customize as needed)
+        import os
+        base_url = os.getenv("STAGING_URL", "https://stg-home.aisquare.studio").rstrip("/")
         config = {{
-            'login_url': '{os.getenv("STAGING_LOGIN_URL", "https://staging.example.com/login")}',
-            'email': '{os.getenv("STAGING_EMAIL", "test@example.com")}',
-            'password': '{os.getenv("STAGING_PASSWORD", "password123")}',
+            'base_url': base_url,
+            'login_url': base_url + "/login",
+            'email': os.getenv("STAGING_EMAIL", "test@example.com"),
+            'password': os.getenv("STAGING_PASSWORD", "password123"),
             'headless': True,
             'timeout': 30000
         }}
@@ -161,7 +164,7 @@ if __name__ == "__main__":
             # Configure git for the action
             subprocess.run(['git', 'config', 'user.name', 'AutoQA Bot'], 
                          cwd=self.target_workspace, check=True)
-            subprocess.run(['git', 'config', 'user.email', 'autoqa@aisquare.com'], 
+            subprocess.run(['git', 'config', 'user.email', 'rabia.tahirr@opengrowth.com'], 
                          cwd=self.target_workspace, check=True)
             
             # Add the test file
