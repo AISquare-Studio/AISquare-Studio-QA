@@ -194,15 +194,12 @@ class QACrew:
         selectors = test_data['selectors']['login_page']
         
         # Don't load environment config here - it will be passed from action_runner
-        # env_config = self.load_environment_config()
-        # print(f"🔍 Debug - Loaded environment config: {env_config}")
         
         # Create basic test configuration that will be updated by action_runner
         test_config = {
             'scenario_name': 'autoqa_generated',
             'scenario_type': 'autoqa',
         }
-        print(f"🔍 Debug - Initial test config: {test_config}")
         
         try:
             # Generate test code using existing Planner Agent

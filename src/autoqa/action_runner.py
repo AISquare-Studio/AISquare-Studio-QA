@@ -185,10 +185,9 @@ class ActionRunner:
             return result
             
         except Exception as e:
-            config_debug = f"staging_url: {self.config.get('staging_url')}, test_config_created: {locals().get('test_config', 'Not created')}"
             return {
                 'success': False,
-                'error': f"Test execution failed: {str(e)} | Debug: {config_debug}"
+                'error': f"Test execution failed: {str(e)}"
             }
     
     def _run_test_suite(self) -> Dict[str, Any]:
