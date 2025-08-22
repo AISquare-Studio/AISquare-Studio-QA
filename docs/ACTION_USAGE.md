@@ -29,6 +29,8 @@ jobs:
       - name: 🤖 Run AutoQA
         uses: AISquare-Studio/AISquare-Studio-QA@main
         with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          staging-url: ${{ secrets.STAGING_URL }}
           target-repo-path: '.'
           git-user-name: 'AutoQA Bot'
           git-user-email: 'rabia.tahirr@opengrowth.com'
@@ -54,7 +56,7 @@ OPENAI_API_KEY=sk-your-openai-api-key-here
 STAGING_URL=https://your-staging-environment.com
 ```
 
-**Note**: Both the OpenAI API key and staging URL are automatically accessed from repository secrets for security.
+**Note**: The OpenAI API key and staging URL must be passed from your repository secrets as inputs to the action.
 
 ### **3. Use AutoQA in Pull Requests**
 
@@ -209,6 +211,10 @@ Customize action behavior with additional inputs:
 - name: 🤖 Run AutoQA (Advanced)
   uses: AISquare-Studio/AISquare-Studio-QA@main
   with:
+    # Required secrets
+    openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+    staging-url: ${{ secrets.STAGING_URL }}
+    
     # Repository configuration
     target-repo-path: '.'
     

@@ -45,6 +45,8 @@ jobs:
       - name: Generate AutoQA Tests
         uses: AISquare-Studio/AISquare-Studio-QA@setup-playwright
         with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          staging-url: ${{ secrets.STAGING_URL }}
           target-repo-path: '.'
           git-user-name: 'AutoQA Bot'
           git-user-email: 'rabia.tahirr@opengrowth.com'

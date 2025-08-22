@@ -7,6 +7,14 @@ branding:
   color: 'blue'
 
 inputs:
+  openai-api-key:
+    description: 'OpenAI API key for test generation'
+    required: true
+  
+  staging-url:
+    description: 'Staging environment URL for testing'
+    required: true
+  
   target-repo-path:
     description: 'Path to the target repository (usually ".")'
     required: false
@@ -77,10 +85,10 @@ runs:
         cd .autoqa-action
         python src/autoqa/action_runner.py
       env:
-        # Core secrets (automatically accessed)
+        # Core configuration
         GITHUB_TOKEN: ${{ github.token }}
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        STAGING_URL: ${{ secrets.STAGING_URL }}
+        OPENAI_API_KEY: ${{ inputs.openai-api-key }}
+        STAGING_URL: ${{ inputs.staging-url }}
         
         # Action inputs as environment variables
         TARGET_REPO_PATH: ${{ inputs.target-repo-path }}

@@ -65,6 +65,8 @@ jobs:
       - name: 🤖 Test AutoQA Action (Self)
         uses: ./
         with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          staging-url: ${{ secrets.STAGING_URL }}
           target-repo-path: '.'
           git-user-name: 'AutoQA Test Bot'
           git-user-email: 'rabia.tahirr@opengrowth.com'
@@ -127,7 +129,7 @@ jobs:
       
       - name: 📊 Check Action Inputs
         run: |
-          required_inputs=("target-repo-path" "git-user-name" "git-user-email" "test-directory")
+          required_inputs=("openai-api-key" "staging-url" "target-repo-path" "git-user-name" "git-user-email" "test-directory")
           
           for input in "${required_inputs[@]}"; do
             if ! grep -q "$input:" action.yml; then
