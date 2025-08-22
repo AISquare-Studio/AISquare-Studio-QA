@@ -18,6 +18,8 @@ jobs:
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
           staging-url: ${{ secrets.STAGING_URL }}
+          staging-email: ${{ secrets.STAGING_EMAIL }}
+          staging-password: ${{ secrets.STAGING_PASSWORD }}
           target-repo-path: '.'
           git-user-name: 'AutoQA Bot'
           git-user-email: 'rabia.tahirr@opengrowth.com'

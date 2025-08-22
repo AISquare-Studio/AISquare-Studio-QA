@@ -15,6 +15,16 @@ inputs:
     description: 'Staging environment URL for testing'
     required: true
   
+  staging-email:
+    description: 'Test email for staging environment login'
+    required: false
+    default: 'test@example.com'
+  
+  staging-password:
+    description: 'Test password for staging environment login'
+    required: false
+    default: 'password123'
+  
   target-repo-path:
     description: 'Path to the target repository (usually ".")'
     required: false
@@ -56,6 +66,15 @@ outputs:
 runs:
   using: 'composite'
   steps:
+    # Cache the AutoQA action repository to avoid repeated clones
+    - name: 🗂️ Cache AutoQA Repository
+      uses: actions/cache@v3
+      with:
+        path: .autoqa-action
+        key: ${{ runner.os }}-autoqa-repo-${{ github.sha }}-v1
+        restore-keys: |
+          ${{ runner.os }}-autoqa-repo-v1
+          
     - name: 🔍 Checkout AutoQA Action Repository
       uses: actions/checkout@v4
       with:
@@ -63,6 +82,7 @@ runs:
         path: '.autoqa-action'
         ref: 'main'
     
+    # Setup Python with pip caching based on requirements.txt hash
     - name: 🐍 Setup Python Environment
       uses: actions/setup-python@v4
       with:
@@ -70,12 +90,52 @@ runs:
         cache: 'pip'
         cache-dependency-path: '.autoqa-action/requirements.txt'
     
+    # Additional caching for Python packages and site-packages
+    - name: 📦 Cache Additional Dependencies  
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/pip
+          ~/.local/lib/python3.11/site-packages
+        key: ${{ runner.os }}-autoqa-deps-${{ hashFiles('.autoqa-action/requirements.txt') }}-v1
+        restore-keys: |
+          ${{ runner.os }}-autoqa-deps-v1
+          ${{ runner.os }}-autoqa-deps-
+    
+    # Cache Playwright browsers to avoid downloading ~100MB each run
+    - name: 🎭 Cache Playwright Browsers
+      uses: actions/cache@v3
+      id: playwright-cache
+      with:
+        path: ~/.cache/ms-playwright
+        key: ${{ runner.os }}-autoqa-playwright-${{ hashFiles('.autoqa-action/requirements.txt') }}-v1
+        restore-keys: |
+          ${{ runner.os }}-autoqa-playwright-v1
+          ${{ runner.os }}-playwright-v1
+          ${{ runner.os }}-playwright-
+    
+    # Install Python dependencies (pip packages cached above)
     - name: 📦 Install AutoQA Dependencies
       shell: bash
       run: |
         cd .autoqa-action
         pip install -r requirements.txt
+        
+    # Only install browsers if not cached (saves ~2-3 minutes per run)
+    - name: 🎭 Install Playwright Browsers
+      if: steps.playwright-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        cd .autoqa-action
         playwright install chromium
+        playwright install-deps chromium
+    
+    # For cached browsers, only install system dependencies
+    - name: 🎭 Setup Playwright (cached browsers)
+      if: steps.playwright-cache.outputs.cache-hit == 'true'
+      shell: bash
+      run: |
+        cd .autoqa-action
         playwright install-deps chromium
     
     - name: 🤖 Execute AutoQA Workflow
@@ -89,6 +149,8 @@ runs:
         GITHUB_TOKEN: ${{ github.token }}
         OPENAI_API_KEY: ${{ inputs.openai-api-key }}
         STAGING_URL: ${{ inputs.staging-url }}
+        STAGING_EMAIL: ${{ inputs.staging-email }}
+        STAGING_PASSWORD: ${{ inputs.staging-password }}
         
         # Action inputs as environment variables
         TARGET_REPO_PATH: ${{ inputs.target-repo-path }}

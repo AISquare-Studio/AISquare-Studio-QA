@@ -21,11 +21,34 @@ jobs:
         with:
           python-version: "3.11"
           cache: 'pip'
+          cache-dependency-path: 'requirements.txt'
+      
+      # Cache Playwright browsers to speed up test runs (saves ~2-3 minutes)
+      - name: 🎭 Cache Playwright Browsers
+        uses: actions/cache@v3
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('requirements.txt') }}-v1
+          restore-keys: |
+            ${{ runner.os }}-playwright-v1
+            ${{ runner.os }}-playwright-
       
       - name: 📦 Install Dependencies
         run: |
           pip install -r requirements.txt
+          
+      # Only install browsers if cache miss (saves significant time on cache hit)
+      - name: 🎭 Install Playwright Browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: |
           playwright install chromium
+          playwright install-deps chromium
+      
+      # For cached browsers, only install system dependencies
+      - name: 🎭 Setup Playwright (cached browsers)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: |
           playwright install-deps chromium
       
       - name: 🔍 Test AutoQA Parser
@@ -62,11 +85,24 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
       
+      # Cache Playwright browsers for the action test
+      - name: 🎭 Cache Playwright Browsers (for Action)
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-action-${{ hashFiles('requirements.txt') }}-v1
+          restore-keys: |
+            ${{ runner.os }}-playwright-action-v1
+            ${{ runner.os }}-playwright-v1
+            ${{ runner.os }}-playwright-
+      
       - name: 🤖 Test AutoQA Action (Self)
         uses: ./
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
           staging-url: ${{ secrets.STAGING_URL }}
+          staging-email: ${{ secrets.STAGING_EMAIL }}
+          staging-password: ${{ secrets.STAGING_PASSWORD }}
           target-repo-path: '.'
           git-user-name: 'AutoQA Test Bot'
           git-user-email: 'rabia.tahirr@opengrowth.com'
@@ -129,7 +165,7 @@ jobs:
       
       - name: 📊 Check Action Inputs
         run: |
-          required_inputs=("openai-api-key" "staging-url" "target-repo-path" "git-user-name" "git-user-email" "test-directory")
+          required_inputs=("openai-api-key" "staging-url" "staging-email" "staging-password" "target-repo-path" "git-user-name" "git-user-email" "test-directory")
           
           for input in "${required_inputs[@]}"; do
             if ! grep -q "$input:" action.yml; then

@@ -129,8 +129,8 @@ jobs:
       - name: 🤖 Generate and Execute Tests
         uses: AISquare-Studio/AISquare-Studio-QA@main
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          staging-login-url: ${{ secrets.STAGING_LOGIN_URL }}
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          staging-url: ${{ secrets.STAGING_URL }}
           staging-email: ${{ secrets.STAGING_EMAIL }}
           staging-password: ${{ secrets.STAGING_PASSWORD }}
 ```
@@ -327,6 +327,32 @@ playwright install
 2. Add tests for new functionality
 3. Update documentation as needed
 4. Ensure security validation passes
+
+## ⚡ Performance & Caching
+
+AutoQA includes comprehensive caching optimizations for faster CI/CD runs:
+
+### 🚀 **Caching Strategy**
+- **Python Dependencies**: Pip packages cached using `requirements.txt` hash
+- **Playwright Browsers**: Browser binaries (~100MB) cached to avoid repeated downloads
+- **System Dependencies**: OS-level dependencies cached separately
+- **Repository Cache**: Action repository cached to speed up checkout
+
+### 📊 **Performance Benefits**
+- **Cold Run**: ~3-4 minutes (first time, no cache)
+- **Warm Run**: ~45-60 seconds (with full cache hits)
+- **Typical Savings**: 2-3 minutes per workflow run
+
+### 🔧 **Cache Configuration**
+```yaml
+# Automatic caching in action.yml and workflows
+- Python packages: ~/.cache/pip + site-packages
+- Playwright browsers: ~/.cache/ms-playwright  
+- Cache keys include requirements.txt hash for invalidation
+- Multi-level restore keys for fallback scenarios
+```
+
+Cache automatically invalidates when `requirements.txt` changes, ensuring fresh dependencies while maximizing reuse.
 
 ## 📄 License
 

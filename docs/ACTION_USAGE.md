@@ -31,6 +31,8 @@ jobs:
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
           staging-url: ${{ secrets.STAGING_URL }}
+          staging-email: ${{ secrets.STAGING_EMAIL }}
+          staging-password: ${{ secrets.STAGING_PASSWORD }}
           target-repo-path: '.'
           git-user-name: 'AutoQA Bot'
           git-user-email: 'rabia.tahirr@opengrowth.com'
@@ -54,9 +56,11 @@ Add these secrets to your repository (`Settings → Secrets and variables → Ac
 ```
 OPENAI_API_KEY=sk-your-openai-api-key-here
 STAGING_URL=https://your-staging-environment.com
+STAGING_EMAIL=test@example.com
+STAGING_PASSWORD=your-test-password
 ```
 
-**Note**: The OpenAI API key and staging URL must be passed from your repository secrets as inputs to the action.
+**Note**: All secrets are passed as inputs to the action for maximum flexibility and security.
 
 ### **3. Use AutoQA in Pull Requests**
 
@@ -214,6 +218,8 @@ Customize action behavior with additional inputs:
     # Required secrets
     openai-api-key: ${{ secrets.OPENAI_API_KEY }}
     staging-url: ${{ secrets.STAGING_URL }}
+    staging-email: ${{ secrets.STAGING_EMAIL }}
+    staging-password: ${{ secrets.STAGING_PASSWORD }}
     
     # Repository configuration
     target-repo-path: '.'

@@ -21,6 +21,12 @@ In your React repository, add the required secrets:
    
    - **Name**: `STAGING_URL`
    - **Value**: Your staging environment URL (e.g., `https://your-staging-app.vercel.app`)
+   
+   - **Name**: `STAGING_EMAIL`
+   - **Value**: Test email for staging environment (e.g., `test@example.com`)
+   
+   - **Name**: `STAGING_PASSWORD`
+   - **Value**: Test password for staging environment
 
 ## Step 2: Create GitHub Workflow
 
@@ -47,6 +53,8 @@ jobs:
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
           staging-url: ${{ secrets.STAGING_URL }}
+          staging-email: ${{ secrets.STAGING_EMAIL }}
+          staging-password: ${{ secrets.STAGING_PASSWORD }}
           target-repo-path: '.'
           git-user-name: 'AutoQA Bot'
           git-user-email: 'rabia.tahirr@opengrowth.com'
