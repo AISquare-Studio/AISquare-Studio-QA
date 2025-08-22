@@ -11,6 +11,11 @@ inputs:
     description: 'OpenAI API key for test generation'
     required: true
   
+  qa-github-token:
+    description: 'GitHub token with access to AutoQA repository (required for private repos)'
+    required: false
+    default: ${{ github.token }}
+  
   staging-url:
     description: 'Staging environment URL for testing'
     required: true
@@ -79,6 +84,7 @@ runs:
       uses: actions/checkout@v4
       with:
         repository: 'AISquare-Studio/AISquare-Studio-QA'
+        token: ${{ inputs.qa-github-token }}
         path: '.autoqa-action'
         ref: 'main'
     

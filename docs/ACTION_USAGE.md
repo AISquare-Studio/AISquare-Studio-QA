@@ -30,6 +30,7 @@ jobs:
         uses: AISquare-Studio/AISquare-Studio-QA@main
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          qa-github-token: ${{ secrets.QA_GITHUB_TOKEN }}
           staging-url: ${{ secrets.STAGING_URL }}
           staging-email: ${{ secrets.STAGING_EMAIL }}
           staging-password: ${{ secrets.STAGING_PASSWORD }}
@@ -55,12 +56,26 @@ Add these secrets to your repository (`Settings → Secrets and variables → Ac
 
 ```
 OPENAI_API_KEY=sk-your-openai-api-key-here
+QA_GITHUB_TOKEN=ghp_your-github-token-with-repo-access
 STAGING_URL=https://your-staging-environment.com
 STAGING_EMAIL=test@example.com
 STAGING_PASSWORD=your-test-password
 ```
 
 **Note**: All secrets are passed as inputs to the action for maximum flexibility and security.
+
+#### **Creating QA_GITHUB_TOKEN**
+
+For the `QA_GITHUB_TOKEN` secret, you need a Personal Access Token with repository access:
+
+1. **Go to GitHub Settings**: https://github.com/settings/personal-access-tokens/tokens
+2. **Generate new token (classic)**
+3. **Select scopes**:
+   - ✅ `repo` (Full control of private repositories)
+   - ✅ `workflow` (Update GitHub Action workflows)
+4. **Copy the token** and add it as `QA_GITHUB_TOKEN` secret in your repository
+
+**Alternative**: If the AutoQA repository is public, you can omit this secret and the action will use the default `GITHUB_TOKEN`.
 
 ### **3. Use AutoQA in Pull Requests**
 

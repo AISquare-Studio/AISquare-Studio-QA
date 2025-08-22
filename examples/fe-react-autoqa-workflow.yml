@@ -51,6 +51,9 @@ jobs:
           # Required: OpenAI API key for test generation
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
           
+          # GitHub token with access to AutoQA repository
+          qa-github-token: ${{ secrets.QA_GITHUB_TOKEN }}
+          
           # Staging environment configuration
           staging-url: ${{ secrets.STAGING_URL }}
           staging-email: ${{ secrets.STAGING_EMAIL }}
