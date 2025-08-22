@@ -96,13 +96,35 @@ jobs:
             ${{ runner.os }}-playwright-v1
             ${{ runner.os }}-playwright-
       
+      - name: 🔧 Set Default Test Values
+        id: defaults
+        run: |
+          STAGING_URL="${{ secrets.STAGING_URL }}"
+          STAGING_EMAIL="${{ secrets.STAGING_EMAIL }}"
+          STAGING_PASSWORD="${{ secrets.STAGING_PASSWORD }}"
+          
+          # Set defaults if secrets are empty
+          if [ -z "$STAGING_URL" ]; then
+            STAGING_URL="https://stg-home.aisquare.studio"
+          fi
+          if [ -z "$STAGING_EMAIL" ]; then
+            STAGING_EMAIL="test@example.com"
+          fi
+          if [ -z "$STAGING_PASSWORD" ]; then
+            STAGING_PASSWORD="password123"
+          fi
+          
+          echo "staging-url=$STAGING_URL" >> $GITHUB_OUTPUT
+          echo "staging-email=$STAGING_EMAIL" >> $GITHUB_OUTPUT
+          echo "staging-password=$STAGING_PASSWORD" >> $GITHUB_OUTPUT
+      
       - name: 🤖 Test AutoQA Action (Self)
         uses: ./
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
-          staging-url: ${{ secrets.STAGING_URL }}
-          staging-email: ${{ secrets.STAGING_EMAIL }}
-          staging-password: ${{ secrets.STAGING_PASSWORD }}
+          staging-url: ${{ steps.defaults.outputs.staging-url }}
+          staging-email: ${{ steps.defaults.outputs.staging-email }}
+          staging-password: ${{ steps.defaults.outputs.staging-password }}
           target-repo-path: '.'
           git-user-name: 'AutoQA Test Bot'
           git-user-email: 'rabia.tahirr@opengrowth.com'
