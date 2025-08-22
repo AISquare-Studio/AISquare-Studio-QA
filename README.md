@@ -150,6 +150,44 @@ AutoQA
 
 📖 **[Complete Usage Guide](docs/ACTION_USAGE.md)**
 
+## 🚀 FE-REACT Integration
+
+### **Quick Setup for FE-REACT Repository**
+
+Use our automated setup script for instant integration:
+
+```bash
+# In your FE-REACT repository
+curl -sSL https://raw.githubusercontent.com/AISquare-Studio/AISquare-Studio-QA/main/scripts/setup-fe-react.sh | bash
+```
+
+**Or manual setup:**
+
+1. **Copy workflow file**:
+   ```bash
+   mkdir -p .github/workflows
+   curl -o .github/workflows/autoqa.yml https://raw.githubusercontent.com/AISquare-Studio/AISquare-Studio-QA/main/examples/fe-react-autoqa-workflow.yml
+   ```
+
+2. **Configure repository secrets**:
+   - `OPENAI_API_KEY`: Your OpenAI API key
+   - `STAGING_URL`: Your staging environment URL
+   - `STAGING_EMAIL` & `STAGING_PASSWORD`: Test credentials
+
+3. **Add test scripts to package.json**:
+   ```json
+   {
+     "scripts": {
+       "test:autoqa": "playwright test tests/autoqa/",
+       "test:autoqa:headed": "playwright test tests/autoqa/ --headed"
+     }
+   }
+   ```
+
+4. **Create PR with AutoQA steps** and watch the magic happen! ✨
+
+📖 **[FE-REACT Integration Guide](docs/FE_REACT_INTEGRATION.md)**
+
 ## ✨ Features
 
 - 🤖 **AI-Powered Test Generation**: CrewAI agents generate Playwright test code from natural language in PR descriptions
