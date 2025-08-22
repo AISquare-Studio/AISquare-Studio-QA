@@ -1,0 +1,141 @@
+name: 🧪 Test AutoQA Action
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  test-action-components:
+    name: 🔧 Test Action Components
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📋 Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: 🐍 Setup Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          cache: 'pip'
+      
+      - name: 📦 Install Dependencies
+        run: |
+          pip install -r requirements.txt
+          playwright install chromium
+          playwright install-deps chromium
+      
+      - name: 🔍 Test AutoQA Parser
+        run: |
+          python -c "
+          from src.autoqa.parser import AutoQAParser
+          
+          parser = AutoQAParser()
+          test_pr_body = '''
+          ## Feature Test
+          
+          AutoQA
+          1. Navigate to login page
+          2. Enter valid credentials
+          3. Click login button
+          4. Verify dashboard appears
+          '''
+          
+          assert parser.has_autoqa_tag(test_pr_body), 'AutoQA tag detection failed'
+          steps = parser.parse_test_steps(test_pr_body)
+          assert len(steps) == 4, f'Expected 4 steps, got {len(steps)}'
+          print('✅ AutoQA Parser tests passed')
+          "
+
+  test-self-autoqa:
+    name: 🚀 Test Self AutoQA
+    runs-on: ubuntu-latest
+    if: contains(github.event.pull_request.body, 'AutoQA') || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: 📋 Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: 🤖 Test AutoQA Action (Self)
+        uses: ./
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          staging-login-url: ${{ secrets.STAGING_LOGIN_URL }}
+          staging-email: ${{ secrets.STAGING_EMAIL }}
+          staging-password: ${{ secrets.STAGING_PASSWORD }}
+          pr-body: |
+            ## Test PR for AutoQA
+            
+            AutoQA
+            1. Navigate to login page
+            2. Enter valid email credentials
+            3. Enter valid password
+            4. Click login button
+            5. Verify successful login
+          test-directory: 'tests/autoQA-self-test'
+          run-existing-tests: false
+      
+      - name: 📊 Verify Test Generation
+        run: |
+          if [ -d "tests/autoQA-self-test" ]; then
+            echo "✅ Test directory created"
+            ls -la tests/autoQA-self-test/
+            
+            if ls tests/autoQA-self-test/test_*.py 1> /dev/null 2>&1; then
+              echo "✅ Test files generated"
+              cat tests/autoQA-self-test/test_*.py | head -20
+            else
+              echo "❌ No test files found"
+              exit 1
+            fi
+          else
+            echo "❌ Test directory not created"
+            exit 1
+          fi
+
+  validate-action-yml:
+    name: 📋 Validate Action Definition
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📋 Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: 🔍 Validate action.yml
+        run: |
+          # Check required fields
+          if ! grep -q "name:" action.yml; then
+            echo "❌ action.yml missing 'name' field"
+            exit 1
+          fi
+          
+          if ! grep -q "description:" action.yml; then
+            echo "❌ action.yml missing 'description' field"
+            exit 1
+          fi
+          
+          if ! grep -q "runs:" action.yml; then
+            echo "❌ action.yml missing 'runs' field"
+            exit 1
+          fi
+          
+          echo "✅ action.yml validation passed"
+      
+      - name: 📊 Check Action Inputs
+        run: |
+          required_inputs=("github-token" "staging-login-url" "staging-email" "staging-password")
+          
+          for input in "${required_inputs[@]}"; do
+            if ! grep -q "$input:" action.yml; then
+              echo "❌ Missing required input: $input"
+              exit 1
+            fi
+          done
+          
+          echo "✅ All required inputs present"
