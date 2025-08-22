@@ -18,8 +18,9 @@ class CrossRepoManager:
         self.target_workspace = target_workspace
         self.action_path = action_path
         self.github_token = os.getenv('GITHUB_TOKEN')
-        self.target_branch = os.getenv('TARGET_BRANCH')
+        self.target_branch = os.getenv('TARGET_BRANCH', 'main')
         self.test_directory = os.getenv('TEST_DIRECTORY', 'tests/autoQA')
+        self.create_pr = os.getenv('CREATE_PR', 'false').lower() == 'true'
         
     def commit_test_file(self, code: str, steps: List[str], metadata: Dict[str, Any]) -> Path:
         """Commit generated test file to target repository"""
@@ -162,9 +163,12 @@ if __name__ == "__main__":
         """Commit the test file to the target repository"""
         try:
             # Configure git for the action
-            subprocess.run(['git', 'config', 'user.name', 'AutoQA Bot'], 
+            git_user_name = os.getenv('GIT_USER_NAME', 'AutoQA Bot')
+            git_user_email = os.getenv('GIT_USER_EMAIL', 'rabia.tahirr@opengrowth.com')
+            
+            subprocess.run(['git', 'config', 'user.name', git_user_name], 
                          cwd=self.target_workspace, check=True)
-            subprocess.run(['git', 'config', 'user.email', 'rabia.tahirr@opengrowth.com'], 
+            subprocess.run(['git', 'config', 'user.email', git_user_email], 
                          cwd=self.target_workspace, check=True)
             
             # Add the test file
@@ -181,9 +185,78 @@ if __name__ == "__main__":
             
             print(f"✅ Committed test file: {relative_path}")
             
+            # Push to remote repository or create PR
+            if self.create_pr:
+                self._create_pull_request(steps)
+            else:
+                self._push_to_remote()
+            
         except subprocess.CalledProcessError as e:
             print(f"❌ Failed to commit test file: {e}")
             raise
+    
+    def _push_to_remote(self) -> None:
+        """Push committed changes to remote repository"""
+        try:
+            # Get current branch name
+            result = subprocess.run(['git', 'branch', '--show-current'], 
+                                  cwd=self.target_workspace, 
+                                  capture_output=True, text=True, check=True)
+            current_branch = result.stdout.strip()
+            
+            # Check if we have a remote configured
+            remote_result = subprocess.run(['git', 'remote', 'get-url', 'origin'], 
+                                         cwd=self.target_workspace, 
+                                         capture_output=True, text=True)
+            
+            if remote_result.returncode != 0:
+                print("⚠️ No remote 'origin' configured, skipping push")
+                return
+            
+            print(f"🚀 Pushing changes to origin/{current_branch}...")
+            
+            # Push to origin with authentication
+            push_result = subprocess.run(['git', 'push', 'origin', current_branch], 
+                                       cwd=self.target_workspace, 
+                                       capture_output=True, text=True)
+            
+            if push_result.returncode == 0:
+                print(f"✅ Successfully pushed changes to remote repository")
+            else:
+                print(f"❌ Push failed: {push_result.stderr}")
+                print("📋 Possible causes:")
+                print("  - Branch protection rules preventing direct push")
+                print("  - Insufficient permissions on repository")
+                print("  - Network connectivity issues")
+                print("📋 Note: Changes are committed locally but not pushed to remote")
+            
+        except subprocess.CalledProcessError as e:
+            print(f"❌ Failed to push to remote: {e}")
+            print("📋 Note: Changes are committed locally but not pushed to remote")
+            # Don't re-raise the exception as commit was successful
+    
+    def _create_pull_request(self, steps: List[str]) -> None:
+        """Create a pull request with the AutoQA test changes"""
+        try:
+            # Create a new branch for the PR
+            branch_name = f"autoqa/test-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+            
+            # Create and checkout new branch
+            subprocess.run(['git', 'checkout', '-b', branch_name], 
+                         cwd=self.target_workspace, check=True)
+            
+            # Push the new branch
+            subprocess.run(['git', 'push', 'origin', branch_name], 
+                         cwd=self.target_workspace, check=True)
+            
+            print(f"✅ Created and pushed branch: {branch_name}")
+            print(f"📋 Create a PR manually from {branch_name} to {self.target_branch}")
+            print(f"📋 Or use GitHub CLI: gh pr create --title 'AutoQA: Add generated test' --body 'Auto-generated test from AutoQA'")
+            
+        except subprocess.CalledProcessError as e:
+            print(f"❌ Failed to create pull request branch: {e}")
+            print("📋 Falling back to direct push...")
+            self._push_to_remote()
     
     def _generate_commit_message(self, steps: List[str]) -> str:
         """Generate descriptive commit message"""

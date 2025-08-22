@@ -54,6 +54,11 @@ inputs:
     description: 'Directory to store generated tests'
     required: false
     default: 'tests/generated'
+  
+  create-pr:
+    description: 'Create a pull request instead of pushing directly to main branch'
+    required: false
+    default: 'false'
 
 outputs:
   test-generated:
@@ -164,6 +169,7 @@ runs:
         GIT_USER_EMAIL: ${{ inputs.git-user-email }}
         PR_BODY: ${{ inputs.pr-body }}
         TEST_DIRECTORY: ${{ inputs.test-directory }}
+        CREATE_PR: ${{ inputs.create-pr }}
         
         # GitHub context for cross-repo operations
         TARGET_REPOSITORY: ${{ github.repository }}
