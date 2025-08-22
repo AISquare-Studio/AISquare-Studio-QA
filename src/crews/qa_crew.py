@@ -35,8 +35,11 @@ class QACrew:
     
     def load_environment_config(self) -> Dict[str, Any]:
         """Load environment configuration from .env file."""
-        from dotenv import load_dotenv
-        load_dotenv()
+        try:
+            from dotenv import load_dotenv
+            load_dotenv()  # This will fail silently if no .env file exists
+        except ImportError:
+            pass  # dotenv might not be available in action environment
         
         # Use staging environment configuration
         base_url = os.getenv('STAGING_URL', 'https://stg-home.aisquare.studio')

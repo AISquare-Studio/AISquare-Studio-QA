@@ -51,7 +51,8 @@ class ActionRunner:
             'git_user_name': os.getenv('GIT_USER_NAME', 'AutoQA Bot'),
             'git_user_email': os.getenv('GIT_USER_EMAIL', 'rabia.tahirr@opengrowth.com'),
             'pr_body': os.getenv('PR_BODY', ''),
-            'test_directory': os.getenv('TEST_DIRECTORY', 'tests/generated')
+            'test_directory': os.getenv('TEST_DIRECTORY', 'tests/generated'),
+            'run_existing_tests': os.getenv('RUN_EXISTING_TESTS', 'false').lower() == 'true'
         }
     
     def execute(self) -> Dict[str, Any]:
@@ -158,8 +159,12 @@ class ActionRunner:
         """Execute generated test on staging environment"""
         try:
             # Create test configuration for staging
+            base_url = self.config['staging_url'].rstrip('/')
             test_config = {
-                'base_url': self.config['staging_url'],
+                'base_url': base_url,
+                'login_url': f"{base_url}/login",
+                'email': 'test@example.com',  # Default test credentials for action environment
+                'password': 'password123',    # Default test credentials for action environment
                 'headless': True,
                 'timeout': 30000
             }
