@@ -57,7 +57,6 @@ class ActionRunner:
             'run_existing_tests': os.getenv('RUN_EXISTING_TESTS', 'false').lower() == 'true'
         }
         
-        print(f"🔍 Debug - Loaded config staging_url: {config.get('staging_url')}")
         return config
     
     def execute(self) -> Dict[str, Any]:
@@ -180,17 +179,16 @@ class ActionRunner:
                 'timeout': 30000
             }
             
-            print(f"🔍 Debug - Test config login_url: {test_config['login_url']}")
-            
             # Execute using existing executor
             result = self.qa_crew.execute_generated_test(test_code, test_config)
             
             return result
             
         except Exception as e:
+            config_debug = f"staging_url: {self.config.get('staging_url')}, test_config_created: {locals().get('test_config', 'Not created')}"
             return {
                 'success': False,
-                'error': f"Test execution failed: {str(e)}"
+                'error': f"Test execution failed: {str(e)} | Debug: {config_debug}"
             }
     
     def _run_test_suite(self) -> Dict[str, Any]:
