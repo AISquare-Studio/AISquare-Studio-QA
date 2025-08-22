@@ -63,15 +63,23 @@ inputs:
 outputs:
   test-generated:
     description: 'Whether a test was successfully generated'
-    value: ${{ steps.autoqa.outputs.test-generated }}
+    value: ${{ steps.autoqa.outputs.test_generated }}
   
   test-file-path:
     description: 'Path to the generated test file'
-    value: ${{ steps.autoqa.outputs.test-file-path }}
+    value: ${{ steps.autoqa.outputs.test_file_path }}
   
   test-results:
     description: 'JSON string of test execution results'
-    value: ${{ steps.autoqa.outputs.test-results }}
+    value: ${{ steps.autoqa.outputs.test_results }}
+  
+  generation-metadata:
+    description: 'JSON string of test generation metadata'
+    value: ${{ steps.autoqa.outputs.generation_metadata }}
+  
+  error:
+    description: 'Error message if test generation failed'
+    value: ${{ steps.autoqa.outputs.error }}
 
 runs:
   using: 'composite'

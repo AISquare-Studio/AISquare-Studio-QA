@@ -81,7 +81,7 @@ class ActionRunner:
                 print("📋 No AutoQA tag found in PR description")
                 return self._set_outputs({
                     'test_generated': 'false',
-                    'message': 'No AutoQA tag found'
+                    'error': 'No AutoQA tag found in PR description'
                 })
             
             # Step 2: Parse test steps
@@ -254,6 +254,7 @@ class ActionRunner:
         # Set outputs for GitHub Actions
         github_output = os.getenv('GITHUB_OUTPUT')
         if github_output:
+            print(f"📤 Setting GitHub Action outputs to: {github_output}")
             with open(github_output, 'a') as f:
                 for key, value in outputs.items():
                     # Escape multiline values
@@ -261,11 +262,17 @@ class ActionRunner:
                         f.write(f"{key}<<EOF\n{value}\nEOF\n")
                     else:
                         f.write(f"{key}={value}\n")
+        else:
+            print("⚠️ GITHUB_OUTPUT environment variable not set - outputs will not be available")
         
         # Also print for visibility
         print("📊 Action Outputs:")
         for key, value in outputs.items():
-            print(f"  {key}: {value}")
+            # Truncate long values for readability
+            display_value = str(value)
+            if len(display_value) > 100:
+                display_value = display_value[:100] + "..."
+            print(f"  {key}: {display_value}")
         
         return outputs
 

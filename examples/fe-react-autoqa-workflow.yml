@@ -92,10 +92,22 @@ jobs:
                 const results = JSON.parse('${{ steps.autoqa.outputs.test_results }}');
                 if (results.success) {
                   commentBody += '🧪 **Test execution: PASSED** ✅\\n\\n';
+                  if (results.screenshot_path) {
+                    commentBody += `📸 Screenshot: \`${results.screenshot_path}\`\\n\\n`;
+                  }
                 } else {
                   commentBody += '🧪 **Test execution: FAILED** ❌\\n\\n';
                   commentBody += `Error: \`${results.error}\`\\n\\n`;
                 }
+              }
+              
+              // Add generation metadata if available
+              if ('${{ steps.autoqa.outputs.generation_metadata }}') {
+                const metadata = JSON.parse('${{ steps.autoqa.outputs.generation_metadata }}');
+                commentBody += '### 📋 Test Details\\n';
+                commentBody += `- **Scenario**: ${metadata.scenario || 'AutoQA Test'}\\n`;
+                commentBody += `- **Steps**: ${metadata.steps ? metadata.steps.length : 'N/A'} test steps\\n`;
+                commentBody += `- **Generated**: ${metadata.generated_at ? new Date(metadata.generated_at).toLocaleString() : 'N/A'}\\n\\n`;
               }
               
               commentBody += '### 📋 Next Steps\\n';
