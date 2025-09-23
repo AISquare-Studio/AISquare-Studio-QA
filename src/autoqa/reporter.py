@@ -151,54 +151,126 @@ class ActionReporter:
         artifacts = f"""### 📁 Generated Artifacts
 - 📄 **Test File:** `{test_file_path}`"""
         
-        # Screenshot if available
+        # Screenshot if available - embed directly in comment
         screenshot_path = execution_result.get('screenshot_path')
         if screenshot_path and Path(screenshot_path).exists():
-            artifacts += f"\n- 📸 **Screenshot:** `{screenshot_path}`"
-            # Try to embed the screenshot in the comment
-            embedded_screenshot = self._embed_screenshot_in_comment(screenshot_path, "Success Screenshot")
+            embedded_screenshot = self._upload_and_embed_screenshot(screenshot_path, "Success Screenshot")
             if embedded_screenshot:
-                artifacts += f"\n\n{embedded_screenshot}"
+                artifacts += f"\n\n### 📸 Success Screenshot\n{embedded_screenshot}"
+            else:
+                artifacts += f"\n- 📸 **Screenshot:** `{screenshot_path}` (Upload failed)"
         
-        # Error screenshot if available
+        # Error screenshot if available - embed directly in comment
         error_screenshot = execution_result.get('error_screenshot_path')
         if error_screenshot and Path(error_screenshot).exists():
-            artifacts += f"\n- 🚨 **Error Screenshot:** `{error_screenshot}`"
-            # Try to embed the error screenshot
-            embedded_error = self._embed_screenshot_in_comment(error_screenshot, "Error Screenshot")
+            embedded_error = self._upload_and_embed_screenshot(error_screenshot, "Error Screenshot")
             if embedded_error:
-                artifacts += f"\n\n{embedded_error}"
+                artifacts += f"\n\n### 🚨 Error Screenshot\n{embedded_error}"
+            else:
+                artifacts += f"\n- 🚨 **Error Screenshot:** `{error_screenshot}` (Upload failed)"
         
         return artifacts
     
-    def _embed_screenshot_in_comment(self, screenshot_path: str, title: str) -> str:
-        """Embed screenshot directly in PR comment using base64 or upload to GitHub"""
+    def _upload_and_embed_screenshot(self, screenshot_path: str, title: str) -> str:
+        """Upload screenshot to GitHub and return markdown to embed it"""
         try:
             screenshot_file = Path(screenshot_path)
             if not screenshot_file.exists():
+                print(f"⚠️ Screenshot file not found: {screenshot_path}")
                 return ""
             
-            # For GitHub, we'll upload the image as a gist or use a different approach
-            # For now, let's just provide a collapsed details section with file info
-            file_size = screenshot_file.stat().st_size
-            file_size_mb = file_size / (1024 * 1024)
+            # Read and encode the screenshot
+            with open(screenshot_file, 'rb') as f:
+                image_data = f.read()
             
+            file_size = len(image_data)
+            file_size_kb = file_size / 1024
+            
+            print(f"📸 Processing screenshot: {screenshot_path} ({file_size_kb:.1f} KB)")
+            
+            # Method 1: Try uploading to GitHub repository
+            if self.github_token and self.target_repo:
+                import base64
+                encoded_image = base64.b64encode(image_data).decode('utf-8')
+                screenshot_url = self._upload_screenshot_to_github(screenshot_file.name, encoded_image)
+                
+                if screenshot_url:
+                    return f"![{title}]({screenshot_url})"
+            
+            # Method 2: Try base64 data URL for small images
+            if file_size < 100000:  # 100KB limit for data URLs
+                import base64
+                encoded_image = base64.b64encode(image_data).decode('utf-8')
+                print(f"✅ Embedding screenshot as base64 data URL ({file_size_kb:.1f} KB)")
+                return f"![{title}](data:image/png;base64,{encoded_image})"
+            
+            # Method 3: Create a detailed summary for large images
+            timestamp = datetime.fromtimestamp(screenshot_file.stat().st_mtime).strftime('%Y-%m-%d %H:%M:%S')
             return f"""
 <details>
-<summary>🖼️ {title} (Click to expand details)</summary>
+<summary>📸 {title} ({file_size_kb:.1f} KB) - Click to view details</summary>
 
 **File:** `{screenshot_path}`  
-**Size:** {file_size_mb:.2f} MB  
-**Timestamp:** {datetime.fromtimestamp(screenshot_file.stat().st_mtime).strftime('%Y-%m-%d %H:%M:%S')}
+**Size:** {file_size_kb:.1f} KB  
+**Timestamp:** {timestamp}
 
-> 📸 Screenshot captured during test execution.  
-> The screenshot shows the browser state at the time of test completion/failure.
+> 🖼️ Screenshot captured during test execution.  
+> This screenshot shows the browser state when the test completed.  
+> 
+> **Note:** Image is too large to embed directly in comment.  
+> The screenshot file is available in the repository at the path above.
 
-</details>"""
-            
+</details>
+
+*💡 To view the screenshot: Check the `{screenshot_path}` file in the repository.*"""
+                    
         except Exception as e:
-            print(f"⚠️ Warning: Could not embed screenshot: {e}")
-            return f"\n📸 **{title}:** `{screenshot_path}` (Available in reports)"
+            print(f"⚠️ Warning: Could not process screenshot: {e}")
+            return f"**{title}:** `{screenshot_path}` (Processing failed: {str(e)})"
+    
+    def _upload_screenshot_to_github(self, filename: str, base64_content: str) -> str:
+        """Upload screenshot to GitHub repository and return the raw URL"""
+        try:
+            # Create a unique filename with timestamp
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            unique_filename = f"autoqa_screenshot_{timestamp}_{filename}"
+            
+            # Upload to a special path in the repository
+            upload_path = f"autoqa-screenshots/{unique_filename}"
+            
+            url = f"https://api.github.com/repos/{self.target_repo}/contents/{upload_path}"
+            
+            headers = {
+                'Authorization': f'token {self.github_token}',
+                'Accept': 'application/vnd.github.v3+json',
+                'Content-Type': 'application/json'
+            }
+            
+            data = {
+                'message': f'AutoQA: Upload screenshot {unique_filename}',
+                'content': base64_content,
+                'branch': 'main'  # or create a special branch for screenshots
+            }
+            
+            response = requests.put(url, headers=headers, json=data, timeout=30)
+            
+            if response.status_code in [200, 201]:
+                response_data = response.json()
+                # Return the raw URL for direct image embedding
+                download_url = response_data.get('content', {}).get('download_url')
+                if download_url:
+                    print(f"✅ Screenshot uploaded to GitHub: {download_url}")
+                    return download_url
+                else:
+                    print("⚠️ Upload successful but no download URL returned")
+                    return ""
+            else:
+                print(f"⚠️ Failed to upload screenshot to GitHub: {response.status_code} - {response.text}")
+                return ""
+                
+        except Exception as e:
+            print(f"⚠️ Error uploading screenshot to GitHub: {e}")
+            return ""
     
     def _post_pr_comment(self, comment_body: str) -> None:
         """Post comment to GitHub PR using GitHub API"""
