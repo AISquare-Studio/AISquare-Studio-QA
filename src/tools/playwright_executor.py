@@ -30,6 +30,9 @@ def create_playwright_executor_tool():
                 'screenshot_path': None
             }
             
+            browser = None
+            page = None
+            
             with sync_playwright() as p:
                 # Launch browser
                 browser = p.chromium.launch(
@@ -47,58 +50,68 @@ def create_playwright_executor_tool():
                     'assert': safe_assert
                 }
                 
-                # Execute the code (define the function)
-                exec(code, exec_globals)
+                try:
+                    # Execute the code (define the function)
+                    exec(code, exec_globals)
+                    
+                    # Call the run_test function
+                    exec_globals['run_test'](page, config)
+                    
+                    # Take success screenshot
+                    screenshot_path = f"reports/screenshots/success_{config.get('scenario_name', 'test')}_{int(__import__('time').time())}.png"
+                    Path(screenshot_path).parent.mkdir(parents=True, exist_ok=True)
+                    page.screenshot(path=screenshot_path, full_page=True)
+                    
+                    result.update({
+                        'success': True,
+                        'message': 'Test executed successfully',
+                        'screenshot_path': screenshot_path
+                    })
+                    
+                except AssertionError as e:
+                    result.update({
+                        'success': False,
+                        'error': f'Assertion failed: {str(e)}',
+                        'message': 'Test assertion failed'
+                    })
+                    
+                    # Take failure screenshot (page is still available)
+                    try:
+                        error_screenshot = f"reports/screenshots/failure_{config.get('scenario_name', 'test')}_{int(__import__('time').time())}.png"
+                        Path(error_screenshot).parent.mkdir(parents=True, exist_ok=True)
+                        page.screenshot(path=error_screenshot, full_page=True)
+                        result['screenshot_path'] = error_screenshot
+                        print(f"📸 Failure screenshot captured: {error_screenshot}")
+                    except Exception as screenshot_error:
+                        print(f"Warning: Could not take failure screenshot: {screenshot_error}")
+                        
+                except Exception as e:
+                    result.update({
+                        'success': False,
+                        'error': str(e),
+                        'message': 'Test execution failed'
+                    })
+                    
+                    # Take error screenshot (page is still available)
+                    try:
+                        error_screenshot = f"reports/screenshots/error_{config.get('scenario_name', 'test')}_{int(__import__('time').time())}.png"
+                        Path(error_screenshot).parent.mkdir(parents=True, exist_ok=True)
+                        page.screenshot(path=error_screenshot, full_page=True)
+                        result['screenshot_path'] = error_screenshot
+                        print(f"📸 Error screenshot captured: {error_screenshot}")
+                    except Exception as screenshot_error:
+                        print(f"Warning: Could not take error screenshot: {screenshot_error}")
                 
-                # Call the run_test function
-                exec_globals['run_test'](page, config)
-                
-                # Take success screenshot
-                screenshot_path = f"reports/screenshots/success_{config.get('scenario_name', 'test')}_{int(__import__('time').time())}.png"
-                Path(screenshot_path).parent.mkdir(parents=True, exist_ok=True)
-                page.screenshot(path=screenshot_path, full_page=True)
-                
-                result.update({
-                    'success': True,
-                    'message': 'Test executed successfully',
-                    'screenshot_path': screenshot_path
-                })
-                
+                # Close browser after all screenshots are taken
                 browser.close()
                 
-        except AssertionError as e:
+        except Exception as outer_error:
+            # Handle any outer exceptions (playwright setup issues, etc.)
             result.update({
                 'success': False,
-                'error': f'Assertion failed: {str(e)}',
-                'message': 'Test assertion failed'
+                'error': f'Playwright execution error: {str(outer_error)}',
+                'message': 'Failed to initialize browser or playwright'
             })
-            
-            # Take failure screenshot
-            try:
-                if 'page' in locals():
-                    error_screenshot = f"reports/screenshots/failure_{config.get('scenario_name', 'test')}_{int(__import__('time').time())}.png"
-                    Path(error_screenshot).parent.mkdir(parents=True, exist_ok=True)
-                    page.screenshot(path=error_screenshot, full_page=True)
-                    result['screenshot_path'] = error_screenshot
-            except Exception as screenshot_error:
-                print(f"Warning: Could not take failure screenshot: {screenshot_error}")
-                
-        except Exception as e:
-            result.update({
-                'success': False,
-                'error': str(e),
-                'message': 'Test execution failed'
-            })
-            
-            # Take error screenshot
-            try:
-                if 'page' in locals():
-                    error_screenshot = f"reports/screenshots/error_{config.get('scenario_name', 'test')}_{int(__import__('time').time())}.png"
-                    Path(error_screenshot).parent.mkdir(parents=True, exist_ok=True)
-                    page.screenshot(path=error_screenshot, full_page=True)
-                    result['screenshot_path'] = error_screenshot
-            except Exception as screenshot_error:
-                print(f"Warning: Could not take error screenshot: {screenshot_error}")
         
         return json.dumps(result, indent=2)
     
