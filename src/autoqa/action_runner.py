@@ -54,7 +54,7 @@ class ActionRunner:
             'git_user_email': os.getenv('GIT_USER_EMAIL', 'rabia.tahirr@opengrowth.com'),
             'pr_body': os.getenv('PR_BODY', ''),
             'test_directory': os.getenv('TEST_DIRECTORY', 'tests/generated'),
-            'run_existing_tests': os.getenv('RUN_EXISTING_TESTS', 'false').lower() == 'true'
+            'run_existing_tests': True  # Always run existing tests
         }
         
         return config
@@ -81,7 +81,7 @@ class ActionRunner:
                 print("📋 No AutoQA tag found in PR description")
                 return self._set_outputs({
                     'test_generated': 'false',
-                    'error': 'No AutoQA tag found in PR description'
+                    'message': 'No AutoQA tag found'
                 })
             
             # Step 2: Parse test steps
@@ -116,13 +116,23 @@ class ActionRunner:
                 print("🏃 Running full test suite...")
                 suite_results = self._run_test_suite()
             
-            # Step 7: Set outputs and create summary
+            # Step 7: Generate PR comment with results
+            print("� Generating PR comment with results...")
+            self.reporter.create_pr_comment(
+                generation_result=generation_result,
+                execution_result=execution_result,
+                suite_results=suite_results,
+                test_file_path=str(test_file_path)
+            )
+            
+            # Step 8: Set outputs and create summary
             return self._set_outputs({
                 'test_generated': 'true',
                 'test_file_path': str(test_file_path),
                 'test_results': json.dumps(execution_result),
                 'suite_results': json.dumps(suite_results),
-                'generation_metadata': json.dumps(generation_result.get('metadata', {}))
+                'generation_metadata': json.dumps(generation_result.get('metadata', {})),
+                'screenshot_path': execution_result.get('screenshot_path', '')
             })
             
         except Exception as e:
@@ -249,12 +259,28 @@ class ActionRunner:
             'test_results': json.dumps(result)
         })
     
+    def _handle_generation_failure(self, result: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle test generation failure"""
+        print(f"❌ Test generation failed: {result.get('error', 'Unknown error')}")
+        return self._set_outputs({
+            'test_generated': 'false',
+            'error': result.get('error', 'Test generation failed')
+        })
+    
+    def _handle_execution_failure(self, result: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle test execution failure"""
+        print(f"❌ Test execution failed: {result.get('error', 'Unknown error')}")
+        return self._set_outputs({
+            'test_generated': 'false',
+            'error': result.get('error', 'Test execution failed'),
+            'test_results': json.dumps(result)
+        })
+    
     def _set_outputs(self, outputs: Dict[str, str]) -> Dict[str, Any]:
         """Set GitHub Action outputs"""
         # Set outputs for GitHub Actions
         github_output = os.getenv('GITHUB_OUTPUT')
         if github_output:
-            print(f"📤 Setting GitHub Action outputs to: {github_output}")
             with open(github_output, 'a') as f:
                 for key, value in outputs.items():
                     # Escape multiline values
@@ -262,17 +288,11 @@ class ActionRunner:
                         f.write(f"{key}<<EOF\n{value}\nEOF\n")
                     else:
                         f.write(f"{key}={value}\n")
-        else:
-            print("⚠️ GITHUB_OUTPUT environment variable not set - outputs will not be available")
         
         # Also print for visibility
         print("📊 Action Outputs:")
         for key, value in outputs.items():
-            # Truncate long values for readability
-            display_value = str(value)
-            if len(display_value) > 100:
-                display_value = display_value[:100] + "..."
-            print(f"  {key}: {display_value}")
+            print(f"  {key}: {value}")
         
         return outputs
 

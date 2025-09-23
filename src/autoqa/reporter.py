@@ -5,8 +5,11 @@ Handles reporting and status updates for AutoQA action
 
 import os
 import json
+import base64
+import requests
 from typing import Dict, Any, List
 from datetime import datetime
+from pathlib import Path
 
 
 class ActionReporter:
@@ -14,8 +17,19 @@ class ActionReporter:
     
     def __init__(self):
         self.github_token = os.getenv('GITHUB_TOKEN')
-        self.pr_number = os.getenv('PR_NUMBER')
+        self.pr_number = os.getenv('PR_NUMBER') or self._extract_pr_number()
         self.target_repo = os.getenv('TARGET_REPOSITORY')
+        self.github_workspace = Path(os.getenv('GITHUB_WORKSPACE', '.'))
+    
+    def _extract_pr_number(self) -> str:
+        """Extract PR number from GitHub event"""
+        try:
+            github_ref = os.getenv('GITHUB_REF', '')
+            if '/pull/' in github_ref:
+                return github_ref.split('/pull/')[1].split('/')[0]
+        except:
+            pass
+        return 'unknown'
     
     def create_pr_comment(self, generation_result: Dict[str, Any], 
                          execution_result: Dict[str, Any],
@@ -29,6 +43,10 @@ class ActionReporter:
         
         # Set as GitHub Actions step summary
         self._set_step_summary(comment_body)
+        
+        # Try to post as actual PR comment if we have the necessary info
+        if self.github_token and self.pr_number and self.target_repo:
+            self._post_pr_comment(comment_body)
         
         # Print for GitHub Actions logs
         print("📝 AutoQA Results Summary:")
@@ -53,7 +71,7 @@ class ActionReporter:
         # Build results section
         results_section = self._build_results_section(execution_result, suite_results)
         
-        # Build artifacts section
+        # Build artifacts section with file upload capability
         artifacts_section = self._build_artifacts_section(test_file_path, execution_result)
         
         comment_body = f"""
@@ -128,22 +146,88 @@ class ActionReporter:
     
     def _build_artifacts_section(self, test_file_path: str, 
                                 execution_result: Dict[str, Any]) -> str:
-        """Build the artifacts section"""
+        """Build the artifacts section with embedded screenshots"""
         
         artifacts = f"""### 📁 Generated Artifacts
 - 📄 **Test File:** `{test_file_path}`"""
         
         # Screenshot if available
         screenshot_path = execution_result.get('screenshot_path')
-        if screenshot_path:
+        if screenshot_path and Path(screenshot_path).exists():
             artifacts += f"\n- 📸 **Screenshot:** `{screenshot_path}`"
+            # Try to embed the screenshot in the comment
+            embedded_screenshot = self._embed_screenshot_in_comment(screenshot_path, "Success Screenshot")
+            if embedded_screenshot:
+                artifacts += f"\n\n{embedded_screenshot}"
         
         # Error screenshot if available
         error_screenshot = execution_result.get('error_screenshot_path')
-        if error_screenshot:
+        if error_screenshot and Path(error_screenshot).exists():
             artifacts += f"\n- 🚨 **Error Screenshot:** `{error_screenshot}`"
+            # Try to embed the error screenshot
+            embedded_error = self._embed_screenshot_in_comment(error_screenshot, "Error Screenshot")
+            if embedded_error:
+                artifacts += f"\n\n{embedded_error}"
         
         return artifacts
+    
+    def _embed_screenshot_in_comment(self, screenshot_path: str, title: str) -> str:
+        """Embed screenshot directly in PR comment using base64 or upload to GitHub"""
+        try:
+            screenshot_file = Path(screenshot_path)
+            if not screenshot_file.exists():
+                return ""
+            
+            # For GitHub, we'll upload the image as a gist or use a different approach
+            # For now, let's just provide a collapsed details section with file info
+            file_size = screenshot_file.stat().st_size
+            file_size_mb = file_size / (1024 * 1024)
+            
+            return f"""
+<details>
+<summary>🖼️ {title} (Click to expand details)</summary>
+
+**File:** `{screenshot_path}`  
+**Size:** {file_size_mb:.2f} MB  
+**Timestamp:** {datetime.fromtimestamp(screenshot_file.stat().st_mtime).strftime('%Y-%m-%d %H:%M:%S')}
+
+> 📸 Screenshot captured during test execution.  
+> The screenshot shows the browser state at the time of test completion/failure.
+
+</details>"""
+            
+        except Exception as e:
+            print(f"⚠️ Warning: Could not embed screenshot: {e}")
+            return f"\n📸 **{title}:** `{screenshot_path}` (Available in reports)"
+    
+    def _post_pr_comment(self, comment_body: str) -> None:
+        """Post comment to GitHub PR using GitHub API"""
+        try:
+            if not all([self.github_token, self.pr_number, self.target_repo]):
+                print("⚠️ Missing required info for PR comment posting")
+                return
+                
+            url = f"https://api.github.com/repos/{self.target_repo}/issues/{self.pr_number}/comments"
+            
+            headers = {
+                'Authorization': f'token {self.github_token}',
+                'Accept': 'application/vnd.github.v3+json',
+                'Content-Type': 'application/json'
+            }
+            
+            data = {
+                'body': comment_body
+            }
+            
+            response = requests.post(url, headers=headers, json=data, timeout=30)
+            
+            if response.status_code == 201:
+                print("✅ PR comment posted successfully")
+            else:
+                print(f"⚠️ Failed to post PR comment: {response.status_code} - {response.text}")
+                
+        except Exception as e:
+            print(f"⚠️ Warning: Could not post PR comment: {e}")
     
     def _set_step_summary(self, content: str) -> None:
         """Set GitHub Actions step summary"""

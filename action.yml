@@ -77,6 +77,10 @@ outputs:
     description: 'JSON string of test generation metadata'
     value: ${{ steps.autoqa.outputs.generation_metadata }}
   
+  screenshot_path:
+    description: 'Path to the generated screenshot'
+    value: ${{ steps.autoqa.outputs.screenshot_path }}
+  
   error:
     description: 'Error message if test generation failed'
     value: ${{ steps.autoqa.outputs.error }}

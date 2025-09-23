@@ -54,9 +54,9 @@ def create_playwright_executor_tool():
                 exec_globals['run_test'](page, config)
                 
                 # Take success screenshot
-                screenshot_path = f"reports/screenshots/success_{config.get('scenario_name', 'test')}.png"
+                screenshot_path = f"reports/screenshots/success_{config.get('scenario_name', 'test')}_{int(__import__('time').time())}.png"
                 Path(screenshot_path).parent.mkdir(parents=True, exist_ok=True)
-                page.screenshot(path=screenshot_path)
+                page.screenshot(path=screenshot_path, full_page=True)
                 
                 result.update({
                     'success': True,
@@ -76,12 +76,12 @@ def create_playwright_executor_tool():
             # Take failure screenshot
             try:
                 if 'page' in locals():
-                    error_screenshot = f"reports/screenshots/failure_{config.get('scenario_name', 'test')}.png"
+                    error_screenshot = f"reports/screenshots/failure_{config.get('scenario_name', 'test')}_{int(__import__('time').time())}.png"
                     Path(error_screenshot).parent.mkdir(parents=True, exist_ok=True)
-                    page.screenshot(path=error_screenshot)
+                    page.screenshot(path=error_screenshot, full_page=True)
                     result['screenshot_path'] = error_screenshot
-            except:
-                pass
+            except Exception as screenshot_error:
+                print(f"Warning: Could not take failure screenshot: {screenshot_error}")
                 
         except Exception as e:
             result.update({
@@ -93,12 +93,12 @@ def create_playwright_executor_tool():
             # Take error screenshot
             try:
                 if 'page' in locals():
-                    error_screenshot = f"reports/screenshots/error_{config.get('scenario_name', 'test')}.png"
+                    error_screenshot = f"reports/screenshots/error_{config.get('scenario_name', 'test')}_{int(__import__('time').time())}.png"
                     Path(error_screenshot).parent.mkdir(parents=True, exist_ok=True)
-                    page.screenshot(path=error_screenshot)
+                    page.screenshot(path=error_screenshot, full_page=True)
                     result['screenshot_path'] = error_screenshot
-            except:
-                pass
+            except Exception as screenshot_error:
+                print(f"Warning: Could not take error screenshot: {screenshot_error}")
         
         return json.dumps(result, indent=2)
     
