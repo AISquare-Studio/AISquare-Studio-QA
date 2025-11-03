@@ -39,15 +39,9 @@ jobs:
           git-user-email: 'rabia.tahirr@opengrowth.com'
           test-directory: 'tests/generated'
       
-      - name: 📊 Upload Test Reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: autoqa-reports
-          path: |
-            tests/generated/
-            reports/
-          retention-days: 30
+      # Note: Screenshots and reports are automatically uploaded by the AutoQA action
+      # The action includes built-in artifact uploads for screenshots and test reports
+      # You can optionally add custom artifact uploads here if needed
 ```
 
 ### **2. Configure Repository Secrets**
@@ -273,7 +267,39 @@ AutoQA
 - Check everything is good
 ```
 
-### **10. Troubleshooting**
+### **10. Screenshots and Artifacts** 📸
+
+AutoQA automatically captures screenshots during test execution and uploads them as GitHub Actions artifacts. These are accessible in multiple ways:
+
+#### **In PR Comments**
+- Small screenshots (<100KB) are embedded directly in the PR comment using base64 encoding
+- Larger screenshots include a link to GitHub Actions artifacts
+- Both success and error screenshots are captured
+
+#### **In GitHub Actions Artifacts**
+All screenshots are uploaded as artifacts for 30 days:
+1. Go to the Actions tab in your repository
+2. Click on the specific workflow run
+3. Scroll to the "Artifacts" section at the bottom
+4. Download `autoqa-screenshots-{run-number}` or `autoqa-reports-{run-number}`
+
+#### **Screenshot Locations**
+Screenshots are saved to:
+- **Success**: `reports/screenshots/test_completion_TIMESTAMP.png`
+- **Error**: `reports/screenshots/test_error_TIMESTAMP.png`
+
+#### **Accessing Screenshots**
+The PR comment will include:
+```markdown
+### 📁 Generated Artifacts
+- 📄 **Test File:** `tests/generated/test_login.py`
+- 📦 **[View All Artifacts & Screenshots](https://github.com/owner/repo/actions/runs/12345)**
+
+### 📸 Success Screenshot
+![Success Screenshot](embedded-image-or-link)
+```
+
+### **11. Troubleshooting**
 
 #### **Common Issues**
 
@@ -296,6 +322,12 @@ AutoQA
 - Check repository permissions for GitHub token
 - Verify branch is not protected against direct commits
 - Review commit errors in GitHub Actions logs
+
+**Screenshots not appearing in PR comments?**
+- Check the GitHub Actions artifacts section - screenshots are always uploaded there
+- Large screenshots (>100KB) won't embed directly but will have a link to artifacts
+- Verify the workflow completed successfully (check Actions tab)
+- See [docs/SCREENSHOT_FIX.md](SCREENSHOT_FIX.md) for detailed information
 
 #### **Getting Help**
 

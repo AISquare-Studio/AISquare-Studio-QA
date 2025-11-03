@@ -201,7 +201,11 @@ def main():
             
             # Take screenshot on completion
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            screenshot_path = f"reports/screenshots/test_completion_{{timestamp}}.png"
+            
+            # Use action path if available, otherwise use relative path
+            import os
+            action_path = os.getenv('ACTION_PATH', '.')
+            screenshot_path = os.path.join(action_path, f"reports/screenshots/test_completion_{{timestamp}}.png")
             
             # Ensure directory exists
             Path(screenshot_path).parent.mkdir(parents=True, exist_ok=True)
@@ -226,7 +230,11 @@ def main():
         try:
             if 'page' in locals() and 'browser' in locals():
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                error_screenshot = f"reports/screenshots/test_error_{{timestamp}}.png"
+                
+                # Use action path if available, otherwise use relative path
+                import os
+                action_path = os.getenv('ACTION_PATH', '.')
+                error_screenshot = os.path.join(action_path, f"reports/screenshots/test_error_{{timestamp}}.png")
                 
                 # Ensure directory exists
                 Path(error_screenshot).parent.mkdir(parents=True, exist_ok=True)

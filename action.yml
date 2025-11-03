@@ -190,3 +190,26 @@ runs:
         
         # Action working directory
         ACTION_PATH: ${{ github.workspace }}/.autoqa-action
+    
+    - name: 📸 Upload Screenshots as Artifacts
+      if: always() && steps.autoqa.outputs.test_generated == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: autoqa-screenshots-${{ github.run_number }}
+        path: |
+          .autoqa-action/reports/screenshots/*.png
+          ${{ github.workspace }}/reports/screenshots/*.png
+        if-no-files-found: warn
+        retention-days: 30
+    
+    - name: 📊 Upload Test Reports
+      if: always() && steps.autoqa.outputs.test_generated == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: autoqa-reports-${{ github.run_number }}
+        path: |
+          .autoqa-action/reports/**
+          ${{ github.workspace }}/reports/**
+          ${{ inputs.test-directory }}/**
+        if-no-files-found: warn
+        retention-days: 30

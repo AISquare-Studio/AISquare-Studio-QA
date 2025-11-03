@@ -35,15 +35,17 @@ After every test execution, comprehensive reports are automatically generated:
 
 ### CI/CD Integration
 - 🤖 **Automated on PR**: Tests run automatically on every pull request
-- 💬 **PR Comments**: Results posted directly in GitHub PR comments
-- 📁 **Artifact Upload**: Reports downloadable from GitHub Actions
+- 💬 **PR Comments**: Results posted directly in GitHub PR comments with embedded screenshots
+- 📁 **Artifact Upload**: Reports and screenshots downloadable from GitHub Actions (30 day retention)
 - 🛡️ **Status Checks**: Pass/fail status for branch protection
 
 Reports include:
 - ✅ Test execution summary and results
-- 📸 Screenshots of browser interactions
+- 📸 **Screenshots**: Automatically captured and embedded in PR comments (small images) or linked via artifacts
 - ⏱️ Detailed timing and performance metrics
-- 🔍 AI-generated code and validation resultsash
+- 🔍 AI-generated code and validation results
+
+> **📸 Screenshot Support**: Screenshots are now automatically embedded in PR comments (for images <100KB) and always available via GitHub Actions artifacts. See [SCREENSHOT_QUICK_REFERENCE.md](SCREENSHOT_QUICK_REFERENCE.md) for details.
 # Copy the template and fill in your values
 cp env.template .env
 ```

@@ -7,7 +7,7 @@ import os
 import json
 import base64
 import requests
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from datetime import datetime
 from pathlib import Path
 
@@ -20,6 +20,8 @@ class ActionReporter:
         self.pr_number = os.getenv('PR_NUMBER') or self._extract_pr_number()
         self.target_repo = os.getenv('TARGET_REPOSITORY')
         self.github_workspace = Path(os.getenv('GITHUB_WORKSPACE', '.'))
+        self.github_run_id = os.getenv('GITHUB_RUN_ID')
+        self.github_run_number = os.getenv('GITHUB_RUN_NUMBER')
     
     def _extract_pr_number(self) -> str:
         """Extract PR number from GitHub event"""
@@ -151,25 +153,72 @@ class ActionReporter:
         artifacts = f"""### 📁 Generated Artifacts
 - 📄 **Test File:** `{test_file_path}`"""
         
+        # Add link to GitHub Actions artifacts
+        if self.github_run_id and self.target_repo:
+            artifacts_url = f"https://github.com/{self.target_repo}/actions/runs/{self.github_run_id}"
+            artifacts += f"\n- 📦 **[View All Artifacts & Screenshots]({artifacts_url})**"
+        
         # Screenshot if available - embed directly in comment
         screenshot_path = execution_result.get('screenshot_path')
-        if screenshot_path and Path(screenshot_path).exists():
-            embedded_screenshot = self._upload_and_embed_screenshot(screenshot_path, "Success Screenshot")
-            if embedded_screenshot:
-                artifacts += f"\n\n### 📸 Success Screenshot\n{embedded_screenshot}"
+        if screenshot_path:
+            # Resolve absolute path if relative
+            screenshot_file = self._resolve_screenshot_path(screenshot_path)
+            if screenshot_file and screenshot_file.exists():
+                embedded_screenshot = self._upload_and_embed_screenshot(str(screenshot_file), "Success Screenshot")
+                if embedded_screenshot:
+                    artifacts += f"\n\n### 📸 Success Screenshot\n{embedded_screenshot}"
+                else:
+                    # Fallback: provide artifact link
+                    artifacts += f"\n- 📸 **Screenshot:** Available in [GitHub Actions Artifacts]({artifacts_url})"
             else:
-                artifacts += f"\n- 📸 **Screenshot:** `{screenshot_path}` (Upload failed)"
+                print(f"⚠️ Screenshot file not found: {screenshot_path}")
+                if self.github_run_id and self.target_repo:
+                    artifacts += f"\n- 📸 **Screenshot:** Available in [GitHub Actions Artifacts]({artifacts_url})"
         
         # Error screenshot if available - embed directly in comment
         error_screenshot = execution_result.get('error_screenshot_path')
-        if error_screenshot and Path(error_screenshot).exists():
-            embedded_error = self._upload_and_embed_screenshot(error_screenshot, "Error Screenshot")
-            if embedded_error:
-                artifacts += f"\n\n### 🚨 Error Screenshot\n{embedded_error}"
-            else:
-                artifacts += f"\n- 🚨 **Error Screenshot:** `{error_screenshot}` (Upload failed)"
+        if error_screenshot:
+            error_file = self._resolve_screenshot_path(error_screenshot)
+            if error_file and error_file.exists():
+                embedded_error = self._upload_and_embed_screenshot(str(error_file), "Error Screenshot")
+                if embedded_error:
+                    artifacts += f"\n\n### 🚨 Error Screenshot\n{embedded_error}"
+                else:
+                    # Fallback: provide artifact link
+                    if self.github_run_id and self.target_repo:
+                        artifacts += f"\n- 🚨 **Error Screenshot:** Available in [GitHub Actions Artifacts]({artifacts_url})"
         
         return artifacts
+    
+    def _resolve_screenshot_path(self, screenshot_path: str) -> Optional[Path]:
+        """Resolve screenshot path to absolute path, checking multiple locations"""
+        if not screenshot_path:
+            return None
+        
+        # Convert to Path object
+        path = Path(screenshot_path)
+        
+        # If absolute path exists, use it
+        if path.is_absolute() and path.exists():
+            return path
+        
+        # Try relative to current directory
+        if path.exists():
+            return path
+        
+        # Try relative to GitHub workspace
+        workspace_path = self.github_workspace / path
+        if workspace_path.exists():
+            return workspace_path
+        
+        # Try in action path (for screenshots created by the action)
+        action_path = Path(os.getenv('ACTION_PATH', '.'))
+        action_screenshot = action_path / path
+        if action_screenshot.exists():
+            return action_screenshot
+        
+        print(f"⚠️ Could not resolve screenshot path: {screenshot_path}")
+        return None
     
     def _upload_and_embed_screenshot(self, screenshot_path: str, title: str) -> str:
         """Upload screenshot to GitHub and return markdown to embed it"""
