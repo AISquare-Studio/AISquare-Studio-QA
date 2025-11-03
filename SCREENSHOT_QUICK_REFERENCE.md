@@ -47,6 +47,9 @@
 ### ❓ "Need higher resolution?"
 **✅ Solution**: Screenshots are full-page captures at 1280x720 resolution. Check the downloaded artifact for full quality.
 
+### ❓ "Seeing duplicate comments?"
+**✅ Solution**: This is now fixed! AutoQA automatically updates the existing comment instead of creating duplicates. See [docs/SINGLE_COMMENT_FIX.md](docs/SINGLE_COMMENT_FIX.md)
+
 ## PR Comment Example
 
 ```markdown

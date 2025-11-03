@@ -97,6 +97,8 @@ class ActionReporter:
 
 ---
 *🤖 This test was automatically generated and executed by AutoQA*
+
+<!-- AutoQA-Comment-Marker -->
 """
         
         return comment_body.strip()
@@ -322,13 +324,11 @@ class ActionReporter:
             return ""
     
     def _post_pr_comment(self, comment_body: str) -> None:
-        """Post comment to GitHub PR using GitHub API"""
+        """Post or update comment on GitHub PR using GitHub API"""
         try:
             if not all([self.github_token, self.pr_number, self.target_repo]):
                 print("⚠️ Missing required info for PR comment posting")
                 return
-                
-            url = f"https://api.github.com/repos/{self.target_repo}/issues/{self.pr_number}/comments"
             
             headers = {
                 'Authorization': f'token {self.github_token}',
@@ -336,19 +336,70 @@ class ActionReporter:
                 'Content-Type': 'application/json'
             }
             
-            data = {
-                'body': comment_body
-            }
+            # Check for existing AutoQA comment
+            existing_comment_id = self._find_existing_autoqa_comment(headers)
             
-            response = requests.post(url, headers=headers, json=data, timeout=30)
-            
-            if response.status_code == 201:
-                print("✅ PR comment posted successfully")
+            if existing_comment_id:
+                # Update existing comment
+                print(f"📝 Updating existing AutoQA comment (ID: {existing_comment_id})")
+                url = f"https://api.github.com/repos/{self.target_repo}/issues/comments/{existing_comment_id}"
+                data = {'body': comment_body}
+                response = requests.patch(url, headers=headers, json=data, timeout=30)
+                
+                if response.status_code == 200:
+                    print("✅ PR comment updated successfully")
+                else:
+                    print(f"⚠️ Failed to update PR comment: {response.status_code} - {response.text}")
             else:
-                print(f"⚠️ Failed to post PR comment: {response.status_code} - {response.text}")
+                # Create new comment
+                print("📝 Creating new AutoQA comment")
+                url = f"https://api.github.com/repos/{self.target_repo}/issues/{self.pr_number}/comments"
+                data = {'body': comment_body}
+                response = requests.post(url, headers=headers, json=data, timeout=30)
+                
+                if response.status_code == 201:
+                    print("✅ PR comment posted successfully")
+                else:
+                    print(f"⚠️ Failed to post PR comment: {response.status_code} - {response.text}")
                 
         except Exception as e:
             print(f"⚠️ Warning: Could not post PR comment: {e}")
+    
+    def _find_existing_autoqa_comment(self, headers: Dict[str, str]) -> Optional[int]:
+        """Find existing AutoQA comment on the PR"""
+        try:
+            # Get all comments on the PR
+            url = f"https://api.github.com/repos/{self.target_repo}/issues/{self.pr_number}/comments"
+            response = requests.get(url, headers=headers, timeout=30)
+            
+            if response.status_code != 200:
+                print(f"⚠️ Could not fetch PR comments: {response.status_code}")
+                return None
+            
+            comments = response.json()
+            
+            # Look for AutoQA comment by checking for unique identifier
+            # We'll look for comments containing our unique marker
+            for comment in comments:
+                body = comment.get('body', '')
+                # Check if this is an AutoQA comment by looking for our unique marker
+                # Using HTML comment as a hidden marker is more reliable
+                if '<!-- AutoQA-Comment-Marker -->' in body:
+                    comment_id = comment.get('id')
+                    print(f"🔍 Found existing AutoQA comment: {comment_id}")
+                    return comment_id
+                # Fallback: check for the header (for older comments without marker)
+                elif '## ✅ AutoQA Test Generation Results' in body or '## ❌ AutoQA Test Generation Results' in body:
+                    comment_id = comment.get('id')
+                    print(f"🔍 Found existing AutoQA comment (legacy): {comment_id}")
+                    return comment_id
+            
+            print("🔍 No existing AutoQA comment found")
+            return None
+            
+        except Exception as e:
+            print(f"⚠️ Error checking for existing comments: {e}")
+            return None
     
     def _set_step_summary(self, content: str) -> None:
         """Set GitHub Actions step summary"""
