@@ -394,7 +394,35 @@ AutoQA includes comprehensive caching optimizations for faster CI/CD runs:
 
 Cache automatically invalidates when `requirements.txt` changes, ensuring fresh dependencies while maximizing reuse.
 
-## 📄 License
+## 🧹 Code Quality & Linting
+
+AutoQA maintains high code quality standards with automated linting:
+
+### 🔧 **Linting Tools**
+- **black**: Code formatting (line length: 100)
+- **isort**: Import organization
+- **flake8**: Code quality and PEP 8 compliance
+
+### 🤖 **Automated Workflow**
+- Runs on every push and pull request
+- Auto-fixes formatting issues on PRs
+- Commits fixes as "chore: fix linting issues"
+
+### 💻 **Local Development**
+```bash
+# Install linting tools
+pip install flake8==7.0.0 black==24.4.2 isort==5.13.2
+
+# Format and check code
+black . --line-length=100 --preview
+isort . --profile=black --line-length=100
+flake8 .
+```
+
+� **Full Guide**: See [`docs/LINTING.md`](docs/LINTING.md) for complete documentation  
+⚡ **Quick Reference**: See [`.github/LINTING_QUICK_REF.md`](.github/LINTING_QUICK_REF.md)
+
+## �📄 License
 
 [Your License Here]
 
@@ -404,10 +432,11 @@ For help and troubleshooting:
 1. **CI/CD Setup**: See [`docs/SETUP_GUIDE.md`](docs/SETUP_GUIDE.md)
 2. **Week 1 Demo**: See [`docs/WEEK1_DEMO_PLAN.md`](docs/WEEK1_DEMO_PLAN.md)
 3. **Security Guide**: See [`docs/SECURITY.md`](docs/SECURITY.md)
-4. Run `python qa_runner.py --help-detailed` for local testing
-5. Review generated reports in `reports/` directory
-6. Check .env configuration matches your staging environment
-7. Verify OpenAI API key is valid and has sufficient credits
+4. **Linting Guide**: See [`docs/LINTING.md`](docs/LINTING.md)
+5. Run `python qa_runner.py --help-detailed` for local testing
+6. Review generated reports in `reports/` directory
+7. Check .env configuration matches your staging environment
+8. Verify OpenAI API key is valid and has sufficient credits
 
 ### 🎯 Week 1 Demo Ready!
 This framework is **production-ready** for Week 1 CI/CD demonstration with:

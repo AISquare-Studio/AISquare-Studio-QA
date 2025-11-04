@@ -62,10 +62,10 @@ class CommentBuilder:
         comment_body = f"""
 ## {status_emoji} AutoQA Test Generation Results
 
-**Status:** {overall_status}  
-**Timestamp:** {timestamp}  
-**Generated Test:** `{test_file_path}`  
-**Environment:** Staging  
+**Status:** {overall_status}
+**Timestamp:** {timestamp}
+**Generated Test:** `{test_file_path}`
+**Environment:** Staging
 
 {steps_section}
 
@@ -129,7 +129,6 @@ class CommentBuilder:
         if suite_results and suite_results.get("total_tests", 0) > 0:
             total = suite_results.get("total_tests", 0)
             passed = suite_results.get("passed", 0)
-            failed = suite_results.get("failed", 0)
             suite_time = suite_results.get("execution_time", 0)
 
             results += f"""

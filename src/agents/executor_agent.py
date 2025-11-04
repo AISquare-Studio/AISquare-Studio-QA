@@ -4,11 +4,8 @@ Executor Agent: Safely executes generated Playwright test code.
 
 import ast
 import json
-import os
 import subprocess
 import tempfile
-import traceback
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Tuple
 
@@ -22,14 +19,14 @@ class ExecutorAgent:
         self.agent = Agent(
             role="Test Execution Specialist",
             goal="Safely execute Playwright test code and provide detailed results",
-            backstory="""You are a test execution expert who ensures that generated test code 
-            runs safely and reliably. You validate code before execution, handle errors gracefully, 
+            backstory="""You are a test execution expert who ensures that generated test code
+            runs safely and reliably. You validate code before execution, handle errors gracefully,
             and provide comprehensive feedback on test results including screenshots and logs.""",
             verbose=True,
             allow_delegation=False,
         )
 
-    def validate_code_safety(self, code: str) -> Tuple[bool, str]:
+    def validate_code_safety(self, code: str) -> Tuple[bool, str]:  # noqa: C901
         """
         Validate that the generated code is safe to execute.
 
@@ -152,7 +149,7 @@ class ExecutorAgent:
             # Clean up temporary file
             try:
                 Path(temp_file_path).unlink()
-            except:
+            except Exception:
                 pass
 
     def _create_test_script(self, code: str, config: Dict[str, Any]) -> str:

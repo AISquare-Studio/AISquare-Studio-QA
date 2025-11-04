@@ -3,7 +3,6 @@ Cross-Repository Manager for AutoQA
 Handles operations between the action repository and target repository
 """
 
-import json
 import os
 import subprocess
 from datetime import datetime
@@ -112,12 +111,12 @@ from playwright.sync_api import sync_playwright
 
 class TestAutoQA:
     """AutoQA generated test class"""
-    
+
     @pytest.mark.autoqa
     @pytest.mark.generated
     def test_autoqa_scenario(self):
         """Generated test method"""
-        
+
         # Test configuration (customize as needed)
         import os
         base_url = os.getenv("STAGING_URL", "https://stg-home.aisquare.studio").rstrip("/")
@@ -129,12 +128,12 @@ class TestAutoQA:
             'headless': True,
             'timeout': 30000
         }}
-        
+
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=config['headless'])
             page = browser.new_page()
             page.set_viewport_size({{"width": 1280, "height": 720}})
-            
+
             try:
                 # Execute generated test code
 {self._indent_code(code, 16)}
@@ -243,7 +242,7 @@ if __name__ == "__main__":
             )
 
             if push_result.returncode == 0:
-                logger.info(f"Successfully pushed changes to remote repository")
+                logger.info("Successfully pushed changes to remote repository")
             else:
                 logger.error(f"Push failed: {push_result.stderr}")
                 logger.info("Possible causes:")
@@ -276,8 +275,8 @@ if __name__ == "__main__":
             logger.info(f"Created and pushed branch: {branch_name}")
             logger.info(f"Create a PR manually from {branch_name} to {self.target_branch}")
             logger.info(
-                f"Or use GitHub CLI: gh pr create --title 'AutoQA: Add generated test' --body"
-                f" 'Auto-generated test from AutoQA'"
+                "Or use GitHub CLI: gh pr create --title 'AutoQA: Add generated test' --body"
+                " 'Auto-generated test from AutoQA'"
             )
 
         except subprocess.CalledProcessError as e:

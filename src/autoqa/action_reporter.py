@@ -59,7 +59,7 @@ class ActionReporter:
             github_ref = os.getenv("GITHUB_REF", "")
             if "/pull/" in github_ref:
                 return github_ref.split("/pull/")[1].split("/")[0]
-        except:
+        except Exception:
             pass
         return "unknown"
 

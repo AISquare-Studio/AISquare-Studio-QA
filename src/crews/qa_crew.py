@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 import yaml
-from crewai import Agent, Crew, Task
+from crewai import Crew, Task
 
 from src.agents.executor_agent import ExecutorAgent
 from src.agents.planner_agent import PlannerAgent
@@ -152,7 +152,7 @@ class QACrew:
         generated_code = self._clean_generated_code(str(generated_code_raw))
 
         # Step 2: Validate and execute the code
-        logger.info(f"Validating generated code...")
+        logger.info("Validating generated code...")
         is_safe, validation_message = self.executor_agent_wrapper.validate_code_safety(
             generated_code
         )
@@ -166,8 +166,8 @@ class QACrew:
                 "generated_code": generated_code,
             }
 
-        logger.info(f"Code validation passed")
-        logger.info(f"Executing test scenario...")
+        logger.info("Code validation passed")
+        logger.info("Executing test scenario...")
 
         # Step 3: Execute the validated code
         execution_result = self.playwright_executor(generated_code, test_config)
@@ -179,7 +179,7 @@ class QACrew:
                 if isinstance(execution_result, str)
                 else execution_result
             )
-        except:
+        except Exception:
             execution_data = {
                 "success": False,
                 "error": "Failed to parse execution result",
@@ -213,7 +213,7 @@ class QACrew:
 
         try:
             # Generate test code using existing Planner Agent
-            logger.info(f"Generating test code for AutoQA scenario...")
+            logger.info("Generating test code for AutoQA scenario...")
             code_prompt = self.planner_agent_wrapper.generate_test_code(scenario, selectors)
 
             # Create planning task
@@ -231,7 +231,7 @@ class QACrew:
             generated_code = self._clean_generated_code(str(generated_code_raw))
 
             # Validate the code
-            logger.info(f"Validating generated code...")
+            logger.info("Validating generated code...")
             is_safe, validation_message = self.executor_agent_wrapper.validate_code_safety(
                 generated_code
             )
@@ -244,7 +244,7 @@ class QACrew:
                     "validation_result": validation_message,
                 }
 
-            logger.info(f"Code validation passed")
+            logger.info("Code validation passed")
 
             return {
                 "success": True,
@@ -261,7 +261,7 @@ class QACrew:
 
     def execute_generated_test(self, test_code: str, test_config: Dict[str, Any]) -> Dict[str, Any]:
         """Execute generated test code with configuration."""
-        logger.info(f"Executing generated test...")
+        logger.info("Executing generated test...")
 
         try:
             # Execute using the playwright executor tool
@@ -274,7 +274,7 @@ class QACrew:
                     if isinstance(execution_result, str)
                     else execution_result
                 )
-            except:
+            except Exception:
                 execution_data = {
                     "success": False,
                     "error": "Failed to parse execution result",

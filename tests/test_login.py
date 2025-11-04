@@ -58,7 +58,7 @@ class TestLoginFunctionality:
         assert "valid_login" in results
         assert "invalid_login" in results
 
-        print(f"\\nAll Login Tests Results:")
+        print("\\nAll Login Tests Results:")
         for scenario, result in results.items():
             success_status = "✅ Success" if result.get("success", False) else "❌ Failed"
             print(f"  {scenario}: {success_status}")

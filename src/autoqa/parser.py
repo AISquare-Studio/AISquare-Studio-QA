@@ -4,7 +4,7 @@ Parses PR descriptions for AutoQA tags and test steps
 """
 
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 
 class AutoQAParser:

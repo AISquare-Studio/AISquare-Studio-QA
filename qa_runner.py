@@ -82,7 +82,7 @@ def run_staging_tests():
             "--durations=10",
             f"--html={html_report_path}",
             "--self-contained-html",
-            f"--json-report",
+            "--json-report",
             f"--json-report-file={json_report_path}",
         ],
         cwd=project_root,
@@ -90,11 +90,11 @@ def run_staging_tests():
     )
 
     if result.returncode == 0:
-        print(f"📊 Reports generated:")
+        print("📊 Reports generated:")
         print(f"   HTML: {html_report_path}")
         print(f"   JSON: {json_report_path}")
     else:
-        print(f"📊 Reports generated (with test failures):")
+        print("📊 Reports generated (with test failures):")
         print(f"   HTML: {html_report_path}")
         print(f"   JSON: {json_report_path}")
 

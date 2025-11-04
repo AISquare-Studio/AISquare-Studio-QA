@@ -14,9 +14,9 @@ class PlannerAgent:
         self.agent = Agent(
             role="QA Test Code Planner",
             goal="Generate robust and reliable Playwright Python code for automated testing",
-            backstory="""You are a senior SDET (Software Development Engineer in Test) with extensive 
-            experience in web automation testing. You specialize in creating clean, maintainable, 
-            and reliable Playwright code that follows best practices. You always include proper 
+            backstory="""You are a senior SDET (Software Development Engineer in Test) with extensive
+            experience in web automation testing. You specialize in creating clean, maintainable,
+            and reliable Playwright code that follows best practices. You always include proper
             waits, error handling, and assertions in your generated code.""",
             verbose=True,
             allow_delegation=False,
@@ -26,7 +26,7 @@ class PlannerAgent:
         """Get the system prompt for code generation."""
         return """
         You are a Playwright code generator. Generate ONLY Python code using Playwright sync API.
-        
+
         RULES:
         1. Only import from 'playwright.sync_api'
         2. Create a function called 'run_test(page, config)'
@@ -39,32 +39,32 @@ class PlannerAgent:
         9. Add comments for key steps
         10. Return ONLY the function code, no markdown or explanations
         11. IMPORTANT: Use config['login_url'] directly - do NOT add /login to it as it's already included
-        
+
         FORBIDDEN:
         - No imports other than playwright.sync_api
         - No os, subprocess, eval, exec calls
         - No file operations
         - No network requests outside of page interactions
         - Do not use selectors not provided in AVAILABLE SELECTORS
-        
+
         Example structure:
         ```python
         def run_test(page, config):
             # Navigate to login page (login_url is complete URL, don't add /login)
             page.goto(config['login_url'])
-            
+
             # Wait for page to load
             page.wait_for_load_state('networkidle')
-            
+
             # Your test steps here
-            
+
             # Assert success condition
             assert condition, "Test assertion message"
         ```
-        
+
         CRITICAL: config['login_url'] contains the full URL including /login path.
         Do NOT concatenate or add /login to it.
-            
+
             # Assert success condition
             assert condition, "Test assertion message"
         ```
@@ -85,20 +85,20 @@ class PlannerAgent:
         # Create detailed prompt with scenario and selectors
         prompt = f"""
         {self.get_system_prompt()}
-        
+
         Generate Playwright code for this test scenario:
-        
+
         SCENARIO: {scenario['name']}
         DESCRIPTION: {scenario['description']}
-        
+
         STEPS:
         {chr(10).join(f"- {step}" for step in scenario['steps'])}
-        
+
         EXPECTED RESULT: {scenario['expected_result']}
-        
+
         AVAILABLE SELECTORS:
         {chr(10).join(f"- {key}: {value}" for key, value in selectors.items())}
-        
+
         Generate the run_test(page, config) function that implements these steps.
         The config parameter will contain login_url, email, password, and timeout values.
         """

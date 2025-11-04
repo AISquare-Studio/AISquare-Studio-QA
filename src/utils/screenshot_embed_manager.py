@@ -137,7 +137,7 @@ class ScreenshotEmbedManager:
                     logger.info(f"Screenshot uploaded to GitHub: {download_url}")
                     return download_url
                 else:
-                    logger.warning(f"Upload response missing download_url")
+                    logger.warning("Upload response missing download_url")
                     return None
             else:
                 logger.warning(f"Failed to upload screenshot: HTTP {response.status_code}")
@@ -186,14 +186,14 @@ class ScreenshotEmbedManager:
 <details>
 <summary>📸 Screenshot ({file_size_kb:.1f} KB) - Click to view details</summary>
 
-**File:** `{screenshot_path}`  
-**Size:** {file_size_kb:.1f} KB  
+**File:** `{screenshot_path}`
+**Size:** {file_size_kb:.1f} KB
 **Timestamp:** {screenshot_info['timestamp']}
 
-> 🖼️ Screenshot captured during test execution.  
-> This screenshot shows the browser state when the test completed.  
-> 
-> **Note:** Image is too large to embed directly in comment.  
+> 🖼️ Screenshot captured during test execution.
+> This screenshot shows the browser state when the test completed.
+>
+> **Note:** Image is too large to embed directly in comment.
 > The screenshot file is available in the repository at the path above.
 
 </details>
