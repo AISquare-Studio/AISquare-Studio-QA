@@ -7,3 +7,10 @@ python-dotenv
 rich
 pyyaml
 jinja2
+requests
+
+# Development dependencies (optional)
+# Uncomment to install locally for development
+# flake8==7.0.0
+# black==24.4.2
+# isort==5.13.2

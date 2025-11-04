@@ -16,79 +16,79 @@ Placeholders that will be replaced:
 """
 
 import json
+
+# Import screenshot handler for consistent screenshot management
+import os
 import sys
 import traceback
 from datetime import datetime
 from pathlib import Path
+
 from playwright.sync_api import sync_playwright
 
-# Import screenshot handler for consistent screenshot management
-import os
-sys.path.insert(0, os.path.join(os.getenv('ACTION_PATH', '.'), 'src'))
+sys.path.insert(0, os.path.join(os.getenv("ACTION_PATH", "."), "src"))
 from utils.screenshot_handler import ScreenshotHandler
 
 {{USER_CODE}}
 
+
 def main():
     start_time = datetime.now()
     result = {
-        'success': False,
-        'message': '',
-        'error': '',
-        'execution_time': 0,
-        'timestamp': start_time.isoformat(),
-        'screenshot_path': None
+        "success": False,
+        "message": "",
+        "error": "",
+        "execution_time": 0,
+        "timestamp": start_time.isoformat(),
+        "screenshot_path": None,
     }
-    
+
     # Initialize screenshot handler
     screenshot_handler = ScreenshotHandler()
     scenario_name = {{SCENARIO_NAME}}
-    
+
     try:
         with sync_playwright() as p:
             browser = p.chromium.launch(headless={{HEADLESS}})
             page = browser.new_page()
-            
+
             # Set viewport
             page.set_viewport_size({"width": 1280, "height": 720})
-            
+
             # Execute the test
             run_test(page, {{CONFIG}})
-            
+
             # Capture success screenshot
             screenshot_path = screenshot_handler.capture_screenshot(
-                page, 
-                screenshot_handler.SUCCESS,
-                scenario_name
+                page, screenshot_handler.SUCCESS, scenario_name
             )
             if screenshot_path:
-                result['screenshot_path'] = screenshot_path
-            
+                result["screenshot_path"] = screenshot_path
+
             browser.close()
-            
-        result['success'] = True
-        result['message'] = 'Test completed successfully'
-        
+
+        result["success"] = True
+        result["message"] = "Test completed successfully"
+
     except Exception as e:
-        result['error'] = str(e)
-        result['traceback'] = traceback.format_exc()
-        
+        result["error"] = str(e)
+        result["traceback"] = traceback.format_exc()
+
         # Try to capture error screenshot
-        if 'page' in locals() and 'browser' in locals():
+        if "page" in locals() and "browser" in locals():
             error_screenshot = screenshot_handler.capture_screenshot(
-                page,
-                screenshot_handler.ERROR,
-                scenario_name
+                page, screenshot_handler.ERROR, scenario_name
             )
             if error_screenshot:
-                result['error_screenshot_path'] = error_screenshot
-    
+                result["error_screenshot_path"] = error_screenshot
+
     finally:
         end_time = datetime.now()
-        result['execution_time'] = (end_time - start_time).total_seconds()
-    
+        result["execution_time"] = (end_time - start_time).total_seconds()
+
     print(json.dumps(result, indent=2))
-    return result['success']
+    return result["success"]
+
 
 if __name__ == "__main__":
     success = main()

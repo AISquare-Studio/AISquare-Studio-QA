@@ -1,0 +1,61 @@
+name: Fix Linting Issues
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - '**'
+  workflow_dispatch:
+
+jobs:
+  fix-linting-issues:
+    name: Fix Linting Issues
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      statuses: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install linting tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8==7.0.0 black==24.4.2 isort==5.13.2
+
+      - name: Run black formatter
+        run: |
+          black . --line-length=100 --preview --enable-unstable-feature=string_processing
+
+      - name: Run isort import formatter
+        run: |
+          isort . --profile=black --line-length=100
+
+      - name: Run flake8 linter
+        run: |
+          flake8 --max-line-length=100 \
+            --extend-ignore=E203,W503,E501 \
+            --exclude=__pycache__,venv,env,.venv,.env,build,dist,*.egg-info,.pytest_cache,.git,reports,test-results,playwright-report,src/templates/test_execution_template.py
+
+      - name: Commit and push linting fixes
+        # Run only on:
+        # - Pull requests
+        # - Not on the default branch
+        if: >
+          (github.event_name == 'pull_request' &&
+          github.ref_name != github.event.repository.default_branch) ||
+          github.event_name == 'workflow_dispatch'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          branch: ${{ github.event.pull_request.head.ref || github.head_ref || github.ref }}
+          commit_message: "chore: fix linting issues"
+          commit_user_name: "Linting Bot"
+          commit_user_email: "linting.bot@github.com"

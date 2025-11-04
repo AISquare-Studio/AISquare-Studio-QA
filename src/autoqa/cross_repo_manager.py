@@ -5,10 +5,9 @@ Handles operations between the action repository and target repository
 
 import os
 import subprocess
-import json
-from pathlib import Path
-from typing import List, Dict, Any, Optional
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from src.utils.logger import get_logger
 
@@ -17,77 +16,79 @@ logger = get_logger(__name__)
 
 class CrossRepoManager:
     """Manages cross-repository operations for AutoQA action"""
-    
+
     def __init__(self, target_workspace: Path, action_path: Path):
         self.target_workspace = target_workspace
         self.action_path = action_path
-        self.github_token = os.getenv('GITHUB_TOKEN')
-        self.target_branch = os.getenv('TARGET_BRANCH', 'main')
-        self.test_directory = os.getenv('TEST_DIRECTORY', 'tests/autoQA')
-        self.create_pr = os.getenv('CREATE_PR', 'false').lower() == 'true'
-        
+        self.github_token = os.getenv("GITHUB_TOKEN")
+        self.target_branch = os.getenv("TARGET_BRANCH", "main")
+        self.test_directory = os.getenv("TEST_DIRECTORY", "tests/autoQA")
+        self.create_pr = os.getenv("CREATE_PR", "false").lower() == "true"
+
     def commit_test_file(self, code: str, steps: List[str], metadata: Dict[str, Any]) -> Path:
         """Commit generated test file to target repository"""
-        
+
         # Ensure test directory exists in target repo
         test_dir = self.target_workspace / self.test_directory
         test_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Create __init__.py if it doesn't exist
         init_file = test_dir / "__init__.py"
         if not init_file.exists():
             init_file.write_text("# AutoQA Generated Tests\n")
-        
+
         # Generate test file name
         test_file_path = self._generate_test_file_path(steps, metadata)
-        
+
         # Write test file
         test_content = self._create_test_file_content(code, steps, metadata)
         test_file_path.write_text(test_content)
-        
+
         # Commit to target repository
         self._commit_file_to_repo(test_file_path, steps)
-        
+
         return test_file_path
-    
+
     def _generate_test_file_path(self, steps: List[str], metadata: Dict[str, Any]) -> Path:
         """Generate appropriate file path for the test"""
         test_dir = self.target_workspace / self.test_directory
-        
+
         # Generate descriptive name based on steps
         base_name = self._generate_test_name(steps, metadata)
-        
+
         # Ensure unique filename
         counter = 1
         test_file_path = test_dir / f"test_{base_name}.py"
-        
+
         while test_file_path.exists():
             test_file_path = test_dir / f"test_{base_name}_{counter:03d}.py"
             counter += 1
-        
+
         return test_file_path
-    
+
     def _generate_test_name(self, steps: List[str], metadata: Dict[str, Any]) -> str:
         """Generate a descriptive test name"""
-        scenario_type = metadata.get('scenario_type', 'general')
+        scenario_type = metadata.get("scenario_type", "general")
         timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-        
+
         # Create base name from scenario type
-        if scenario_type == 'login':
+        if scenario_type == "login":
             base_name = f"autoqa_login_{timestamp}"
-        elif scenario_type == 'signup':
+        elif scenario_type == "signup":
             base_name = f"autoqa_signup_{timestamp}"
-        elif scenario_type == 'dashboard':
+        elif scenario_type == "dashboard":
             base_name = f"autoqa_dashboard_{timestamp}"
         else:
             base_name = f"autoqa_test_{timestamp}"
-        
+
         return base_name
-    
-    def _create_test_file_content(self, code: str, steps: List[str], metadata: Dict[str, Any]) -> str:
+
+    def _create_test_file_content(
+        self, code: str, steps: List[str], metadata: Dict[str, Any]
+    ) -> str:
         """Create complete test file content with metadata"""
         timestamp = datetime.now().isoformat()
-        
+
         header = f'''"""
 AutoQA Generated Test
 =====================
@@ -110,12 +111,12 @@ from playwright.sync_api import sync_playwright
 
 class TestAutoQA:
     """AutoQA generated test class"""
-    
+
     @pytest.mark.autoqa
     @pytest.mark.generated
     def test_autoqa_scenario(self):
         """Generated test method"""
-        
+
         # Test configuration (customize as needed)
         import os
         base_url = os.getenv("STAGING_URL", "https://stg-home.aisquare.studio").rstrip("/")
@@ -127,12 +128,12 @@ class TestAutoQA:
             'headless': True,
             'timeout': 30000
         }}
-        
+
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=config['headless'])
             page = browser.new_page()
             page.set_viewport_size({{"width": 1280, "height": 720}})
-            
+
             try:
                 # Execute generated test code
 {self._indent_code(code, 16)}
@@ -146,86 +147,102 @@ if __name__ == "__main__":
     test_instance.test_autoqa_scenario()
     print("✅ AutoQA test completed successfully")
 '''
-        
+
         return header
-    
+
     def _indent_code(self, code: str, spaces: int) -> str:
         """Indent code block for proper formatting"""
-        indent = ' ' * spaces
-        lines = code.split('\n')
+        indent = " " * spaces
+        lines = code.split("\n")
         indented_lines = []
-        
+
         for line in lines:
             if line.strip():  # Don't indent empty lines
                 indented_lines.append(indent + line)
             else:
-                indented_lines.append('')
-        
-        return '\n'.join(indented_lines)
-    
+                indented_lines.append("")
+
+        return "\n".join(indented_lines)
+
     def _commit_file_to_repo(self, test_file_path: Path, steps: List[str]) -> None:
         """Commit the test file to the target repository"""
         try:
             # Configure git for the action
-            git_user_name = os.getenv('GIT_USER_NAME', 'AutoQA Bot')
-            git_user_email = os.getenv('GIT_USER_EMAIL', 'rabia.tahirr@opengrowth.com')
-            
-            subprocess.run(['git', 'config', 'user.name', git_user_name], 
-                         cwd=self.target_workspace, check=True)
-            subprocess.run(['git', 'config', 'user.email', git_user_email], 
-                         cwd=self.target_workspace, check=True)
-            
+            git_user_name = os.getenv("GIT_USER_NAME", "AutoQA Bot")
+            git_user_email = os.getenv("GIT_USER_EMAIL", "rabia.tahirr@opengrowth.com")
+
+            subprocess.run(
+                ["git", "config", "user.name", git_user_name], cwd=self.target_workspace, check=True
+            )
+            subprocess.run(
+                ["git", "config", "user.email", git_user_email],
+                cwd=self.target_workspace,
+                check=True,
+            )
+
             # Add the test file
             relative_path = test_file_path.relative_to(self.target_workspace)
-            subprocess.run(['git', 'add', str(relative_path)], 
-                         cwd=self.target_workspace, check=True)
-            
+            subprocess.run(
+                ["git", "add", str(relative_path)], cwd=self.target_workspace, check=True
+            )
+
             # Create commit message
             commit_message = self._generate_commit_message(steps)
-            
+
             # Commit the file
-            subprocess.run(['git', 'commit', '-m', commit_message], 
-                         cwd=self.target_workspace, check=True)
-            
+            subprocess.run(
+                ["git", "commit", "-m", commit_message], cwd=self.target_workspace, check=True
+            )
+
             logger.info(f"Committed test file: {relative_path}")
-            
+
             # Push to remote repository or create PR
             if self.create_pr:
                 self._create_pull_request(steps)
             else:
                 self._push_to_remote()
-            
+
         except subprocess.CalledProcessError as e:
             logger.error(f"Failed to commit test file: {e}")
             raise
-    
+
     def _push_to_remote(self) -> None:
         """Push committed changes to remote repository"""
         try:
             # Get current branch name
-            result = subprocess.run(['git', 'branch', '--show-current'], 
-                                  cwd=self.target_workspace, 
-                                  capture_output=True, text=True, check=True)
+            result = subprocess.run(
+                ["git", "branch", "--show-current"],
+                cwd=self.target_workspace,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
             current_branch = result.stdout.strip()
-            
+
             # Check if we have a remote configured
-            remote_result = subprocess.run(['git', 'remote', 'get-url', 'origin'], 
-                                         cwd=self.target_workspace, 
-                                         capture_output=True, text=True)
-            
+            remote_result = subprocess.run(
+                ["git", "remote", "get-url", "origin"],
+                cwd=self.target_workspace,
+                capture_output=True,
+                text=True,
+            )
+
             if remote_result.returncode != 0:
                 logger.warning("No remote 'origin' configured, skipping push")
                 return
-            
+
             logger.info(f"Pushing changes to origin/{current_branch}...")
-            
+
             # Push to origin with authentication
-            push_result = subprocess.run(['git', 'push', 'origin', current_branch], 
-                                       cwd=self.target_workspace, 
-                                       capture_output=True, text=True)
-            
+            push_result = subprocess.run(
+                ["git", "push", "origin", current_branch],
+                cwd=self.target_workspace,
+                capture_output=True,
+                text=True,
+            )
+
             if push_result.returncode == 0:
-                logger.info(f"Successfully pushed changes to remote repository")
+                logger.info("Successfully pushed changes to remote repository")
             else:
                 logger.error(f"Push failed: {push_result.stderr}")
                 logger.info("Possible causes:")
@@ -233,84 +250,89 @@ if __name__ == "__main__":
                 logger.info("  - Insufficient permissions on repository")
                 logger.info("  - Network connectivity issues")
                 logger.info("Note: Changes are committed locally but not pushed to remote")
-            
+
         except subprocess.CalledProcessError as e:
             logger.error(f"Failed to push to remote: {e}")
             logger.info("Note: Changes are committed locally but not pushed to remote")
             # Don't re-raise the exception as commit was successful
-    
+
     def _create_pull_request(self, steps: List[str]) -> None:
         """Create a pull request with the AutoQA test changes"""
         try:
             # Create a new branch for the PR
             branch_name = f"autoqa/test-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
-            
+
             # Create and checkout new branch
-            subprocess.run(['git', 'checkout', '-b', branch_name], 
-                         cwd=self.target_workspace, check=True)
-            
+            subprocess.run(
+                ["git", "checkout", "-b", branch_name], cwd=self.target_workspace, check=True
+            )
+
             # Push the new branch
-            subprocess.run(['git', 'push', 'origin', branch_name], 
-                         cwd=self.target_workspace, check=True)
-            
+            subprocess.run(
+                ["git", "push", "origin", branch_name], cwd=self.target_workspace, check=True
+            )
+
             logger.info(f"Created and pushed branch: {branch_name}")
             logger.info(f"Create a PR manually from {branch_name} to {self.target_branch}")
-            logger.info(f"Or use GitHub CLI: gh pr create --title 'AutoQA: Add generated test' --body 'Auto-generated test from AutoQA'")
-            
+            logger.info(
+                "Or use GitHub CLI: gh pr create --title 'AutoQA: Add generated test' --body"
+                " 'Auto-generated test from AutoQA'"
+            )
+
         except subprocess.CalledProcessError as e:
             logger.error(f"Failed to create pull request branch: {e}")
             logger.info("Falling back to direct push...")
             self._push_to_remote()
-    
+
     def _generate_commit_message(self, steps: List[str]) -> str:
         """Generate descriptive commit message"""
         step_summary = steps[0] if steps else "AutoQA test"
         return f"AutoQA: Add generated test for '{step_summary}' ({len(steps)} steps)"
-    
+
     def discover_tests(self) -> List[Path]:
         """Discover existing test files in target repository"""
         test_dir = self.target_workspace / self.test_directory
-        
+
         if not test_dir.exists():
             return []
-        
+
         # Find all Python test files
         test_files = []
-        for pattern in ['test_*.py', '*_test.py']:
+        for pattern in ["test_*.py", "*_test.py"]:
             test_files.extend(test_dir.glob(pattern))
-        
+
         return test_files
-    
+
     def get_test_metadata(self, test_file: Path) -> Optional[Dict[str, Any]]:
         """Extract metadata from test file"""
         try:
             content = test_file.read_text()
-            
+
             # Extract metadata from docstring
             metadata = {}
-            
-            if 'AutoQA Generated Test' in content:
-                metadata['source'] = 'AutoQA'
-                metadata['generated'] = True
-            
+
+            if "AutoQA Generated Test" in content:
+                metadata["source"] = "AutoQA"
+                metadata["generated"] = True
+
             # Extract other metadata as needed
-            
+
             return metadata
-            
+
         except Exception as e:
             logger.warning(f"Could not extract metadata from {test_file}: {e}")
             return None
-    
+
     def cleanup_old_tests(self, max_tests: int = 50) -> None:
         """Clean up old AutoQA tests if too many exist"""
         test_files = self.discover_tests()
-        autoqa_tests = [f for f in test_files if 'autoqa' in f.name.lower()]
-        
+        autoqa_tests = [f for f in test_files if "autoqa" in f.name.lower()]
+
         if len(autoqa_tests) > max_tests:
             # Sort by modification time and remove oldest
             autoqa_tests.sort(key=lambda f: f.stat().st_mtime)
-            to_remove = autoqa_tests[:len(autoqa_tests) - max_tests]
-            
+            to_remove = autoqa_tests[: len(autoqa_tests) - max_tests]
+
             for test_file in to_remove:
                 try:
                     test_file.unlink()

@@ -1,0 +1,32 @@
+[flake8]
+max-line-length = 100
+extend-ignore = E203, W503, E501
+exclude =
+    __pycache__,
+    venv,
+    env,
+    .venv,
+    .env,
+    build,
+    dist,
+    *.egg-info,
+    .pytest_cache,
+    .git,
+    reports,
+    test-results,
+    playwright-report,
+    src/templates/test_execution_template.py,
+    tests/generated/
+
+# Ignore specific patterns
+per-file-ignores =
+    # Allow unused imports in __init__.py files
+    **/__init__.py:F401
+    # Template files have placeholders
+    src/templates/*.py:F821,E999
+    # Test files can have longer lines for readability
+    tests/*.py:E501
+    test_*.py:E501
+
+# Complexity settings
+max-complexity = 15

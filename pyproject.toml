@@ -1,0 +1,61 @@
+[tool.black]
+line-length = 100
+target-version = ['py311']
+include = '\.pyi?$'
+preview = true
+enable-unstable-feature = ["string_processing"]
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | venv
+  | env
+  | __pycache__
+  | \.pytest_cache
+  | build
+  | dist
+  | reports
+  | test-results
+  | playwright-report
+  | \.egg-info
+  | tests/generated
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+skip_gitignore = true
+skip = [
+    "__pycache__",
+    "venv",
+    "env",
+    ".venv",
+    ".env",
+    "build",
+    "dist",
+    ".pytest_cache",
+    "reports",
+    "test-results",
+    "playwright-report",
+    "tests/generated",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = [
+    "--verbose",
+    "--color=yes",
+]
+
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
