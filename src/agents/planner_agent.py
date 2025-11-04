@@ -2,13 +2,14 @@
 Planner Agent: Generates Playwright test code based on natural language test scenarios.
 """
 
+from typing import Any, Dict
+
 from crewai import Agent
-from typing import Dict, Any
 
 
 class PlannerAgent:
     """Agent responsible for generating Playwright test code from test scenarios."""
-    
+
     def __init__(self):
         self.agent = Agent(
             role="QA Test Code Planner",
@@ -20,7 +21,7 @@ class PlannerAgent:
             verbose=True,
             allow_delegation=False,
         )
-    
+
     def get_system_prompt(self) -> str:
         """Get the system prompt for code generation."""
         return """
@@ -68,19 +69,19 @@ class PlannerAgent:
             assert condition, "Test assertion message"
         ```
         """
-    
+
     def generate_test_code(self, scenario: Dict[str, Any], selectors: Dict[str, Any]) -> str:
         """
         Generate Playwright test code for a given scenario.
-        
+
         Args:
             scenario: Test scenario details from YAML
             selectors: CSS selectors for page elements
-            
+
         Returns:
             Generated Playwright code as string
         """
-        
+
         # Create detailed prompt with scenario and selectors
         prompt = f"""
         {self.get_system_prompt()}
@@ -101,5 +102,5 @@ class PlannerAgent:
         Generate the run_test(page, config) function that implements these steps.
         The config parameter will contain login_url, email, password, and timeout values.
         """
-        
+
         return prompt
