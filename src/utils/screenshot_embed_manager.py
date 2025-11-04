@@ -11,6 +11,9 @@ from typing import Optional
 from pathlib import Path
 from datetime import datetime
 from src.utils.screenshot_handler import ScreenshotHandler
+from src.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class ScreenshotEmbedManager:
@@ -51,14 +54,14 @@ class ScreenshotEmbedManager:
             screenshot_file = self.screenshot_handler.resolve_screenshot_path(screenshot_path)
             
             if not screenshot_file or not screenshot_file.exists():
-                print(f"⚠️ Screenshot file not found: {screenshot_path}")
+                logger.warning(f"Screenshot file not found: {screenshot_path}")
                 return ""
             
             # Get screenshot metadata
             screenshot_info = self.screenshot_handler.get_screenshot_info(screenshot_file)
             file_size_kb = screenshot_info['size'] / 1024
             
-            print(f"📸 Processing screenshot: {screenshot_path} ({file_size_kb:.1f} KB)")
+            logger.info(f"Processing screenshot: {screenshot_path} ({file_size_kb:.1f} KB)")
             
             # Read screenshot data
             with open(screenshot_file, 'rb') as f:
@@ -78,7 +81,7 @@ class ScreenshotEmbedManager:
             return self.create_artifact_link(screenshot_path, screenshot_info)
                     
         except Exception as e:
-            print(f"⚠️ Warning: Could not process screenshot: {e}")
+            logger.warning(f"Could not process screenshot: {e}")
             return f"**{title}:** `{screenshot_path}` (Processing failed: {str(e)})"
     
     def upload_to_github(self, filename: str, image_data: bytes) -> Optional[str]:
@@ -124,17 +127,17 @@ class ScreenshotEmbedManager:
                 # Return the raw URL for direct image embedding
                 download_url = response_data.get('content', {}).get('download_url')
                 if download_url:
-                    print(f"✅ Screenshot uploaded to GitHub: {download_url}")
+                    logger.info(f"Screenshot uploaded to GitHub: {download_url}")
                     return download_url
                 else:
-                    print(f"⚠️ Upload response missing download_url")
+                    logger.warning(f"Upload response missing download_url")
                     return None
             else:
-                print(f"⚠️ Failed to upload screenshot: HTTP {response.status_code}")
+                logger.warning(f"Failed to upload screenshot: HTTP {response.status_code}")
                 return None
                 
         except Exception as e:
-            print(f"⚠️ Error uploading screenshot to GitHub: {e}")
+            logger.warning(f"Error uploading screenshot to GitHub: {e}")
             return None
     
     def create_base64_embed(self, image_data: bytes, title: str, 
@@ -151,7 +154,7 @@ class ScreenshotEmbedManager:
             Markdown with base64 data URL
         """
         encoded_image = base64.b64encode(image_data).decode('utf-8')
-        print(f"✅ Embedding screenshot as base64 data URL ({file_size_kb:.1f} KB)")
+        logger.info(f"Embedding screenshot as base64 data URL ({file_size_kb:.1f} KB)")
         return f"![{title}](data:image/png;base64,{encoded_image})"
     
     def create_artifact_link(self, screenshot_path: str, 

@@ -15,6 +15,9 @@ from src.utils.comment_builder import CommentBuilder
 from src.utils.screenshot_handler import ScreenshotHandler
 from src.utils.screenshot_embed_manager import ScreenshotEmbedManager
 from src.utils.github_comment_client import GitHubCommentClient
+from src.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class ActionReporter:
@@ -94,9 +97,9 @@ class ActionReporter:
         if self.github_token and self.pr_number and self.target_repo:
             self.github_client.post_or_update_comment(self.pr_number, comment_body)
         
-        # Print for GitHub Actions logs
-        print("📝 AutoQA Results Summary:")
-        print(comment_body)
+        # Log for GitHub Actions logs
+        logger.info("AutoQA Results Summary:")
+        logger.info(comment_body)
     
     def _process_screenshots(self, execution_result: Dict[str, Any]) -> Dict[str, str]:
         """
@@ -126,7 +129,7 @@ class ActionReporter:
                         artifacts_url = f"https://github.com/{self.target_repo}/actions/runs/{self.github_run_id}"
                         screenshot_sections['success'] = f"*Screenshot available in [GitHub Actions Artifacts]({artifacts_url})*"
             else:
-                print(f"⚠️ Screenshot file not found: {screenshot_path}")
+                logger.warning(f"Screenshot file not found: {screenshot_path}")
                 if self.github_run_id and self.target_repo:
                     artifacts_url = f"https://github.com/{self.target_repo}/actions/runs/{self.github_run_id}"
                     screenshot_sections['success'] = f"*Screenshot available in [GitHub Actions Artifacts]({artifacts_url})*"
@@ -157,9 +160,9 @@ class ActionReporter:
                 with open(summary_file, 'a') as f:
                     f.write(content)
                     f.write('\n\n')
-                print("✅ Added to GitHub Actions step summary")
+                logger.info("Added to GitHub Actions step summary")
         except Exception as e:
-            print(f"⚠️ Could not write step summary: {e}")
+            logger.warning(f"Could not write step summary: {e}")
     
     def report_error(self, error_message: str, details: Dict[str, Any] = None) -> None:
         """
@@ -169,12 +172,12 @@ class ActionReporter:
             error_message: Error message to report
             details: Optional error details dict
         """
-        print(f"::error::{error_message}")
+        logger.error(error_message)
         
         if details:
-            print("Error Details:")
+            logger.error("Error Details:")
             for key, value in details.items():
-                print(f"  {key}: {value}")
+                logger.error(f"  {key}: {value}")
     
     def report_warning(self, warning_message: str) -> None:
         """
@@ -183,7 +186,7 @@ class ActionReporter:
         Args:
             warning_message: Warning message to report
         """
-        print(f"::warning::{warning_message}")
+        logger.warning(warning_message)
     
     def report_notice(self, notice_message: str) -> None:
         """
@@ -192,7 +195,7 @@ class ActionReporter:
         Args:
             notice_message: Notice message to report
         """
-        print(f"::notice::{notice_message}")
+        logger.info(notice_message)
     
     def report_status(self, status: str, message: str) -> None:
         """
@@ -203,13 +206,13 @@ class ActionReporter:
             message: Status message
         """
         if status == 'success':
-            print(f"✅ {message}")
+            logger.info(f"✅ {message}")
         elif status == 'warning':
             self.report_warning(message)
         elif status == 'error':
             self.report_error(message)
         else:
-            print(f"ℹ️ {message}")
+            logger.info(message)
     
     def report_step(self, step: str, status: str = None) -> None:
         """
@@ -220,13 +223,13 @@ class ActionReporter:
             status: Optional status (running, success, failed)
         """
         if status == 'running':
-            print(f"⏳ {step}...")
+            logger.info(f"⏳ {step}...")
         elif status == 'success':
-            print(f"✅ {step}")
+            logger.info(f"✅ {step}")
         elif status == 'failed':
-            print(f"❌ {step}")
+            logger.error(f"{step}")
         else:
-            print(f"▶️ {step}")
+            logger.info(f"▶️ {step}")
     
     def report_summary(self, summary: Dict[str, Any]) -> None:
         """
@@ -235,9 +238,9 @@ class ActionReporter:
         Args:
             summary: Summary dict with execution metrics
         """
-        print("\n" + "="*50)
-        print("EXECUTION SUMMARY")
-        print("="*50)
+        logger.info("\n" + "="*50)
+        logger.info("EXECUTION SUMMARY")
+        logger.info("="*50)
         for key, value in summary.items():
-            print(f"{key}: {value}")
-        print("="*50 + "\n")
+            logger.info(f"{key}: {value}")
+        logger.info("="*50 + "\n")

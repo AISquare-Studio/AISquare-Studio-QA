@@ -10,6 +10,10 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 
+from src.utils.logger import get_logger
+
+logger = get_logger(__name__)
+
 
 class CrossRepoManager:
     """Manages cross-repository operations for AutoQA action"""
@@ -183,7 +187,7 @@ if __name__ == "__main__":
             subprocess.run(['git', 'commit', '-m', commit_message], 
                          cwd=self.target_workspace, check=True)
             
-            print(f"✅ Committed test file: {relative_path}")
+            logger.info(f"Committed test file: {relative_path}")
             
             # Push to remote repository or create PR
             if self.create_pr:
@@ -192,7 +196,7 @@ if __name__ == "__main__":
                 self._push_to_remote()
             
         except subprocess.CalledProcessError as e:
-            print(f"❌ Failed to commit test file: {e}")
+            logger.error(f"Failed to commit test file: {e}")
             raise
     
     def _push_to_remote(self) -> None:
@@ -210,10 +214,10 @@ if __name__ == "__main__":
                                          capture_output=True, text=True)
             
             if remote_result.returncode != 0:
-                print("⚠️ No remote 'origin' configured, skipping push")
+                logger.warning("No remote 'origin' configured, skipping push")
                 return
             
-            print(f"🚀 Pushing changes to origin/{current_branch}...")
+            logger.info(f"Pushing changes to origin/{current_branch}...")
             
             # Push to origin with authentication
             push_result = subprocess.run(['git', 'push', 'origin', current_branch], 
@@ -221,18 +225,18 @@ if __name__ == "__main__":
                                        capture_output=True, text=True)
             
             if push_result.returncode == 0:
-                print(f"✅ Successfully pushed changes to remote repository")
+                logger.info(f"Successfully pushed changes to remote repository")
             else:
-                print(f"❌ Push failed: {push_result.stderr}")
-                print("📋 Possible causes:")
-                print("  - Branch protection rules preventing direct push")
-                print("  - Insufficient permissions on repository")
-                print("  - Network connectivity issues")
-                print("📋 Note: Changes are committed locally but not pushed to remote")
+                logger.error(f"Push failed: {push_result.stderr}")
+                logger.info("Possible causes:")
+                logger.info("  - Branch protection rules preventing direct push")
+                logger.info("  - Insufficient permissions on repository")
+                logger.info("  - Network connectivity issues")
+                logger.info("Note: Changes are committed locally but not pushed to remote")
             
         except subprocess.CalledProcessError as e:
-            print(f"❌ Failed to push to remote: {e}")
-            print("📋 Note: Changes are committed locally but not pushed to remote")
+            logger.error(f"Failed to push to remote: {e}")
+            logger.info("Note: Changes are committed locally but not pushed to remote")
             # Don't re-raise the exception as commit was successful
     
     def _create_pull_request(self, steps: List[str]) -> None:
@@ -249,13 +253,13 @@ if __name__ == "__main__":
             subprocess.run(['git', 'push', 'origin', branch_name], 
                          cwd=self.target_workspace, check=True)
             
-            print(f"✅ Created and pushed branch: {branch_name}")
-            print(f"📋 Create a PR manually from {branch_name} to {self.target_branch}")
-            print(f"📋 Or use GitHub CLI: gh pr create --title 'AutoQA: Add generated test' --body 'Auto-generated test from AutoQA'")
+            logger.info(f"Created and pushed branch: {branch_name}")
+            logger.info(f"Create a PR manually from {branch_name} to {self.target_branch}")
+            logger.info(f"Or use GitHub CLI: gh pr create --title 'AutoQA: Add generated test' --body 'Auto-generated test from AutoQA'")
             
         except subprocess.CalledProcessError as e:
-            print(f"❌ Failed to create pull request branch: {e}")
-            print("📋 Falling back to direct push...")
+            logger.error(f"Failed to create pull request branch: {e}")
+            logger.info("Falling back to direct push...")
             self._push_to_remote()
     
     def _generate_commit_message(self, steps: List[str]) -> str:
@@ -294,7 +298,7 @@ if __name__ == "__main__":
             return metadata
             
         except Exception as e:
-            print(f"⚠️ Could not extract metadata from {test_file}: {e}")
+            logger.warning(f"Could not extract metadata from {test_file}: {e}")
             return None
     
     def cleanup_old_tests(self, max_tests: int = 50) -> None:
@@ -310,38 +314,6 @@ if __name__ == "__main__":
             for test_file in to_remove:
                 try:
                     test_file.unlink()
-                    print(f"🗑️ Removed old test: {test_file.name}")
+                    logger.info(f"Removed old test: {test_file.name}")
                 except Exception as e:
-                    print(f"⚠️ Could not remove {test_file}: {e}")
-
-
-# Testing
-if __name__ == "__main__":
-    # Mock test for development
-    import tempfile
-    
-    with tempfile.TemporaryDirectory() as temp_dir:
-        target_workspace = Path(temp_dir)
-        action_path = Path('.')
-        
-        manager = CrossRepoManager(target_workspace, action_path)
-        
-        test_steps = [
-            "Navigate to login page",
-            "Enter credentials", 
-            "Click login button",
-            "Verify success"
-        ]
-        
-        test_code = '''
-def run_test(page, config):
-    page.goto(config['login_url'])
-    page.wait_for_load_state('networkidle')
-    assert "login" in page.url.lower()
-'''
-        
-        metadata = {'scenario_type': 'login'}
-        
-        # This would normally commit to git
-        print("Testing CrossRepoManager...")
-        print(f"Would commit test with {len(test_steps)} steps")
+                    logger.warning(f"Could not remove {test_file}: {e}")

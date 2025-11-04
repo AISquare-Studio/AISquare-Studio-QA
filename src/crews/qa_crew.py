@@ -13,6 +13,10 @@ import json
 from pathlib import Path
 from datetime import datetime
 
+from src.utils.logger import get_logger
+
+logger = get_logger(__name__)
+
 
 class QACrew:
     """Main crew that orchestrates test planning and execution."""
@@ -128,7 +132,7 @@ class QACrew:
             })
         
         # Step 1: Generate test code using Planner Agent
-        print(f"🤖 Generating test code for: {scenario['name']}")
+        logger.info(f"Generating test code for: {scenario['name']}")
         code_prompt = self.planner_agent_wrapper.generate_test_code(scenario, selectors)
         
         # Create planning task
@@ -152,7 +156,7 @@ class QACrew:
         generated_code = self._clean_generated_code(str(generated_code_raw))
         
         # Step 2: Validate and execute the code
-        print(f"🔒 Validating generated code...")
+        logger.info(f"Validating generated code...")
         is_safe, validation_message = self.executor_agent_wrapper.validate_code_safety(generated_code)
         
         if not is_safe:
@@ -164,8 +168,8 @@ class QACrew:
                 'generated_code': generated_code
             }
         
-        print(f"✅ Code validation passed")
-        print(f"🎭 Executing test scenario...")
+        logger.info(f"Code validation passed")
+        logger.info(f"Executing test scenario...")
         
         # Step 3: Execute the validated code
         execution_result = self.playwright_executor(generated_code, test_config)
@@ -187,7 +191,7 @@ class QACrew:
     
     def run_autoqa_scenario(self, scenario: Dict[str, Any]) -> Dict[str, Any]:
         """Run AutoQA scenario with generated steps."""
-        print(f"🤖 Running AutoQA scenario: {scenario.get('name', 'Unknown')}")
+        logger.info(f"Running AutoQA scenario: {scenario.get('name', 'Unknown')}")
         
         # Load selectors (use login selectors as default for now)
         test_data = self.load_test_data()
@@ -203,7 +207,7 @@ class QACrew:
         
         try:
             # Generate test code using existing Planner Agent
-            print(f"🤖 Generating test code for AutoQA scenario...")
+            logger.info(f"Generating test code for AutoQA scenario...")
             code_prompt = self.planner_agent_wrapper.generate_test_code(scenario, selectors)
             
             # Create planning task
@@ -225,7 +229,7 @@ class QACrew:
             generated_code = self._clean_generated_code(str(generated_code_raw))
             
             # Validate the code
-            print(f"🔒 Validating generated code...")
+            logger.info(f"Validating generated code...")
             is_safe, validation_message = self.executor_agent_wrapper.validate_code_safety(generated_code)
             
             if not is_safe:
@@ -236,7 +240,7 @@ class QACrew:
                     'validation_result': validation_message
                 }
             
-            print(f"✅ Code validation passed")
+            logger.info(f"Code validation passed")
             
             return {
                 'success': True,
@@ -248,7 +252,7 @@ class QACrew:
             }
             
         except Exception as e:
-            print(f"❌ AutoQA scenario failed: {str(e)}")
+            logger.error(f"AutoQA scenario failed: {str(e)}")
             return {
                 'success': False,
                 'error': str(e),
@@ -257,7 +261,7 @@ class QACrew:
     
     def execute_generated_test(self, test_code: str, test_config: Dict[str, Any]) -> Dict[str, Any]:
         """Execute generated test code with configuration."""
-        print(f"🎭 Executing generated test...")
+        logger.info(f"Executing generated test...")
         
         try:
             # Execute using the playwright executor tool
@@ -283,7 +287,7 @@ class QACrew:
     
     def run_all_tests(self) -> Dict[str, Any]:
         """Run all available tests (existing + generated)."""
-        print("🏃 Running complete test suite...")
+        logger.info("Running complete test suite...")
         
         results = {
             'login_tests': {},
@@ -326,18 +330,18 @@ class QACrew:
         login_scenarios = ['valid_login', 'invalid_login']
         
         for scenario_name in login_scenarios:
-            print(f"\\n{'='*50}")
-            print(f"Running scenario: {scenario_name}")
-            print(f"{'='*50}")
+            logger.info(f"\\n{'='*50}")
+            logger.info(f"Running scenario: {scenario_name}")
+            logger.info(f"{'='*50}")
             
             try:
                 result = self.run_test_scenario('login', scenario_name)
                 results[scenario_name] = result
                 
-                print(f"✅ Scenario {scenario_name} completed")
+                logger.info(f"Scenario {scenario_name} completed")
                 
             except Exception as e:
-                print(f"❌ Scenario {scenario_name} failed: {str(e)}")
+                logger.error(f"Scenario {scenario_name} failed: {str(e)}")
                 results[scenario_name] = {
                     'error': str(e),
                     'success': False

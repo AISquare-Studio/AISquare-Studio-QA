@@ -6,6 +6,9 @@ Handles GitHub API operations for creating and updating PR comments.
 
 import requests
 from typing import Optional, Dict
+from src.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class GitHubCommentClient:
@@ -35,7 +38,7 @@ class GitHubCommentClient:
             True if successful, False otherwise
         """
         if not self.github_token or not pr_number or not self.target_repo:
-            print("⚠️ Missing required GitHub context for PR comment")
+            logger.warning("Missing required GitHub context for PR comment")
             return False
         
         headers = self._get_headers()
@@ -88,17 +91,17 @@ class GitHubCommentClient:
                     body = comment.get('body', '')
                     # Check for our hidden marker
                     if '<!-- AutoQA-Comment-Marker -->' in body:
-                        print(f"✅ Found existing AutoQA comment: {comment['id']}")
+                        logger.info(f"Found existing AutoQA comment: {comment['id']}")
                         return comment['id']
                     # Fallback: check for AutoQA header (for legacy comments)
                     elif '## ✅ AutoQA' in body or '## ❌ AutoQA' in body:
-                        print(f"✅ Found existing AutoQA comment (legacy): {comment['id']}")
+                        logger.info(f"Found existing AutoQA comment (legacy): {comment['id']}")
                         return comment['id']
             else:
-                print(f"⚠️ Failed to fetch PR comments: HTTP {response.status_code}")
+                logger.warning(f"Failed to fetch PR comments: HTTP {response.status_code}")
                 
         except Exception as e:
-            print(f"⚠️ Error searching for existing comment: {e}")
+            logger.warning(f"Error searching for existing comment: {e}")
         
         return None
     
@@ -126,15 +129,15 @@ class GitHubCommentClient:
             response = requests.patch(url, headers=headers, json=data, timeout=30)
             
             if response.status_code == 200:
-                print(f"✅ Updated existing PR comment #{comment_id}")
+                logger.info(f"Updated existing PR comment #{comment_id}")
                 return True
             else:
-                print(f"⚠️ Failed to update comment: HTTP {response.status_code}")
-                print(f"Response: {response.text}")
+                logger.warning(f"Failed to update comment: HTTP {response.status_code}")
+                logger.debug(f"Response: {response.text}")
                 return False
                 
         except Exception as e:
-            print(f"⚠️ Error updating PR comment: {e}")
+            logger.error(f"Error updating PR comment: {e}")
             return False
     
     def create_comment(self, pr_number: str, comment_body: str, 
@@ -161,15 +164,15 @@ class GitHubCommentClient:
             response = requests.post(url, headers=headers, json=data, timeout=30)
             
             if response.status_code == 201:
-                print(f"✅ Created new PR comment on #{pr_number}")
+                logger.info(f"Created new PR comment on #{pr_number}")
                 return True
             else:
-                print(f"⚠️ Failed to create comment: HTTP {response.status_code}")
-                print(f"Response: {response.text}")
+                logger.warning(f"Failed to create comment: HTTP {response.status_code}")
+                logger.debug(f"Response: {response.text}")
                 return False
                 
         except Exception as e:
-            print(f"⚠️ Error creating PR comment: {e}")
+            logger.error(f"Error creating PR comment: {e}")
             return False
     
     def _get_headers(self) -> Dict[str, str]:

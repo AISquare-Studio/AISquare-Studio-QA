@@ -7,6 +7,9 @@ import os
 from pathlib import Path
 from datetime import datetime
 from typing import Optional
+from src.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class ScreenshotHandler:
@@ -106,12 +109,12 @@ class ScreenshotHandler:
             screenshot_path = self.get_screenshot_path(screenshot_type, scenario_name)
             
             page.screenshot(path=screenshot_path, full_page=full_page)
-            print(f"📸 Screenshot saved: {screenshot_path}")
+            logger.info(f"Screenshot saved: {screenshot_path}")
             
             return screenshot_path
             
         except Exception as e:
-            print(f"⚠️ Failed to capture {screenshot_type} screenshot: {e}")
+            logger.warning(f"Failed to capture {screenshot_type} screenshot: {e}")
             return None
     
     def resolve_screenshot_path(self, screenshot_path: str) -> Optional[Path]:
@@ -155,7 +158,7 @@ class ScreenshotHandler:
             if workspace_path.exists():
                 return workspace_path
         
-        print(f"⚠️ Could not resolve screenshot path: {screenshot_path}")
+        logger.warning(f"Could not resolve screenshot path: {screenshot_path}")
         return None
     
     def get_screenshot_info(self, screenshot_path: str) -> dict:

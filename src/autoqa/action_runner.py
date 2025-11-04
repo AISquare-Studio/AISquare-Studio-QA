@@ -19,6 +19,9 @@ from src.crews.qa_crew import QACrew
 from src.autoqa.parser import AutoQAParser
 from src.autoqa.cross_repo_manager import CrossRepoManager
 from src.autoqa.action_reporter import ActionReporter
+from src.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class ActionRunner:
@@ -62,7 +65,7 @@ class ActionRunner:
     def execute(self) -> Dict[str, Any]:
         """Main execution flow for AutoQA action"""
         try:
-            print(f"🚀 AutoQA Action starting for repository: {self.target_repo}")
+            logger.info(f"AutoQA Action starting for repository: {self.target_repo}")
             
             # Validate required configuration
             if not self.config['openai_api_key']:
@@ -72,13 +75,13 @@ class ActionRunner:
                 })
             
             if not self.config['staging_url']:
-                print("⚠️ Warning: STAGING_URL not provided, using default for testing")
+                logger.warning("STAGING_URL not provided, using default for testing")
                 # Use default staging URL for testing
                 self.config['staging_url'] = 'https://stg-home.aisquare.studio'
             
             # Step 1: Check for AutoQA tag
             if not self.parser.has_autoqa_tag(self.config['pr_body']):
-                print("📋 No AutoQA tag found in PR description")
+                logger.info("No AutoQA tag found in PR description")
                 return self._set_outputs({
                     'test_generated': 'false',
                     'message': 'No AutoQA tag found'
@@ -86,24 +89,24 @@ class ActionRunner:
             
             # Step 2: Parse test steps
             steps = self.parser.parse_test_steps(self.config['pr_body'])
-            print(f"📝 Parsed {len(steps)} test steps from AutoQA description")
+            logger.info(f"Parsed {len(steps)} test steps from AutoQA description")
             
             # Step 3: Generate test using CrewAI
-            print("🤖 Generating test code with CrewAI...")
+            logger.info("Generating test code with CrewAI...")
             generation_result = self._generate_test_code(steps)
             
             if not generation_result['success']:
                 return self._handle_generation_failure(generation_result)
             
             # Step 4: Execute test on staging
-            print("🧪 Executing generated test on staging...")
+            logger.info("Executing generated test on staging...")
             execution_result = self._execute_test(generation_result['code'])
             
             if not execution_result['success']:
                 return self._handle_execution_failure(execution_result)
             
             # Step 5: Commit test to target repository
-            print("💾 Committing generated test to target repository...")
+            logger.info("Committing generated test to target repository...")
             test_file_path = self.cross_repo.commit_test_file(
                 code=generation_result['code'],
                 steps=steps,
@@ -113,11 +116,11 @@ class ActionRunner:
             # Step 6: Run existing tests if requested
             suite_results = {}
             if self.config['run_existing_tests']:
-                print("🏃 Running full test suite...")
+                logger.info("Running full test suite...")
                 suite_results = self._run_test_suite()
             
             # Step 7: Generate PR comment with results
-            print("� Generating PR comment with results...")
+            logger.info("Generating PR comment with results...")
             self.reporter.create_pr_comment(
                 generation_result=generation_result,
                 execution_result=execution_result,
@@ -136,7 +139,7 @@ class ActionRunner:
             })
             
         except Exception as e:
-            print(f"❌ AutoQA Action failed: {str(e)}")
+            logger.error(f"AutoQA Action failed: {str(e)}")
             return self._set_outputs({
                 'test_generated': 'false',
                 'error': str(e)
@@ -244,7 +247,7 @@ class ActionRunner:
     
     def _handle_generation_failure(self, result: Dict[str, Any]) -> Dict[str, Any]:
         """Handle test generation failure"""
-        print(f"❌ Test generation failed: {result.get('error', 'Unknown error')}")
+        logger.error(f"Test generation failed: {result.get('error', 'Unknown error')}")
         return self._set_outputs({
             'test_generated': 'false',
             'error': result.get('error', 'Test generation failed')
@@ -252,24 +255,7 @@ class ActionRunner:
     
     def _handle_execution_failure(self, result: Dict[str, Any]) -> Dict[str, Any]:
         """Handle test execution failure"""
-        print(f"❌ Test execution failed: {result.get('error', 'Unknown error')}")
-        return self._set_outputs({
-            'test_generated': 'false',
-            'error': result.get('error', 'Test execution failed'),
-            'test_results': json.dumps(result)
-        })
-    
-    def _handle_generation_failure(self, result: Dict[str, Any]) -> Dict[str, Any]:
-        """Handle test generation failure"""
-        print(f"❌ Test generation failed: {result.get('error', 'Unknown error')}")
-        return self._set_outputs({
-            'test_generated': 'false',
-            'error': result.get('error', 'Test generation failed')
-        })
-    
-    def _handle_execution_failure(self, result: Dict[str, Any]) -> Dict[str, Any]:
-        """Handle test execution failure"""
-        print(f"❌ Test execution failed: {result.get('error', 'Unknown error')}")
+        logger.error(f"Test execution failed: {result.get('error', 'Unknown error')}")
         return self._set_outputs({
             'test_generated': 'false',
             'error': result.get('error', 'Test execution failed'),
@@ -289,10 +275,10 @@ class ActionRunner:
                     else:
                         f.write(f"{key}={value}\n")
         
-        # Also print for visibility
-        print("📊 Action Outputs:")
+        # Also log for visibility
+        logger.info("Action Outputs:")
         for key, value in outputs.items():
-            print(f"  {key}: {value}")
+            logger.info(f"  {key}: {value}")
         
         return outputs
 
