@@ -172,12 +172,39 @@ class CommentBuilder:
         # Error details if failed
         if not execution_result.get("success", False):
             error = execution_result.get("error", "Unknown error")
+            screenshot_path = execution_result.get("screenshot_path", "")
+            error_screenshot = execution_result.get("error_screenshot_path", "")
+            
             results += f"""
+
+### ❌ Test Execution Failed
 
 **Error Details:**
 ```
 {error}
-```"""
+```
+
+**What happened:**
+- ✅ Test code was generated successfully
+- ❌ Test execution on staging environment failed
+- 📸 Screenshot captured for debugging
+- 🚫 Test file was NOT committed to repository
+
+**Why wasn't the test committed?**
+AutoQA only commits tests that pass successfully. This ensures your test suite remains clean and all tests are verified to work.
+
+**Next Steps:**
+1. 📸 **Review the failure screenshot** in the artifacts section below
+2. 🔍 **Check the error message** - it shows what assertion or step failed
+3. ✏️ **Update the test steps** in your PR description if needed
+4. 🔄 **Push a new commit** or edit the PR description to trigger AutoQA again
+5. ✅ **Once the test passes**, it will be automatically committed
+
+**Need help?**
+- Check if the staging environment is accessible
+- Verify the test steps match actual UI elements
+- Ensure text/selectors in steps are accurate
+- Tag @TahirRabia for assistance"""
 
         return results
 
@@ -189,27 +216,27 @@ class CommentBuilder:
 
         Args:
             test_file_path: Path to generated test file
-            screenshot_sections: Dict with 'success' and 'error' screenshot markdown
+            screenshot_sections: Dict with 'success', 'error', and 'artifacts_header' screenshot markdown
 
         Returns:
             Formatted markdown section
         """
-        artifacts = f"""### 📁 Generated Artifacts
+        artifacts = f"""### 📁 Generated Test File
 - 📄 **Test File:** `{test_file_path}`"""
-
-        # Add link to GitHub Actions artifacts
-        if self.github_run_id and self.target_repo:
-            artifacts_url = (
-                f"https://github.com/{self.target_repo}/actions/runs/{self.github_run_id}"
-            )
-            artifacts += f"\n- 📦 **[View All Artifacts & Screenshots]({artifacts_url})**"
 
         # Add screenshot sections if provided
         if screenshot_sections:
+            # Add artifacts header with link (from action_reporter)
+            if screenshot_sections.get("artifacts_header"):
+                artifacts += f"\n\n{screenshot_sections['artifacts_header']}"
+            
+            # Add success screenshot
             if screenshot_sections.get("success"):
-                artifacts += f"\n\n### 📸 Success Screenshot\n{screenshot_sections['success']}"
+                artifacts += screenshot_sections['success']
+            
+            # Add error screenshot (for failures)
             if screenshot_sections.get("error"):
-                artifacts += f"\n\n### 🚨 Error Screenshot\n{screenshot_sections['error']}"
+                artifacts += screenshot_sections['error']
 
         return artifacts
 

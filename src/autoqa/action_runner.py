@@ -133,47 +133,58 @@ class ActionRunner:
             logger.info("Executing generated test on staging...")
             execution_result = self._execute_test(generation_result["code"])
 
-            if not execution_result["success"]:
-                return self._handle_execution_failure(execution_result)
+            # Step 7: Only commit test file if execution succeeded
+            test_file_path = None
+            if execution_result["success"]:
+                logger.info("✅ Test execution passed - committing to repository...")
+                test_file_path = self.cross_repo.commit_test_file(
+                    code=generation_result["code"],
+                    metadata=metadata,
+                )
+                logger.info(f"Test file committed: {test_file_path}")
+            else:
+                logger.warning("❌ Test execution failed - skipping commit")
+                logger.warning(f"Error: {execution_result.get('error', 'Unknown error')}")
+                test_file_path = self._generate_preview_path(metadata)
 
-            # Step 7: Commit test to target repository
-            logger.info("Committing generated test to target repository...")
-            test_file_path = self.cross_repo.commit_test_file(
-                code=generation_result["code"],
-                metadata=metadata,
-            )
-
-            # Step 8: Run existing tests if requested
+            # Step 8: Run existing tests only if new test passed
             suite_results = {}
-            if self.config["run_existing_tests"]:
+            if execution_result["success"] and self.config["run_existing_tests"]:
                 logger.info("Running full test suite...")
                 suite_results = self._run_test_suite()
+            elif not execution_result["success"]:
+                logger.info("Skipping test suite run (generated test failed)")
 
-            # Step 9: Generate PR comment with results
+            # Step 9: ALWAYS generate PR comment (success or failure)
             logger.info("Generating PR comment with results...")
             self.reporter.create_pr_comment(
                 generation_result=generation_result,
                 execution_result=execution_result,
                 suite_results=suite_results,
-                test_file_path=str(test_file_path),
+                test_file_path=str(test_file_path) if test_file_path else "Not committed (test failed)",
                 metadata=metadata,
             )
 
-            # Step 10: Set outputs and create summary
-            return self._set_outputs(
-                {
-                    "test_generated": "true",
-                    "test_file_path": str(test_file_path),
-                    "test_results": json.dumps(execution_result),
-                    "suite_results": json.dumps(suite_results),
-                    "generation_metadata": json.dumps(metadata),
-                    "screenshot_path": execution_result.get("screenshot_path", ""),
-                    "etag": etag,
-                    "flow_name": metadata.get("flow_name", ""),
-                    "tier": metadata.get("tier", ""),
-                    "area": metadata.get("area", ""),
-                }
-            )
+            # Step 10: Set outputs (success or failure)
+            test_generated = "true" if execution_result["success"] else "false"
+            outputs = {
+                "test_generated": test_generated,
+                "test_file_path": str(test_file_path) if test_file_path else "",
+                "test_results": json.dumps(execution_result),
+                "suite_results": json.dumps(suite_results),
+                "generation_metadata": json.dumps(metadata),
+                "screenshot_path": execution_result.get("screenshot_path", ""),
+                "etag": etag,
+                "flow_name": metadata.get("flow_name", ""),
+                "tier": metadata.get("tier", ""),
+                "area": metadata.get("area", ""),
+            }
+            
+            # Add error field only if test failed
+            if not execution_result["success"]:
+                outputs["error"] = execution_result.get("error", "Test execution failed")
+            
+            return self._set_outputs(outputs)
 
         except Exception as e:
             logger.error(f"AutoQA Action failed: {str(e)}")
@@ -296,22 +307,30 @@ class ActionRunner:
         except Exception as e:
             return {"success": False, "error": f"Test suite execution failed: {str(e)}"}
 
+    def _generate_preview_path(self, metadata: Dict[str, Any]) -> str:
+        """
+        Generate preview path for failed tests (not committed)
+        
+        Args:
+            metadata: AutoQA metadata
+            
+        Returns:
+            Preview path string showing where test would be created
+        """
+        tier = metadata.get("tier", "B")
+        area = metadata.get("area", "general")
+        flow_name = metadata.get("flow_name", "unknown")
+        
+        if area and area != "general":
+            return f"tests/autoqa/{tier}/{area}/test_{flow_name}.py"
+        else:
+            return f"tests/autoqa/{tier}/general/test_{flow_name}.py"
+
     def _handle_generation_failure(self, result: Dict[str, Any]) -> Dict[str, Any]:
         """Handle test generation failure"""
         logger.error(f"Test generation failed: {result.get('error', 'Unknown error')}")
         return self._set_outputs(
             {"test_generated": "false", "error": result.get("error", "Test generation failed")}
-        )
-
-    def _handle_execution_failure(self, result: Dict[str, Any]) -> Dict[str, Any]:
-        """Handle test execution failure"""
-        logger.error(f"Test execution failed: {result.get('error', 'Unknown error')}")
-        return self._set_outputs(
-            {
-                "test_generated": "false",
-                "error": result.get("error", "Test execution failed"),
-                "test_results": json.dumps(result),
-            }
         )
 
     def _set_outputs(self, outputs: Dict[str, str]) -> Dict[str, Any]:

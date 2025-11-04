@@ -116,6 +116,15 @@ class ActionReporter:
             Dict with 'success' and 'error' screenshot markdown sections
         """
         screenshot_sections = {}
+        
+        # Always provide artifact link at the top
+        if self.github_run_id and self.target_repo:
+            artifacts_url = f"https://github.com/{self.target_repo}/actions/runs/{self.github_run_id}"
+            screenshot_sections["artifacts_header"] = (
+                f"\n### 📦 Artifacts\n"
+                f"**[View All Screenshots & Reports]({artifacts_url})** - "
+                f"Available for 14 days\n"
+            )
 
         # Success screenshot
         screenshot_path = execution_result.get("screenshot_path")
@@ -126,25 +135,20 @@ class ActionReporter:
                     str(resolved_path), "Success Screenshot"
                 )
                 if embedded_screenshot:
-                    screenshot_sections["success"] = embedded_screenshot
+                    screenshot_sections["success"] = f"\n### 📸 Success Screenshot\n{embedded_screenshot}\n"
                 else:
-                    # Fallback: provide artifact link
-                    if self.github_run_id and self.target_repo:
-                        artifacts_url = f"https://github.com/{self.target_repo}/actions/runs/{self.github_run_id}"
-                        screenshot_sections["success"] = (
-                            f"*Screenshot available in [GitHub Actions Artifacts]({artifacts_url})*"
-                        )
+                    screenshot_sections["success"] = (
+                        f"\n### 📸 Success Screenshot\n"
+                        f"*Screenshot captured - view in artifacts above*\n"
+                    )
             else:
                 logger.warning(f"Screenshot file not found: {screenshot_path}")
-                if self.github_run_id and self.target_repo:
-                    artifacts_url = (
-                        f"https://github.com/{self.target_repo}/actions/runs/{self.github_run_id}"
-                    )
-                    screenshot_sections["success"] = (
-                        f"*Screenshot available in [GitHub Actions Artifacts]({artifacts_url})*"
-                    )
+                screenshot_sections["success"] = (
+                    f"\n### 📸 Success Screenshot\n"
+                    f"*Screenshot captured - view in artifacts above*\n"
+                )
 
-        # Error screenshot
+        # Error screenshot (for failures)
         error_screenshot = execution_result.get("error_screenshot_path")
         if error_screenshot:
             error_file = self.screenshot_handler.resolve_screenshot_path(error_screenshot)
@@ -153,15 +157,25 @@ class ActionReporter:
                     str(error_file), "Error Screenshot"
                 )
                 if embedded_error:
-                    screenshot_sections["error"] = embedded_error
+                    screenshot_sections["error"] = f"\n### 🚨 Failure Screenshot\n{embedded_error}\n"
                 else:
-                    # Fallback: provide artifact link
-                    if self.github_run_id and self.target_repo:
-                        artifacts_url = f"https://github.com/{self.target_repo}/actions/runs/{self.github_run_id}"
-                        screenshot_sections["error"] = (
-                            "*Error screenshot available in [GitHub Actions"
-                            f" Artifacts]({artifacts_url})*"
-                        )
+                    screenshot_sections["error"] = (
+                        f"\n### 🚨 Failure Screenshot\n"
+                        f"*Screenshot captured at failure - view in artifacts above*\n"
+                    )
+            else:
+                screenshot_sections["error"] = (
+                    f"\n### 🚨 Failure Screenshot\n"
+                    f"*Screenshot captured at failure - view in artifacts above*\n"
+                )
+
+        # If test failed but no specific error screenshot, use main screenshot
+        if not execution_result.get("success", False) and "error" not in screenshot_sections:
+            if screenshot_path and "success" in screenshot_sections:
+                # Rename success screenshot to failure screenshot for failed tests
+                screenshot_sections["error"] = screenshot_sections.pop("success").replace(
+                    "Success Screenshot", "Failure Screenshot"
+                ).replace("📸", "🚨")
 
         return screenshot_sections
 
