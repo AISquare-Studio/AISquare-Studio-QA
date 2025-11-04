@@ -80,94 +80,145 @@ class ActionRunner:
 
             if not self.config["staging_url"]:
                 logger.warning("STAGING_URL not provided, using default for testing")
-                # Use default staging URL for testing
                 self.config["staging_url"] = "https://stg-home.aisquare.studio"
 
             # Step 1: Check for AutoQA tag
             if not self.parser.has_autoqa_tag(self.config["pr_body"]):
-                logger.info("No AutoQA tag found in PR description")
+                logger.info("No AutoQA fenced metadata block found in PR description")
                 return self._set_outputs(
-                    {"test_generated": "false", "message": "No AutoQA tag found"}
+                    {"test_generated": "false", "message": "No AutoQA metadata block found"}
                 )
 
-            # Step 2: Parse test steps
-            steps = self.parser.parse_test_steps(self.config["pr_body"])
-            logger.info(f"Parsed {len(steps)} test steps from AutoQA description")
+            # Step 2: Extract complete AutoQA block (metadata + steps)
+            autoqa_block = self.parser.extract_autoqa_block(self.config["pr_body"])
+            if not autoqa_block:
+                logger.error("Failed to extract AutoQA block from PR body")
+                return self._set_outputs(
+                    {"test_generated": "false", "error": "Failed to parse AutoQA block"}
+                )
+            
+            metadata = autoqa_block["metadata"]
+            steps = autoqa_block["steps"]
+            
+            logger.info(f"Parsed AutoQA block: {self.parser.get_metadata_summary(metadata)}")
+            logger.info(f"Steps: {len(steps)}")
 
-            # Step 3: Generate test using CrewAI
+            # Step 3: Validate metadata
+            is_valid, validation_errors = self.parser.validate_metadata(metadata)
+            if not is_valid:
+                error_message = "Metadata validation failed:\n" + "\n".join(
+                    f"  - {err}" for err in validation_errors
+                )
+                logger.error(error_message)
+                return self._set_outputs(
+                    {"test_generated": "false", "error": error_message}
+                )
+            
+            logger.info("✓ Metadata validation passed")
+
+            # Step 4: Compute ETag for idempotency
+            etag = self.parser.compute_etag(metadata, steps)
+            metadata["etag"] = etag
+            metadata["steps"] = steps  # Include steps in metadata for downstream use
+            logger.info(f"Computed ETag: {etag}")
+
+            # Step 5: Generate test using CrewAI
             logger.info("Generating test code with CrewAI...")
-            generation_result = self._generate_test_code(steps)
+            generation_result = self._generate_test_code(steps, metadata)
 
             if not generation_result["success"]:
                 return self._handle_generation_failure(generation_result)
 
-            # Step 4: Execute test on staging
+            # Step 6: Execute test on staging
             logger.info("Executing generated test on staging...")
             execution_result = self._execute_test(generation_result["code"])
 
             if not execution_result["success"]:
                 return self._handle_execution_failure(execution_result)
 
-            # Step 5: Commit test to target repository
+            # Step 7: Commit test to target repository
             logger.info("Committing generated test to target repository...")
             test_file_path = self.cross_repo.commit_test_file(
                 code=generation_result["code"],
-                steps=steps,
-                metadata=generation_result.get("metadata", {}),
+                metadata=metadata,
             )
 
-            # Step 6: Run existing tests if requested
+            # Step 8: Run existing tests if requested
             suite_results = {}
             if self.config["run_existing_tests"]:
                 logger.info("Running full test suite...")
                 suite_results = self._run_test_suite()
 
-            # Step 7: Generate PR comment with results
+            # Step 9: Generate PR comment with results
             logger.info("Generating PR comment with results...")
             self.reporter.create_pr_comment(
                 generation_result=generation_result,
                 execution_result=execution_result,
                 suite_results=suite_results,
                 test_file_path=str(test_file_path),
+                metadata=metadata,
             )
 
-            # Step 8: Set outputs and create summary
+            # Step 10: Set outputs and create summary
             return self._set_outputs(
                 {
                     "test_generated": "true",
                     "test_file_path": str(test_file_path),
                     "test_results": json.dumps(execution_result),
                     "suite_results": json.dumps(suite_results),
-                    "generation_metadata": json.dumps(generation_result.get("metadata", {})),
+                    "generation_metadata": json.dumps(metadata),
                     "screenshot_path": execution_result.get("screenshot_path", ""),
+                    "etag": etag,
+                    "flow_name": metadata.get("flow_name", ""),
+                    "tier": metadata.get("tier", ""),
+                    "area": metadata.get("area", ""),
                 }
             )
 
         except Exception as e:
             logger.error(f"AutoQA Action failed: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
             return self._set_outputs({"test_generated": "false", "error": str(e)})
 
-    def _generate_test_code(self, steps: List[str]) -> Dict[str, Any]:
-        """Generate test code using CrewAI components"""
+    def _generate_test_code(self, steps: List[str], metadata: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Generate test code using CrewAI components
+        
+        Args:
+            steps: List of test steps
+            metadata: AutoQA metadata with flow_name, tier, area, etag
+            
+        Returns:
+            Generation result dict with code and metadata
+        """
         try:
-            # Convert steps to scenario format
-            scenario = self.parser.steps_to_scenario(steps)
+            # Convert steps to scenario format with metadata
+            scenario = self.parser.steps_to_scenario(steps, metadata)
 
             # Use existing QA crew to generate code
             result = self.qa_crew.run_autoqa_scenario(scenario)
 
+            # Enhance result with full metadata
+            enhanced_metadata = {
+                "flow_name": metadata.get("flow_name", ""),
+                "tier": metadata.get("tier", ""),
+                "area": metadata.get("area", ""),
+                "etag": metadata.get("etag", ""),
+                "steps": steps,
+                "scenario": scenario,
+                "generated_at": self.parser.format_iso8601_timestamp(),
+                "validation_result": result.get("validation_result", ""),
+            }
+
             return {
                 "success": result.get("success", False),
                 "code": result.get("generated_code", ""),
-                "metadata": {
-                    "steps": steps,
-                    "scenario": scenario,
-                    "generated_at": result.get("timestamp", ""),
-                    "validation_result": result.get("validation_result", ""),
-                },
+                "metadata": enhanced_metadata,
             }
 
         except Exception as e:
+            logger.error(f"Test code generation failed: {str(e)}")
             return {"success": False, "error": f"CrewAI generation failed: {str(e)}"}
 
     def _execute_test(self, test_code: str) -> Dict[str, Any]:

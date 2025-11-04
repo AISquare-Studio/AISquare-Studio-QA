@@ -1,5 +1,5 @@
 name: 'AISquare Studio AutoQA'
-description: 'AI-powered test generation and execution using CrewAI + Playwright'
+description: 'AI-powered test generation with metadata-driven organization (flow_name, tier, area) using CrewAI + Playwright'
 author: 'AISquare Studio'
 
 branding:
@@ -46,14 +46,14 @@ inputs:
     default: 'rabia.tahirr@opengrowth.com'
   
   pr-body:
-    description: 'Pull request description to parse for AutoQA steps'
+    description: 'Pull request description to parse for AutoQA metadata block (```autoqa\nflow_name: ...\ntier: ...\n```)'
     required: false
     default: ${{ github.event.pull_request.body }}
   
   test-directory:
-    description: 'Directory to store generated tests'
+    description: 'Base directory for generated tests (will create tests/autoqa/{tier}/{area}/test_{flow_name}.py structure)'
     required: false
-    default: 'tests/generated'
+    default: 'tests/autoqa'
   
   create-pr:
     description: 'Create a pull request instead of pushing directly to main branch'
@@ -66,7 +66,7 @@ outputs:
     value: ${{ steps.autoqa.outputs.test_generated }}
   
   test_file_path:
-    description: 'Path to the generated test file'
+    description: 'Path to the generated test file (e.g., tests/autoqa/A/auth/test_user_login.py)'
     value: ${{ steps.autoqa.outputs.test_file_path }}
   
   test_results:
@@ -74,15 +74,31 @@ outputs:
     value: ${{ steps.autoqa.outputs.test_results }}
   
   generation_metadata:
-    description: 'JSON string of test generation metadata'
+    description: 'JSON string of test generation metadata (includes flow_name, tier, area, etag, steps)'
     value: ${{ steps.autoqa.outputs.generation_metadata }}
   
   screenshot_path:
     description: 'Path to the generated screenshot'
     value: ${{ steps.autoqa.outputs.screenshot_path }}
   
+  etag:
+    description: 'ETag hash for idempotency (SHA256 of metadata + steps)'
+    value: ${{ steps.autoqa.outputs.etag }}
+  
+  flow_name:
+    description: 'Flow name from AutoQA metadata'
+    value: ${{ steps.autoqa.outputs.flow_name }}
+  
+  tier:
+    description: 'Test tier from AutoQA metadata (A, B, or C)'
+    value: ${{ steps.autoqa.outputs.tier }}
+  
+  area:
+    description: 'Test area from AutoQA metadata (optional)'
+    value: ${{ steps.autoqa.outputs.area }}
+  
   error:
-    description: 'Error message if test generation failed'
+    description: 'Error message if test generation or validation failed'
     value: ${{ steps.autoqa.outputs.error }}
 
 runs:

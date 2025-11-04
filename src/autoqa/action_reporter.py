@@ -69,6 +69,7 @@ class ActionReporter:
         execution_result: Dict[str, Any],
         suite_results: Dict[str, Any],
         test_file_path: str,
+        metadata: Dict[str, Any] = None,
     ) -> None:
         """
         Create or update PR comment with AutoQA results
@@ -78,6 +79,7 @@ class ActionReporter:
             execution_result: Test execution results
             suite_results: Full test suite results
             test_file_path: Path to generated test file
+            metadata: AutoQA metadata with flow_name, tier, area, etag
         """
         # Process screenshots
         screenshot_sections = self._process_screenshots(execution_result)
@@ -88,6 +90,7 @@ class ActionReporter:
             execution_result=execution_result,
             suite_results=suite_results,
             test_file_path=test_file_path,
+            metadata=metadata,
             screenshot_sections=screenshot_sections,
         )
 

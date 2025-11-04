@@ -1,21 +1,151 @@
+# AISquare AutoQA Configuration
+# Aligned with autoqa-policy.yml
+
+schema: v1
+generated_files_header: "AutoQA-Generated"   # Required header for files AutoQA may edit
+timestamp_format: "ISO8601_TZ"               # All headers/PR bodies must include timezone
+
+# Metadata configuration
+metadata:
+  # Minimal fields expected inside the fenced `autoqa` block in PRs
+  required: ["flow_name", "tier"]
+  optional: ["area"]
+  tier_values: ["A", "B", "C"]
+  defaults:
+    tier: "B"
+    area: "general"
+  validation:
+    flow_name_max_length: 50
+    area_max_length: 30
+    min_steps: 1
+
+# Quotas and limits
+quotas:
+  # Hard caps per repo to prevent test bloat
+  total_curated: 100
+  per_tier:
+    A: 40
+    B: 40
+    C: 20
+
+# Approvals and CODEOWNERS
+approvals:
+  # GitHub branch protection / CODEOWNERS should enforce Rabia as required reviewer
+  required_reviewers:
+    - "TahirRabia"
+  paths:
+    - "tests/autoqa/**"
+
+# Versioning and branching
+versioning:
+  # Update-in-place strategy per flow
+  branch_pattern: "autoqa/{source_pr}-{flow_name}"
+  control_comment_anchor: "AUTOQA_CONTROL"  # AutoQA patches a single PR comment
+  etag:
+    algo: "sha256"      # Full SHA256 hash
+    no_op_on_match: true   # Skip regeneration if ETag unchanged
+
+# Edit policy
+edit_policy:
+  # Create-only by default. Auto-edits allowed only for AutoQA-owned files.
+  allow_auto_edit_only_if_header: true       # File must contain the header string above
+  allow_if_last_author_is_autoqa: true
+  allow_if_label_present: "autoqa:allow-edit"
+  # Major UI change flow
+  version_bump_creates_v2: true              # Generates …_v2.py and links old file
+  human_paths_protected:
+    - "tests/**/human/**"
+
+# Test lifecycle
+lifecycle:
+  # Simple retire/replace controls
+  retire_label: "autoqa:retire"              # When added on the test PR, AutoQA opens a delete PR
+  retire_meta_action: "retire"               # Optional: action: retire inside the autoqa meta
+  replacement_file_suffix: "_v2.py"
+
+# Regression preview strategy
+regression_preview:
+  # Minimal preview: run essentials, then impacted-by-area; only failed flows go to LLM
+  gate_order: ["essentials", "impacted"]
+  impacted_resolution:
+    by_area: true            # Map PR area to tests/autoqa/{tier}/{area}/…
+  llm_context:
+    include: ["test_file", "last_green_commit", "dom_snapshot", "pr_diff"]
+
+# Context and repo access
+context:
+  # Repo access policy for LLM
+  full_repo_available: true                  # Clone/fetch entire repo during CI
+  mcp_future: true                           # Plan to move to GitHub MCP later
+  research:
+    repoindex_cache: false                   # Off for now; gather feedback before enabling
+
+# CI execution settings
+ci:
+  # Execution targets and parallelism
+  pr_time_budget_minutes: 5                  # Manual enforcement by QA owner (Rabia)
+  workers_max: 4
+  required_checks:
+    - "autoqa/security-ast"
+    - "autoqa/run-validation"
+    - "autoqa/policy-guard"
+
+# Stability and retries
+stability:
+  # Keep it simple: 2 CI retries; reasonable waits; screenshots on failure
+  retries_ci: 2
+  waits:
+    action_ms: 5000
+    navigation_ms: 10000
+    test_timeout_ms: 90000
+  screenshots_on: "failures"
+
+# Artifacts
+artifacts:
+  provider: "github"
+  retention_days: 14
+  include:
+    - "report.html"
+    - "screenshots/*"
+    - "dom_snapshot.json"
+
+# Logging
+logging:
+  # Keep logs safe and minimal
+  safe_logging: true
+  avoid_secret_like_values: true
+  redact_patterns:
+    - "password="
+    - "token="
+    - "Bearer "
+    - "@example.com"
+
+# Security
+security:
+  # Use GitHub Secrets for all environment values used by tests
+  secrets_source: "github_actions_secrets"
+  ast_validation: true
+  restricted_imports: true
+  sandbox_execution: true
+  mask_secrets_in_logs: true
+
+# Labels
+labels:
+  allow_edit: "autoqa:allow-edit"
+  retire: "autoqa:retire"
+  frozen: "autoqa:frozen"
+
+# Naming conventions
+naming:
+  # File & class naming conventions
+  path_pattern: "tests/autoqa/{tier}/{area}/test_{flow_name}.py"
+  class_pattern: "Test{FlowCamel}"
+  function_pattern: "test_{flow_name}"
+
+# Action configuration
 autoqa:
-  # Action configuration
-  trigger_tag: "AutoQA"
-  test_directory: "tests/autoQA"
-  
-  # Naming conventions
-  naming:
-    prefix: "test_autoqa_"
-    use_timestamps: true
-    use_descriptive_names: true
-  
-  # Persistence settings
-  persistence:
-    commit_to_current_branch: true
-    commit_message_template: "AutoQA: Add generated test for {scenario_name}"
-    never_commit_to_main: true
-    auto_cleanup_old_tests: false
-    max_tests_per_repo: 100
+  trigger_tag: "```autoqa"  # Fenced metadata block
+  test_directory: "tests/autoqa"
   
   # Execution settings
   execution:
@@ -30,43 +160,6 @@ autoqa:
     include_screenshots: true
     include_execution_logs: true
     create_github_checks: false
-  
-  # Security
-  security:
-    ast_validation: true
-    restricted_imports: true
-    sandbox_execution: true
-    mask_secrets_in_logs: true
-
-# Scenario type mappings
-scenario_types:
-  login:
-    keywords: ["login", "sign in", "authenticate"]
-    selectors_key: "login_page"
-    default_config:
-      timeout: 30000
-      headless: true
-  
-  signup:
-    keywords: ["signup", "register", "create account"]
-    selectors_key: "signup_page"
-    default_config:
-      timeout: 45000
-      headless: true
-  
-  dashboard:
-    keywords: ["dashboard", "home", "main page"]
-    selectors_key: "dashboard_page"
-    default_config:
-      timeout: 30000
-      headless: true
-  
-  general:
-    keywords: []
-    selectors_key: "login_page"  # Default fallback
-    default_config:
-      timeout: 30000
-      headless: true
 
 # Cross-repository settings
 cross_repo:
@@ -76,19 +169,7 @@ cross_repo:
   
   # Target repository settings
   target:
-    test_directory: "tests/autoQA"
-    init_file_content: |
-      """
-      AutoQA Generated Tests
-      =====================
-      
-      This directory contains tests automatically generated by AISquare Studio AutoQA.
-      
-      Generated tests follow the naming pattern: test_autoqa_*.py
-      Each test includes metadata about its generation source and steps.
-      
-      To regenerate tests, use the AutoQA tag in pull request descriptions.
-      """
+    test_directory: "tests/autoqa"
     
     commit_settings:
       author_name: "AutoQA Bot"

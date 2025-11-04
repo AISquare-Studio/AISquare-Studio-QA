@@ -31,6 +31,7 @@ class CommentBuilder:
         execution_result: Dict[str, Any],
         suite_results: Dict[str, Any],
         test_file_path: str,
+        metadata: Dict[str, Any] = None,
         screenshot_sections: Dict[str, str] = None,
     ) -> str:
         """
@@ -41,21 +42,26 @@ class CommentBuilder:
             execution_result: Test execution results
             suite_results: Full test suite results
             test_file_path: Path to generated test file
+            metadata: AutoQA metadata with flow_name, tier, area, etag
             screenshot_sections: Pre-built screenshot markdown sections
 
         Returns:
             Complete markdown comment body
         """
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC")
+        from datetime import datetime, timezone
+        timestamp = datetime.now(timezone.utc).astimezone().isoformat()
 
         # Determine overall status
         overall_status = "✅ SUCCESS" if execution_result.get("success", False) else "❌ FAILED"
         status_emoji = "✅" if execution_result.get("success", False) else "❌"
 
+        # Extract metadata (from parameter or generation_result)
+        if metadata is None:
+            metadata = generation_result.get("metadata", {})
+
         # Build sections
-        steps_section = self.build_steps_section(
-            generation_result.get("metadata", {}).get("steps", [])
-        )
+        metadata_section = self.build_metadata_section(metadata)
+        steps_section = self.build_steps_section(metadata.get("steps", []))
         results_section = self.build_results_section(execution_result, suite_results)
         artifacts_section = self.build_artifacts_section(test_file_path, screenshot_sections)
 
@@ -66,6 +72,8 @@ class CommentBuilder:
 **Timestamp:** {timestamp}
 **Generated Test:** `{test_file_path}`
 **Environment:** Staging
+
+{metadata_section}
 
 {steps_section}
 
@@ -80,11 +88,37 @@ class CommentBuilder:
 
 ---
 *🤖 This test was automatically generated and executed by AutoQA*
+*For policy details, see: `.github/autoqa-policy.yml`*
 
 <!-- AutoQA-Comment-Marker -->
 """
 
         return comment_body.strip()
+
+    def build_metadata_section(self, metadata: Dict[str, Any]) -> str:
+        """
+        Build the metadata section
+
+        Args:
+            metadata: AutoQA metadata dict
+
+        Returns:
+            Formatted markdown section
+        """
+        flow_name = metadata.get("flow_name", "unknown")
+        tier = metadata.get("tier", "B")
+        area = metadata.get("area", "general")
+        etag = metadata.get("etag", "")
+        
+        # Optionally hide area if it's the default
+        area_line = ""
+        if area and area != "general":
+            area_line = f"\n- **Area:** `{area}`"
+
+        return f"""### 📊 Test Metadata
+- **Flow Name:** `{flow_name}`
+- **Tier:** `{tier}`{area_line}
+- **ETag:** `{etag[:12]}...` (idempotency hash)"""
 
     def build_steps_section(self, steps: List[str]) -> str:
         """
