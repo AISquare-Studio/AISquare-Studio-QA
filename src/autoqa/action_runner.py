@@ -18,7 +18,7 @@ sys.path.insert(0, str(action_path))
 from src.crews.qa_crew import QACrew
 from src.autoqa.parser import AutoQAParser
 from src.autoqa.cross_repo_manager import CrossRepoManager
-from src.autoqa.reporter import ActionReporter
+from src.autoqa.action_reporter import ActionReporter
 
 
 class ActionRunner:

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from src.autoqa.reporter import ActionReporter
+from src.autoqa.action_reporter import ActionReporter
 from src.tools.playwright_executor import create_playwright_executor_tool
 import os
 import json

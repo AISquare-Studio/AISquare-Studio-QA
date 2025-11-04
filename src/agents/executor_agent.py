@@ -7,6 +7,7 @@ import ast
 import tempfile
 import subprocess
 import json
+import os
 from pathlib import Path
 from typing import Dict, Any, Tuple
 from datetime import datetime
@@ -166,85 +167,23 @@ class ExecutorAgent:
                 pass
     
     def _create_test_script(self, code: str, config: Dict[str, Any]) -> str:
-        """Create the complete test script with imports and execution logic."""
-        script = f"""
-import json
-import sys
-import traceback
-from datetime import datetime
-from pathlib import Path
-from playwright.sync_api import sync_playwright
-
-# Import screenshot handler for consistent screenshot management
-import os
-sys.path.insert(0, os.path.join(os.getenv('ACTION_PATH', '.'), 'src'))
-from utils.screenshot_handler import ScreenshotHandler
-
-{code}
-
-def main():
-    start_time = datetime.now()
-    result = {{
-        'success': False,
-        'message': '',
-        'error': '',
-        'execution_time': 0,
-        'timestamp': start_time.isoformat(),
-        'screenshot_path': None
-    }}
-    
-    # Initialize screenshot handler
-    screenshot_handler = ScreenshotHandler()
-    scenario_name = {repr(config.get('scenario_name', 'test'))}
-    
-    try:
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless={config.get('headless', True)})
-            page = browser.new_page()
-            
-            # Set viewport
-            page.set_viewport_size({{"width": 1280, "height": 720}})
-            
-            # Execute the test
-            run_test(page, {repr(config)})
-            
-            # Capture success screenshot
-            screenshot_path = screenshot_handler.capture_screenshot(
-                page, 
-                screenshot_handler.SUCCESS,
-                scenario_name
-            )
-            if screenshot_path:
-                result['screenshot_path'] = screenshot_path
-            
-            browser.close()
-            
-        result['success'] = True
-        result['message'] = 'Test completed successfully'
+        """
+        Create the complete test script with imports and execution logic.
+        Loads template from file and replaces placeholders.
+        """
+        # Load template from file
+        template_path = Path(__file__).parent.parent / 'templates' / 'test_execution_template.py'
         
-    except Exception as e:
-        result['error'] = str(e)
-        result['traceback'] = traceback.format_exc()
+        try:
+            with open(template_path, 'r') as f:
+                template = f.read()
+        except FileNotFoundError:
+            raise RuntimeError(f"Test execution template not found at: {template_path}")
         
-        # Try to capture error screenshot
-        if 'page' in locals() and 'browser' in locals():
-            error_screenshot = screenshot_handler.capture_screenshot(
-                page,
-                screenshot_handler.ERROR,
-                scenario_name
-            )
-            if error_screenshot:
-                result['error_screenshot_path'] = error_screenshot
-    
-    finally:
-        end_time = datetime.now()
-        result['execution_time'] = (end_time - start_time).total_seconds()
-    
-    print(json.dumps(result, indent=2))
-    return result['success']
-
-if __name__ == "__main__":
-    success = main()
-    sys.exit(0 if success else 1)
-"""
+        # Replace placeholders with actual values
+        script = template.replace('{{USER_CODE}}', code)
+        script = script.replace('{{SCENARIO_NAME}}', repr(config.get('scenario_name', 'test')))
+        script = script.replace('{{CONFIG}}', repr(config))
+        script = script.replace('{{HEADLESS}}', str(config.get('headless', True)))
+        
         return script
