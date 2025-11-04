@@ -64,9 +64,15 @@ class ScreenshotEmbedManager:
                 logger.warning(f"Screenshot file not found: {screenshot_path}")
                 return ""
 
-            # Get screenshot metadata
-            screenshot_info = self.screenshot_handler.get_screenshot_info(screenshot_file)
-            file_size_kb = screenshot_info["size"] / 1024
+            # Get screenshot metadata (pass as string, not Path)
+            screenshot_info = self.screenshot_handler.get_screenshot_info(str(screenshot_file))
+
+            # Check if screenshot info was retrieved successfully
+            if not screenshot_info.get("exists", False):
+                logger.warning(f"Could not get screenshot info: {screenshot_path}")
+                return ""
+
+            file_size_kb = screenshot_info["size_kb"]
 
             logger.info(f"Processing screenshot: {screenshot_path} ({file_size_kb:.1f} KB)")
 
@@ -81,7 +87,7 @@ class ScreenshotEmbedManager:
                     return f"![{title}]({screenshot_url})"
 
             # Method 2: Base64 embed for small images
-            if screenshot_info["can_embed"]:
+            if screenshot_info.get("is_embeddable", False):
                 return self.create_base64_embed(image_data, title, file_size_kb)
 
             # Method 3: Artifact link for large images
@@ -174,7 +180,8 @@ class ScreenshotEmbedManager:
         Returns:
             Markdown with artifact details and link
         """
-        file_size_kb = screenshot_info["size"] / 1024
+        file_size_kb = screenshot_info.get("size_kb", 0)
+        timestamp = screenshot_info.get("modified_timestamp", "N/A")
 
         artifacts_url = ""
         if self.github_run_id and self.target_repo:
@@ -188,7 +195,7 @@ class ScreenshotEmbedManager:
 
 **File:** `{screenshot_path}`
 **Size:** {file_size_kb:.1f} KB
-**Timestamp:** {screenshot_info['timestamp']}
+**Timestamp:** {timestamp}
 
 > 🖼️ Screenshot captured during test execution.
 > This screenshot shows the browser state when the test completed.
