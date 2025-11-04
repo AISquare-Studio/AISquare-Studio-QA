@@ -6,6 +6,7 @@ from typing import Dict, Any
 from playwright.sync_api import sync_playwright
 import json
 from pathlib import Path
+from src.utils.screenshot_handler import ScreenshotHandler
 
 
 def create_playwright_executor_tool():
@@ -22,6 +23,10 @@ def create_playwright_executor_tool():
         Returns:
             JSON string with execution results
         """
+        # Initialize screenshot handler
+        screenshot_handler = ScreenshotHandler()
+        scenario_name = config.get('scenario_name', 'test')
+        
         try:
             result = {
                 'success': False,
@@ -57,10 +62,12 @@ def create_playwright_executor_tool():
                     # Call the run_test function
                     exec_globals['run_test'](page, config)
                     
-                    # Take success screenshot
-                    screenshot_path = f"reports/screenshots/success_{config.get('scenario_name', 'test')}_{int(__import__('time').time())}.png"
-                    Path(screenshot_path).parent.mkdir(parents=True, exist_ok=True)
-                    page.screenshot(path=screenshot_path, full_page=True)
+                    # Capture success screenshot
+                    screenshot_path = screenshot_handler.capture_screenshot(
+                        page,
+                        ScreenshotHandler.SUCCESS,
+                        scenario_name
+                    )
                     
                     result.update({
                         'success': True,
@@ -75,15 +82,14 @@ def create_playwright_executor_tool():
                         'message': 'Test assertion failed'
                     })
                     
-                    # Take failure screenshot (page is still available)
-                    try:
-                        error_screenshot = f"reports/screenshots/failure_{config.get('scenario_name', 'test')}_{int(__import__('time').time())}.png"
-                        Path(error_screenshot).parent.mkdir(parents=True, exist_ok=True)
-                        page.screenshot(path=error_screenshot, full_page=True)
-                        result['screenshot_path'] = error_screenshot
-                        print(f"📸 Failure screenshot captured: {error_screenshot}")
-                    except Exception as screenshot_error:
-                        print(f"Warning: Could not take failure screenshot: {screenshot_error}")
+                    # Capture failure screenshot
+                    failure_screenshot = screenshot_handler.capture_screenshot(
+                        page,
+                        ScreenshotHandler.FAILURE,
+                        scenario_name
+                    )
+                    if failure_screenshot:
+                        result['screenshot_path'] = failure_screenshot
                         
                 except Exception as e:
                     result.update({
@@ -92,15 +98,14 @@ def create_playwright_executor_tool():
                         'message': 'Test execution failed'
                     })
                     
-                    # Take error screenshot (page is still available)
-                    try:
-                        error_screenshot = f"reports/screenshots/error_{config.get('scenario_name', 'test')}_{int(__import__('time').time())}.png"
-                        Path(error_screenshot).parent.mkdir(parents=True, exist_ok=True)
-                        page.screenshot(path=error_screenshot, full_page=True)
+                    # Capture error screenshot
+                    error_screenshot = screenshot_handler.capture_screenshot(
+                        page,
+                        ScreenshotHandler.ERROR,
+                        scenario_name
+                    )
+                    if error_screenshot:
                         result['screenshot_path'] = error_screenshot
-                        print(f"📸 Error screenshot captured: {error_screenshot}")
-                    except Exception as screenshot_error:
-                        print(f"Warning: Could not take error screenshot: {screenshot_error}")
                 
                 # Close browser after all screenshots are taken
                 browser.close()

@@ -10,6 +10,7 @@ import requests
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 from pathlib import Path
+from src.utils.screenshot_handler import ScreenshotHandler
 
 
 class ActionReporter:
@@ -22,6 +23,8 @@ class ActionReporter:
         self.github_workspace = Path(os.getenv('GITHUB_WORKSPACE', '.'))
         self.github_run_id = os.getenv('GITHUB_RUN_ID')
         self.github_run_number = os.getenv('GITHUB_RUN_NUMBER')
+        # Initialize screenshot handler for path resolution
+        self.screenshot_handler = ScreenshotHandler()
     
     def _extract_pr_number(self) -> str:
         """Extract PR number from GitHub event"""
@@ -193,51 +196,32 @@ class ActionReporter:
         return artifacts
     
     def _resolve_screenshot_path(self, screenshot_path: str) -> Optional[Path]:
-        """Resolve screenshot path to absolute path, checking multiple locations"""
-        if not screenshot_path:
-            return None
-        
-        # Convert to Path object
-        path = Path(screenshot_path)
-        
-        # If absolute path exists, use it
-        if path.is_absolute() and path.exists():
-            return path
-        
-        # Try relative to current directory
-        if path.exists():
-            return path
-        
-        # Try relative to GitHub workspace
-        workspace_path = self.github_workspace / path
-        if workspace_path.exists():
-            return workspace_path
-        
-        # Try in action path (for screenshots created by the action)
-        action_path = Path(os.getenv('ACTION_PATH', '.'))
-        action_screenshot = action_path / path
-        if action_screenshot.exists():
-            return action_screenshot
-        
-        print(f"⚠️ Could not resolve screenshot path: {screenshot_path}")
-        return None
+        """
+        Resolve screenshot path to absolute path, checking multiple locations.
+        Delegates to ScreenshotHandler for consistent path resolution.
+        """
+        return self.screenshot_handler.resolve_screenshot_path(screenshot_path)
     
     def _upload_and_embed_screenshot(self, screenshot_path: str, title: str) -> str:
-        """Upload screenshot to GitHub and return markdown to embed it"""
+        """
+        Upload screenshot to GitHub and return markdown to embed it.
+        Uses ScreenshotHandler for screenshot metadata.
+        """
         try:
             screenshot_file = Path(screenshot_path)
             if not screenshot_file.exists():
                 print(f"⚠️ Screenshot file not found: {screenshot_path}")
                 return ""
             
-            # Read and encode the screenshot
-            with open(screenshot_file, 'rb') as f:
-                image_data = f.read()
-            
-            file_size = len(image_data)
-            file_size_kb = file_size / 1024
+            # Get screenshot info from handler
+            screenshot_info = self.screenshot_handler.get_screenshot_info(screenshot_file)
+            file_size_kb = screenshot_info['size'] / 1024
             
             print(f"📸 Processing screenshot: {screenshot_path} ({file_size_kb:.1f} KB)")
+            
+            # Read screenshot data
+            with open(screenshot_file, 'rb') as f:
+                image_data = f.read()
             
             # Method 1: Try uploading to GitHub repository
             if self.github_token and self.target_repo:
@@ -249,21 +233,20 @@ class ActionReporter:
                     return f"![{title}]({screenshot_url})"
             
             # Method 2: Try base64 data URL for small images
-            if file_size < 100000:  # 100KB limit for data URLs
+            if screenshot_info['can_embed']:
                 import base64
                 encoded_image = base64.b64encode(image_data).decode('utf-8')
                 print(f"✅ Embedding screenshot as base64 data URL ({file_size_kb:.1f} KB)")
                 return f"![{title}](data:image/png;base64,{encoded_image})"
             
             # Method 3: Create a detailed summary for large images
-            timestamp = datetime.fromtimestamp(screenshot_file.stat().st_mtime).strftime('%Y-%m-%d %H:%M:%S')
             return f"""
 <details>
 <summary>📸 {title} ({file_size_kb:.1f} KB) - Click to view details</summary>
 
 **File:** `{screenshot_path}`  
 **Size:** {file_size_kb:.1f} KB  
-**Timestamp:** {timestamp}
+**Timestamp:** {screenshot_info['timestamp']}
 
 > 🖼️ Screenshot captured during test execution.  
 > This screenshot shows the browser state when the test completed.  
@@ -445,39 +428,3 @@ class ActionReporter:
     def report_notice(self, notice_message: str) -> None:
         """Report notice with GitHub Actions formatting"""
         print(f"::notice::{notice_message}")
-
-
-# Testing
-if __name__ == "__main__":
-    reporter = ActionReporter()
-    
-    # Mock test data
-    generation_result = {
-        'success': True,
-        'metadata': {
-            'steps': [
-                "Navigate to login page",
-                "Enter valid credentials",
-                "Click login button",
-                "Verify dashboard appears"
-            ]
-        }
-    }
-    
-    execution_result = {
-        'success': True,
-        'execution_time': 15.5,
-        'screenshot_path': 'reports/screenshots/test_success.png'
-    }
-    
-    suite_results = {
-        'total_tests': 5,
-        'passed': 5,
-        'failed': 0,
-        'execution_time': 45.2
-    }
-    
-    test_file_path = "tests/autoQA/test_autoqa_login_20250821_1430.py"
-    
-    print("Testing ActionReporter...")
-    reporter.create_pr_comment(generation_result, execution_result, suite_results, test_file_path)

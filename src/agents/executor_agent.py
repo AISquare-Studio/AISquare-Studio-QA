@@ -175,6 +175,11 @@ from datetime import datetime
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 
+# Import screenshot handler for consistent screenshot management
+import os
+sys.path.insert(0, os.path.join(os.getenv('ACTION_PATH', '.'), 'src'))
+from utils.screenshot_handler import ScreenshotHandler
+
 {code}
 
 def main():
@@ -188,6 +193,10 @@ def main():
         'screenshot_path': None
     }}
     
+    # Initialize screenshot handler
+    screenshot_handler = ScreenshotHandler()
+    scenario_name = {repr(config.get('scenario_name', 'test'))}
+    
     try:
         with sync_playwright() as p:
             browser = p.chromium.launch(headless={config.get('headless', True)})
@@ -199,23 +208,14 @@ def main():
             # Execute the test
             run_test(page, {repr(config)})
             
-            # Take screenshot on completion
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            
-            # Use action path if available, otherwise use relative path
-            import os
-            action_path = os.getenv('ACTION_PATH', '.')
-            screenshot_path = os.path.join(action_path, f"reports/screenshots/test_completion_{{timestamp}}.png")
-            
-            # Ensure directory exists
-            Path(screenshot_path).parent.mkdir(parents=True, exist_ok=True)
-            
-            try:
-                page.screenshot(path=screenshot_path, full_page=True)
+            # Capture success screenshot
+            screenshot_path = screenshot_handler.capture_screenshot(
+                page, 
+                screenshot_handler.SUCCESS,
+                scenario_name
+            )
+            if screenshot_path:
                 result['screenshot_path'] = screenshot_path
-                print(f"Screenshot saved to: {{screenshot_path}}")
-            except Exception as screenshot_error:
-                print(f"Warning: Could not take completion screenshot: {{screenshot_error}}")
             
             browser.close()
             
@@ -226,24 +226,15 @@ def main():
         result['error'] = str(e)
         result['traceback'] = traceback.format_exc()
         
-        # Try to take error screenshot
-        try:
-            if 'page' in locals() and 'browser' in locals():
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                
-                # Use action path if available, otherwise use relative path
-                import os
-                action_path = os.getenv('ACTION_PATH', '.')
-                error_screenshot = os.path.join(action_path, f"reports/screenshots/test_error_{{timestamp}}.png")
-                
-                # Ensure directory exists
-                Path(error_screenshot).parent.mkdir(parents=True, exist_ok=True)
-                
-                page.screenshot(path=error_screenshot, full_page=True)
+        # Try to capture error screenshot
+        if 'page' in locals() and 'browser' in locals():
+            error_screenshot = screenshot_handler.capture_screenshot(
+                page,
+                screenshot_handler.ERROR,
+                scenario_name
+            )
+            if error_screenshot:
                 result['error_screenshot_path'] = error_screenshot
-                print(f"Error screenshot saved to: {{error_screenshot}}")
-        except Exception as screenshot_error:
-            print(f"Warning: Could not take error screenshot: {{screenshot_error}}")
     
     finally:
         end_time = datetime.now()
