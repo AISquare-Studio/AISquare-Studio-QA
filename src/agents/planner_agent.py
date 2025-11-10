@@ -10,7 +10,7 @@ from crewai import Agent
 class PlannerAgent:
     """Agent responsible for generating Playwright test code from test scenarios."""
 
-    def __init__(self):
+    def __init__(self, llm=None):
         self.agent = Agent(
             role="QA Test Code Planner",
             goal="Generate robust and reliable Playwright Python code for automated testing",
@@ -20,6 +20,7 @@ class PlannerAgent:
             waits, error handling, and assertions in your generated code.""",
             verbose=True,
             allow_delegation=False,
+            llm=llm,  # Pass the configured LLM
         )
 
     def get_system_prompt(self) -> str:

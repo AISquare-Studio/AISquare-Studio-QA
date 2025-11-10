@@ -22,9 +22,20 @@ logger = get_logger(__name__)
 class QACrew:
     """Main crew that orchestrates test planning and execution."""
 
-    def __init__(self):
-        self.planner_agent_wrapper = PlannerAgent()
-        self.executor_agent_wrapper = ExecutorAgent()
+    def __init__(self, model_name=None):
+        # Configure LLM - use gpt-4.1 by default or from environment
+        from crewai import LLM
+        model = model_name or os.getenv("OPENAI_MODEL_NAME", "openai/gpt-4.1")
+        
+        llm = LLM(
+            model=model,
+            timeout=300,  # 5 minutes
+            max_retries=3,
+        )
+        
+        # Initialize agent wrappers with configured LLM
+        self.planner_agent_wrapper = PlannerAgent(llm=llm)
+        self.executor_agent_wrapper = ExecutorAgent(llm=llm)
         self.playwright_executor = create_playwright_executor_tool()
 
         # Initialize the actual CrewAI agents

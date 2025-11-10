@@ -15,7 +15,7 @@ from crewai import Agent
 class ExecutorAgent:
     """Agent responsible for safely executing generated Playwright test code."""
 
-    def __init__(self):
+    def __init__(self, llm=None):
         self.agent = Agent(
             role="Test Execution Specialist",
             goal="Safely execute Playwright test code and provide detailed results",
@@ -24,6 +24,7 @@ class ExecutorAgent:
             and provide comprehensive feedback on test results including screenshots and logs.""",
             verbose=True,
             allow_delegation=False,
+            llm=llm,  # Pass the configured LLM
         )
 
     def validate_code_safety(self, code: str) -> Tuple[bool, str]:  # noqa: C901

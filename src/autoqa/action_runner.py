@@ -35,7 +35,11 @@ class ActionRunner:
 
         # Initialize components
         self.parser = AutoQAParser()
-        self.qa_crew = QACrew()
+        
+        # Get model configuration from environment (defaults to gpt-4.1)
+        model_name = os.getenv("OPENAI_MODEL_NAME", "openai/gpt-4.1")
+        self.qa_crew = QACrew(model_name=model_name)
+        
         self.cross_repo = CrossRepoManager(
             target_workspace=self.target_workspace, action_path=self.action_path
         )
