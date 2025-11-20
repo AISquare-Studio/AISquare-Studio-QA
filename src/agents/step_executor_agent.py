@@ -90,38 +90,45 @@ class StepExecutorAgent:
                 previous_code=previous_code_context,  # New: pass formatted code
             )
 
+            # Create the task
+            code_generation_task = Task(
+                description=prompt,
+                expected_output="Single Python statement or block for this step only",
+                agent=self.agent,
+            )
+            
             # Use persistent crew if provided, otherwise create temporary one
             if crew is not None:
-                # Create task for persistent crew (benefits from memory)
-                code_generation_task = Task(
-                    description=prompt,
-                    expected_output="Single Python statement or block for this step only",
-                    agent=self.agent,
-                )
-                
-                # Execute on persistent crew
-                generated_code = crew.kickoff_for_each([code_generation_task])
+                # Update persistent crew's tasks and execute
+                crew.tasks = [code_generation_task]
+                result = crew.kickoff()
+                generated_code = result.raw if hasattr(result, 'raw') else str(result)
             else:
                 # Fallback: create temporary crew (for backward compatibility)
-                code_generation_task = Task(
-                    description=prompt,
-                    expected_output="Single Python statement or block for this step only",
-                    agent=self.agent,
+                temp_crew = Crew(
+                    agents=[self.agent], 
+                    tasks=[code_generation_task], 
+                    verbose=False
                 )
-                
-                temp_crew = Crew(agents=[self.agent], tasks=[code_generation_task], verbose=False)
-                generated_code = temp_crew.kickoff()
+                result = temp_crew.kickoff()
+                generated_code = result.raw if hasattr(result, 'raw') else str(result)
 
             # Clean the code
             cleaned_code = self._clean_generated_code(str(generated_code))
+            
+            # Validate the cleaned code
+            if not cleaned_code or len(cleaned_code.strip()) == 0:
+                logger.warning(f"Empty code generated for step {step_number}, using fallback")
+                # Provide a basic fallback based on step description
+                cleaned_code = self._generate_fallback_code(step_description, config)
 
             logger.info(f"Generated code for step {step_number}:\n{cleaned_code}")
             return cleaned_code
 
         except Exception as e:
             logger.error(f"Failed to generate code for step {step_number}: {str(e)}")
-            # Return a simple comment as fallback
-            return f"# Error generating step {step_number}: {str(e)}"
+            # Return a fallback based on step description
+            return self._generate_fallback_code(step_description, config)
 
     def execute_step(
         self,
@@ -160,6 +167,9 @@ class StepExecutorAgent:
                 "config": config,
                 "TimeoutError": PlaywrightTimeoutError,
             }
+
+            # Log the code being executed for debugging
+            logger.debug(f"Executing code:\n{step_code}")
 
             # Execute the step code
             exec(step_code, exec_namespace)
@@ -289,14 +299,16 @@ RULES FOR THIS STEP:
 12. Add a wait_for_timeout(1000) after actions that trigger changes
 
 IMPORTANT:
-- Return ONLY executable Python code (no markdown, no explanations)
+- Return ONLY executable Python code (no markdown, no explanations, no comments about what you're doing)
 - Code should be 1-5 lines maximum for this single step
 - Do NOT include function definitions or imports
 - Do NOT repeat previous steps
+- Do NOT add indentation (code will be indented automatically when assembled)
 - Build on the context established by previous steps
+- Write code as if you're inside a function body (page and config variables are available)
 
 Example patterns (use similar style to previous steps if applicable):
-- Navigation: page.goto(config['login_url'])
+- Navigation: page.goto(config['base_url'] + '/signup')
               page.wait_for_load_state('networkidle')
 - Click: page.click("button[data-testid='submit']")
          page.wait_for_timeout(1000)
@@ -325,9 +337,54 @@ Generate code for: {step_description}
         # Remove common explanatory phrases that might sneak in
         code_lines = []
         for line in code.split("\n"):
-            line = line.strip()
-            # Skip empty lines and comments that are explanations
-            if line and not line.startswith("# Here") and not line.startswith("# This"):
-                code_lines.append(line)
+            # Don't strip the line initially to preserve intentional indentation
+            stripped = line.strip()
+            # Skip empty lines and explanation comments
+            if stripped and not stripped.startswith("# Here") and not stripped.startswith("# This"):
+                # Remove any leading indentation that might cause issues
+                code_lines.append(stripped)
 
-        return "\n".join(code_lines)
+        result = "\n".join(code_lines)
+        
+        # Additional safety: remove any function definitions that shouldn't be there
+        if result.startswith("def "):
+            # Extract just the body if a function was mistakenly generated
+            lines = result.split("\n")
+            result = "\n".join(line for line in lines if not line.startswith("def ") and line.strip())
+        
+        return result.strip()
+
+    def _generate_fallback_code(self, step_description: str, config: Dict[str, Any]) -> str:
+        """
+        Generate basic fallback code when LLM generation fails.
+        
+        Args:
+            step_description: The step description
+            config: Test configuration
+            
+        Returns:
+            Basic executable code
+        """
+        step_lower = step_description.lower()
+        
+        # Handle navigation steps
+        if "navigate" in step_lower or "go to" in step_lower or "visit" in step_lower:
+            # Extract path if present
+            if '"/signup"' in step_description or "'/signup'" in step_description:
+                return 'page.goto(config.get("base_url", "") + "/signup")\npage.wait_for_load_state("networkidle")'
+            elif '"/login"' in step_description or "'/login'" in step_description:
+                return 'page.goto(config.get("base_url", "") + "/login")\npage.wait_for_load_state("networkidle")'
+            else:
+                # Generic navigation
+                return 'page.goto(config.get("base_url", ""))\npage.wait_for_load_state("networkidle")'
+        
+        # Handle click actions
+        elif "click" in step_lower:
+            return 'page.wait_for_timeout(1000)  # Wait for elements to be ready'
+        
+        # Handle fill/input actions  
+        elif "fill" in step_lower or "enter" in step_lower or "type" in step_lower:
+            return 'page.wait_for_timeout(1000)  # Wait for form to be ready'
+        
+        # Default: just wait
+        return 'page.wait_for_timeout(1000)  # Waiting for page state'

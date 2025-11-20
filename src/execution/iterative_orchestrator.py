@@ -79,15 +79,9 @@ class IterativeTestOrchestrator:
 
         overall_start = time.time()
         
-        # Reset crew memory and accumulated code for new test
-        if hasattr(self.crew, 'memory') and self.crew.memory:
-            try:
-                self.crew.memory.reset()
-                logger.info("Crew memory reset for new test")
-            except Exception as e:
-                logger.warning(f"Could not reset crew memory: {str(e)}")
-        
-        self.accumulated_code = []  # Clear accumulated code
+        # Clear accumulated code for new test
+        self.accumulated_code = []
+        logger.info("Starting fresh execution - memory will accumulate naturally")
         
         with sync_playwright() as playwright:
             # Launch browser
