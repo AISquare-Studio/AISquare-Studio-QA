@@ -6,6 +6,7 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from crewai import Crew
 from playwright.sync_api import sync_playwright
 
 from src.agents.step_executor_agent import StepExecutorAgent
@@ -36,10 +37,23 @@ class IterativeTestOrchestrator:
             max_retries: Maximum retry attempts per step
             screenshot_dir: Directory to save screenshots
         """
+        self.llm = llm
         self.step_executor = StepExecutorAgent(llm=llm)
         self.retry_handler = RetryHandler(max_retries=max_retries)
         self.screenshot_dir = screenshot_dir or Path("reports/screenshots")
         self.screenshot_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Initialize persistent Crew with memory enabled
+        self.crew = Crew(
+            agents=[self.step_executor.agent],
+            tasks=[],  # Start empty, add tasks dynamically
+            memory=True,  # Enable built-in memory
+            verbose=False,  # Reduce console spam
+            process="sequential"
+        )
+        
+        # Track accumulated code for explicit context passing
+        self.accumulated_code = []
 
     def run_active_execution(
         self,
@@ -64,6 +78,16 @@ class IterativeTestOrchestrator:
         logger.info("=" * 60)
 
         overall_start = time.time()
+        
+        # Reset crew memory and accumulated code for new test
+        if hasattr(self.crew, 'memory') and self.crew.memory:
+            try:
+                self.crew.memory.reset()
+                logger.info("Crew memory reset for new test")
+            except Exception as e:
+                logger.warning(f"Could not reset crew memory: {str(e)}")
+        
+        self.accumulated_code = []  # Clear accumulated code
         
         with sync_playwright() as playwright:
             # Launch browser
@@ -113,6 +137,7 @@ class IterativeTestOrchestrator:
                     page=page,
                     exec_context=exec_context,
                     config=config,
+                    accumulated_code=self.accumulated_code,  # Pass accumulated code
                 )
 
                 # Record result
@@ -128,6 +153,15 @@ class IterativeTestOrchestrator:
 
                 # Add to generated steps
                 generated_steps.append(step_result)
+                
+                # Add to accumulated code on success
+                if step_result["success"]:
+                    self.accumulated_code.append({
+                        'step_number': i,
+                        'description': step_description,
+                        'code': step_result['code'],
+                        'url_after': page.url
+                    })
 
                 # Add code to final test (with proper indentation)
                 if step_result["success"]:
@@ -208,6 +242,7 @@ class IterativeTestOrchestrator:
         page: Any,
         exec_context: ExecutionContext,
         config: Dict[str, Any],
+        accumulated_code: List[Dict] = None,  # New parameter
     ) -> Dict[str, Any]:
         """
         Execute a single step with retry logic.
@@ -218,6 +253,7 @@ class IterativeTestOrchestrator:
             page: Playwright page
             exec_context: Execution context
             config: Test config
+            accumulated_code: Previously generated code
 
         Returns:
             Step execution result
@@ -237,6 +273,8 @@ class IterativeTestOrchestrator:
                         page=page,
                         context=exec_context,
                         config=config,
+                        accumulated_code=accumulated_code or [],  # Pass accumulated code
+                        crew=self.crew,  # Pass persistent crew
                     )
                 else:
                     # Retry - analyze failure and modify
@@ -305,4 +343,13 @@ class IterativeTestOrchestrator:
     def reset(self):
         """Reset orchestrator state for new execution."""
         self.retry_handler.reset()
+        self.accumulated_code = []
+        
+        # Reset crew memory
+        if hasattr(self.crew, 'memory') and self.crew.memory:
+            try:
+                self.crew.memory.reset()
+            except Exception as e:
+                logger.warning(f"Could not reset crew memory: {str(e)}")
+        
         logger.info("Orchestrator reset")
