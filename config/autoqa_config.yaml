@@ -153,6 +153,25 @@ autoqa:
     retry_count: 2
     timeout_per_test: 300
     staging_only: true
+    
+    # Active execution mode (NEW)
+    use_active_execution: true  # Enable iterative step-by-step execution
+    active_execution:
+      max_retries_per_step: 2
+      step_timeout_ms: 30000
+      slow_mo_ms: 500  # Slow down browser for observation
+      record_video: false
+      selector_priority:
+        - "data-testid"
+        - "data-test"
+        - "id"
+        - "name"
+        - "aria-label"
+        - "placeholder"
+        - "type"
+        - "class"
+        - "text"
+      failure_mode: "stop_on_error"  # Options: stop_on_error, continue_on_error, partial_commit
   
   # Reporting
   reporting:

@@ -64,6 +64,10 @@ class ActionRunner:
             "pr_body": os.getenv("PR_BODY", ""),
             "test_directory": os.getenv("TEST_DIRECTORY", "tests/generated"),
             "run_existing_tests": True,  # Always run existing tests
+            # Active execution settings
+            "use_active_execution": os.getenv("USE_ACTIVE_EXECUTION", "true").lower() == "true",
+            "max_retries": int(os.getenv("MAX_RETRIES", "2")),
+            "headless": os.getenv("HEADLESS_MODE", "true").lower() == "true",
         }
 
         return config
@@ -133,9 +137,28 @@ class ActionRunner:
             if not generation_result["success"]:
                 return self._handle_generation_failure(generation_result)
 
-            # Step 6: Execute test on staging
-            logger.info("Executing generated test on staging...")
-            execution_result = self._execute_test(generation_result["code"])
+            # Step 6: Execute test on staging (if not already executed by active mode)
+            if generation_result.get("metadata", {}).get("execution_mode") == "active_iterative":
+                # Active execution already ran the test - use those results
+                logger.info("Using execution results from active iterative execution...")
+                execution_result = generation_result.get("execution_result", {})
+                
+                # Convert execution_result format to match expected format
+                execution_result = {
+                    "success": execution_result.get("success", False),
+                    "execution_time": execution_result.get("total_execution_time", 0),
+                    "screenshot_path": execution_result.get("final_screenshot"),
+                    "completed_steps": execution_result.get("completed_steps", 0),
+                    "failed_steps": execution_result.get("failed_steps", 0),
+                    "retry_summary": execution_result.get("retry_summary", {}),
+                    "error": generation_result.get("execution_result", {}).get(
+                        "step_details", [{}]
+                    )[-1].get("error") if not execution_result.get("success") else None,
+                }
+            else:
+                # Legacy mode - execute the generated test
+                logger.info("Executing generated test on staging (legacy mode)...")
+                execution_result = self._execute_test(generation_result["code"])
 
             # Step 7: Only commit test file if execution succeeded
             test_file_path = None
@@ -211,29 +234,80 @@ class ActionRunner:
             # Convert steps to scenario format with metadata
             scenario = self.parser.steps_to_scenario(steps, metadata)
 
-            # Use existing QA crew to generate code
-            result = self.qa_crew.run_autoqa_scenario(scenario)
+            # Check if active execution is enabled
+            if self.config.get("use_active_execution", True):
+                logger.info("Using ACTIVE ITERATIVE EXECUTION mode")
+                
+                # Create test configuration for active execution
+                base_url = self.config.get("staging_url", "https://stg-home.aisquare.studio").rstrip("/")
+                test_config = {
+                    "base_url": base_url,
+                    "login_url": f"{base_url}/login",
+                    "email": self.config.get("staging_email", "test@example.com"),
+                    "password": self.config.get("staging_password", "password123"),
+                    "headless": self.config.get("headless", True),
+                    "timeout": 30000,
+                    "max_retries": self.config.get("max_retries", 2),
+                }
+                
+                # Use active execution
+                result = self.qa_crew.run_active_autoqa_scenario(scenario, test_config)
+                
+                if not result.get("success"):
+                    return {
+                        "success": False,
+                        "error": result.get("error", "Active execution failed"),
+                    }
+                
+                # Enhance result with metadata
+                enhanced_metadata = {
+                    "flow_name": metadata.get("flow_name", ""),
+                    "tier": metadata.get("tier", ""),
+                    "area": metadata.get("area", ""),
+                    "etag": metadata.get("etag", ""),
+                    "steps": steps,
+                    "scenario": scenario,
+                    "generated_at": self.parser.format_iso8601_timestamp(),
+                    "execution_mode": "active_iterative",
+                    "execution_summary": result.get("execution_summary", {}),
+                    "retry_summary": result.get("retry_summary", {}),
+                }
+                
+                return {
+                    "success": True,
+                    "code": result.get("generated_code", ""),
+                    "metadata": enhanced_metadata,
+                    "execution_result": result,  # Include full execution result
+                }
+                
+            else:
+                # Use existing single-pass generation (legacy mode)
+                logger.info("Using LEGACY single-pass generation mode")
+                result = self.qa_crew.run_autoqa_scenario(scenario)
 
-            # Enhance result with full metadata
-            enhanced_metadata = {
-                "flow_name": metadata.get("flow_name", ""),
-                "tier": metadata.get("tier", ""),
-                "area": metadata.get("area", ""),
-                "etag": metadata.get("etag", ""),
-                "steps": steps,
-                "scenario": scenario,
-                "generated_at": self.parser.format_iso8601_timestamp(),
-                "validation_result": result.get("validation_result", ""),
-            }
+                # Enhance result with full metadata
+                enhanced_metadata = {
+                    "flow_name": metadata.get("flow_name", ""),
+                    "tier": metadata.get("tier", ""),
+                    "area": metadata.get("area", ""),
+                    "etag": metadata.get("etag", ""),
+                    "steps": steps,
+                    "scenario": scenario,
+                    "generated_at": self.parser.format_iso8601_timestamp(),
+                    "validation_result": result.get("validation_result", ""),
+                    "execution_mode": "legacy",
+                }
 
-            return {
-                "success": result.get("success", False),
-                "code": result.get("generated_code", ""),
-                "metadata": enhanced_metadata,
-            }
+                return {
+                    "success": result.get("success", False),
+                    "code": result.get("generated_code", ""),
+                    "metadata": enhanced_metadata,
+                }
 
         except Exception as e:
             logger.error(f"Test code generation failed: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
             return {"success": False, "error": f"CrewAI generation failed: {str(e)}"}
 
     def _execute_test(self, test_code: str) -> Dict[str, Any]:

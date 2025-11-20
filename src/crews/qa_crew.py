@@ -13,6 +13,7 @@ from crewai import Crew, Task
 
 from src.agents.executor_agent import ExecutorAgent
 from src.agents.planner_agent import PlannerAgent
+from src.execution.iterative_orchestrator import IterativeTestOrchestrator
 from src.tools.playwright_executor import create_playwright_executor_tool
 from src.utils.logger import get_logger
 
@@ -37,6 +38,9 @@ class QACrew:
         self.planner_agent_wrapper = PlannerAgent(llm=llm)
         self.executor_agent_wrapper = ExecutorAgent(llm=llm)
         self.playwright_executor = create_playwright_executor_tool()
+        
+        # Initialize iterative orchestrator for active execution
+        self.iterative_orchestrator = IterativeTestOrchestrator(llm=llm)
 
         # Initialize the actual CrewAI agents
         self.planner_agent = self.planner_agent_wrapper.agent
@@ -269,6 +273,65 @@ class QACrew:
         except Exception as e:
             logger.error(f"AutoQA scenario failed: {str(e)}")
             return {"success": False, "error": str(e), "scenario": scenario}
+
+    def run_active_autoqa_scenario(
+        self, 
+        scenario: Dict[str, Any], 
+        config: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Run AutoQA scenario with active iterative execution.
+        
+        This method uses the new IterativeTestOrchestrator to execute steps
+        one at a time with real-time context awareness, selector discovery,
+        and automatic retry logic.
+        
+        Args:
+            scenario: Test scenario with steps
+            config: Test configuration including URLs and credentials
+            
+        Returns:
+            Execution result with generated code and execution details
+        """
+        logger.info(f"Running ACTIVE AutoQA scenario: {scenario.get('name', 'Unknown')}")
+        logger.info("Using iterative execution with real-time context")
+
+        try:
+            # Extract steps from scenario
+            steps = scenario.get("steps", [])
+            
+            if not steps:
+                return {
+                    "success": False,
+                    "error": "No steps provided in scenario",
+                }
+
+            # Run active execution
+            result = self.iterative_orchestrator.run_active_execution(
+                steps=steps,
+                config=config,
+                scenario=scenario,
+            )
+
+            # Enhance result with scenario metadata
+            result["scenario"] = scenario
+            result["config"] = config
+            result["timestamp"] = datetime.now().isoformat()
+            result["execution_mode"] = "active_iterative"
+
+            return result
+
+        except Exception as e:
+            logger.error(f"Active AutoQA execution failed: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
+            
+            return {
+                "success": False,
+                "error": str(e),
+                "scenario": scenario,
+                "execution_mode": "active_iterative",
+            }
 
     def execute_generated_test(self, test_code: str, test_config: Dict[str, Any]) -> Dict[str, Any]:
         """Execute generated test code with configuration."""

@@ -1,4 +1,20 @@
-# AISquare Studio 🚀 Quick Start
+# AISquare Studio AutoQA 🚀
+
+**AI-Powered Test Generation with Active Execution**
+
+> 🆕 **New Feature**: Active Execution Mode - Iterative step-by-step test generation with real-time context awareness and automatic retry logic. [Learn more →](docs/ACTIVE_EXECUTION.md)
+
+## ✨ Features
+
+- 🤖 **AI-Powered Test Generation**: Convert natural language to Playwright tests
+- 🔄 **Active Execution**: Step-by-step generation with live browser context
+- 🔍 **Smart Selector Discovery**: Automatically finds best selectors from live pages
+- 🔁 **Intelligent Retry**: Automatic error recovery with alternative selectors
+- 📊 **Comprehensive Reporting**: Detailed execution logs and screenshots
+- 🛡️ **Security First**: AST validation ensures safe code generation
+- 🚀 **GitHub Integration**: Seamless PR workflow integration
+
+## 🚀 Quick Start
 
 ### 1. Setup ## 🚀 How It Works
 
