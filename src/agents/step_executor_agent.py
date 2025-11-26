@@ -3,6 +3,7 @@ Step Executor Agent: Generates and executes single test steps with context aware
 """
 
 import time
+import textwrap
 from typing import Any, Dict, List, Optional, Tuple
 
 from crewai import Agent, Crew, Task
@@ -377,16 +378,23 @@ Generate code for: {step_description}
             code = code[:-3]
 
         code = code.strip("`").strip()
+        
+        # Dedent to handle cases where the whole block is indented
+        code = textwrap.dedent(code)
 
         # Remove common explanatory phrases that might sneak in
         code_lines = []
         for line in code.split("\n"):
-            # Don't strip the line initially to preserve intentional indentation
             stripped = line.strip()
             # Skip empty lines and explanation comments
-            if stripped and not stripped.startswith("# Here") and not stripped.startswith("# This"):
-                # Remove any leading indentation that might cause issues
-                code_lines.append(stripped)
+            if not stripped:
+                continue
+                
+            if stripped.startswith("# Here") or stripped.startswith("# This"):
+                continue
+                
+            # Keep the line with its indentation (rstrip to remove trailing spaces)
+            code_lines.append(line.rstrip())
 
         result = "\n".join(code_lines)
         
@@ -394,7 +402,11 @@ Generate code for: {step_description}
         if result.startswith("def "):
             # Extract just the body if a function was mistakenly generated
             lines = result.split("\n")
-            result = "\n".join(line for line in lines if not line.startswith("def ") and line.strip())
+            # Filter out the def line
+            body_lines = [line for line in lines if not line.startswith("def ")]
+            # Re-join and dedent the body
+            if body_lines:
+                result = textwrap.dedent("\n".join(body_lines))
         
         return result.strip()
 
