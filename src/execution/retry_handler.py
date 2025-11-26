@@ -88,7 +88,7 @@ class RetryHandler:
 
         # Analyze based on error type
         if error_type == "timeout":
-            analysis.update(self._analyze_timeout_error(step_code, error, page))
+            analysis.update(self._analyze_timeout_error(step_code, error, page, step_description))
         elif "selector" in error.lower() or "element" in error.lower():
             analysis.update(self._analyze_selector_error(step_description, step_code, page))
         else:
@@ -136,21 +136,22 @@ class RetryHandler:
         self, 
         step_code: str, 
         error: str, 
-        page: Page
+        page: Page,
+        step_description: str = None
     ) -> Dict[str, Any]:
         """Analyze timeout errors."""
         # Extract selector from error or code
         selector = self._extract_selector_from_code(step_code)
 
         return {
-            "likely_cause": "Element not found or page taking too long to load",
+            "likely_cause": "Element not found (selector mismatch) or page state not ready",
             "suggestions": [
-                "Increase wait timeout",
-                "Add explicit wait for page load state",
-                "Verify selector is correct",
-                "Check if element is dynamically loaded",
+                "Try alternative selector (prioritized)",
+                "Check if element is in an iframe",
+                "Verify element visibility",
+                "Increase wait timeout (last resort)",
             ],
-            "alternative_selectors": self._find_alternative_selectors(selector, page),
+            "alternative_selectors": self._find_alternative_selectors(selector, page, step_description) if selector else []
         }
 
     def _analyze_selector_error(
@@ -225,22 +226,33 @@ class RetryHandler:
     def _find_alternative_selectors(
         self, 
         original_selector: Optional[str], 
-        page: Page
+        page: Page,
+        step_description: str = None
     ) -> List[str]:
-        """Find alternative selectors similar to the original."""
-        if not original_selector:
+        """Find alternative selectors similar to the original or matching description."""
+        if not original_selector and not step_description:
             return []
 
         try:
             inspector = DOMInspectorTool(page)
-            discovered = inspector.discover_selectors()
-
             alternatives = []
-            for element_type, elements in discovered.items():
-                for element in elements[:2]:  # Top 2 from each type
-                    selector = element.get("best_selector")
-                    if selector and selector != original_selector:
-                        alternatives.append(selector)
+
+            # If we have a description, use the smart finder first
+            if step_description:
+                relevant = inspector.find_relevant_elements(step_description)
+                for el in relevant[:3]:
+                    sel = el.get("best_selector")
+                    if sel and sel != original_selector:
+                        alternatives.append(sel)
+            
+            # Fallback to general discovery if needed
+            if not alternatives:
+                discovered = inspector.discover_selectors()
+                for element_type, elements in discovered.items():
+                    for element in elements[:2]:  # Top 2 from each type
+                        selector = element.get("best_selector")
+                        if selector and selector != original_selector:
+                            alternatives.append(selector)
 
             return alternatives[:5]  # Return top 5
 
