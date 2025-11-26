@@ -6,7 +6,7 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import yaml
 from crewai import Crew, Task
@@ -277,7 +277,8 @@ class QACrew:
     def run_active_autoqa_scenario(
         self, 
         scenario: Dict[str, Any], 
-        config: Dict[str, Any]
+        config: Dict[str, Any],
+        existing_code: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Run AutoQA scenario with active iterative execution.
@@ -289,12 +290,15 @@ class QACrew:
         Args:
             scenario: Test scenario with steps
             config: Test configuration including URLs and credentials
+            existing_code: Optional existing test code for context
             
         Returns:
             Execution result with generated code and execution details
         """
         logger.info(f"Running ACTIVE AutoQA scenario: {scenario.get('name', 'Unknown')}")
         logger.info("Using iterative execution with real-time context")
+        if existing_code:
+            logger.info("Using existing test code for context")
 
         try:
             # Extract steps from scenario
@@ -311,6 +315,7 @@ class QACrew:
                 steps=steps,
                 config=config,
                 scenario=scenario,
+                existing_code=existing_code
             )
 
             # Enhance result with scenario metadata

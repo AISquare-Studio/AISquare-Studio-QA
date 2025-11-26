@@ -144,7 +144,19 @@ class ActionRunner:
 
             # Step 5: Generate test using CrewAI
             logger.info("Generating test code with CrewAI...")
-            generation_result = self._generate_test_code(steps, metadata)
+            
+            # Check for existing test code to provide as context
+            existing_test_path = self.cross_repo.find_test_for_flow(metadata)
+            existing_code = None
+            if existing_test_path:
+                logger.info(f"Found existing test: {existing_test_path}")
+                try:
+                    existing_code = existing_test_path.read_text()
+                    logger.info("Loaded existing test code for context")
+                except Exception as e:
+                    logger.warning(f"Failed to read existing test: {e}")
+
+            generation_result = self._generate_test_code(steps, metadata, existing_code)
 
             if not generation_result["success"]:
                 return self._handle_generation_failure(generation_result)
@@ -233,13 +245,14 @@ class ActionRunner:
             logger.error(traceback.format_exc())
             return self._set_outputs({"test_generated": "false", "error": str(e)})
 
-    def _generate_test_code(self, steps: List[str], metadata: Dict[str, Any]) -> Dict[str, Any]:
+    def _generate_test_code(self, steps: List[str], metadata: Dict[str, Any], existing_code: str = None) -> Dict[str, Any]:
         """
         Generate test code using CrewAI components
         
         Args:
             steps: List of test steps
             metadata: AutoQA metadata with flow_name, tier, area, etag
+            existing_code: Optional existing test code for context
             
         Returns:
             Generation result dict with code and metadata
@@ -265,7 +278,11 @@ class ActionRunner:
                 }
                 
                 # Use active execution
-                result = self.qa_crew.run_active_autoqa_scenario(scenario, test_config)
+                result = self.qa_crew.run_active_autoqa_scenario(
+                    scenario=scenario,
+                    config=test_config,
+                    existing_code=existing_code
+                )
                 
                 if not result.get("success"):
                     return {

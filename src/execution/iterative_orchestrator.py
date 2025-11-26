@@ -60,6 +60,7 @@ class IterativeTestOrchestrator:
         steps: List[str],
         config: Dict[str, Any],
         scenario: Dict[str, Any],
+        existing_code: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Execute test steps iteratively with active context awareness.
@@ -68,12 +69,15 @@ class IterativeTestOrchestrator:
             steps: List of step descriptions
             config: Test configuration
             scenario: Scenario information
+            existing_code: Optional existing test code for context
 
         Returns:
             Complete execution result with generated test code
         """
         logger.info("=" * 60)
         logger.info("Starting Active Iterative Execution")
+        if existing_code:
+            logger.info("Using existing test code for context")
         logger.info(f"Total steps: {len(steps)}")
         logger.info("=" * 60)
 
@@ -131,7 +135,8 @@ class IterativeTestOrchestrator:
                     page=page,
                     exec_context=exec_context,
                     config=config,
-                    accumulated_code=self.accumulated_code,  # Pass accumulated code
+                    accumulated_code=self.accumulated_code,
+                    existing_code=existing_code,
                 )
 
                 # Record result
@@ -236,7 +241,8 @@ class IterativeTestOrchestrator:
         page: Any,
         exec_context: ExecutionContext,
         config: Dict[str, Any],
-        accumulated_code: List[Dict] = None,  # New parameter
+        accumulated_code: List[Dict] = None,
+        existing_code: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Execute a single step with retry logic.
@@ -248,6 +254,7 @@ class IterativeTestOrchestrator:
             exec_context: Execution context
             config: Test config
             accumulated_code: Previously generated code
+            existing_code: Optional existing test code for context
 
         Returns:
             Step execution result
@@ -267,8 +274,9 @@ class IterativeTestOrchestrator:
                         page=page,
                         context=exec_context,
                         config=config,
-                        accumulated_code=accumulated_code or [],  # Pass accumulated code
-                        crew=self.crew,  # Pass persistent crew
+                        accumulated_code=accumulated_code or [],
+                        crew=self.crew,
+                        existing_code=existing_code,
                     )
                 else:
                     # Retry - analyze failure and modify

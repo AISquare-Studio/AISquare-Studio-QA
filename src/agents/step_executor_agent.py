@@ -48,8 +48,9 @@ class StepExecutorAgent:
         page: Page,
         context: ExecutionContext,
         config: Dict[str, Any],
-        accumulated_code: List[Dict] = None,  # New: previously generated code
-        crew: Crew = None,  # New: persistent crew instance
+        accumulated_code: List[Dict] = None,
+        crew: Crew = None,
+        existing_code: Optional[str] = None,
     ) -> str:
         """
         Generate Playwright code for a single step using real page context.
@@ -62,6 +63,7 @@ class StepExecutorAgent:
             config: Test configuration
             accumulated_code: List of previously generated code steps
             crew: Persistent Crew instance with memory
+            existing_code: Optional existing test code for context
 
         Returns:
             Generated Python code for this step
@@ -87,7 +89,8 @@ class StepExecutorAgent:
                 suggested_selector=suggested_selector,
                 execution_context=context.get_context_for_agent(),
                 config=config,
-                previous_code=previous_code_context,  # New: pass formatted code
+                previous_code=previous_code_context,
+                existing_code=existing_code,
             )
 
             # Create the task
@@ -256,7 +259,8 @@ class StepExecutorAgent:
         suggested_selector: Optional[str],
         execution_context: Dict[str, Any],
         config: Dict[str, Any],
-        previous_code: str = "",  # New parameter
+        previous_code: str = "",
+        existing_code: Optional[str] = None,
     ) -> str:
         """Build context-aware prompt for step code generation."""
 
@@ -266,10 +270,23 @@ class StepExecutorAgent:
             else "\nNo specific selector found - infer from page structure"
         )
 
+        existing_code_section = ""
+        if existing_code:
+            existing_code_section = f"""
+EXISTING TEST CODE (FOR REFERENCE):
+The following is the previous implementation of this test. Use it to understand the intended logic, 
+selectors, and flow. However, prioritize the CURRENT page structure and step description if they differ.
+--------------------------------------------------------------------------------
+{existing_code}
+--------------------------------------------------------------------------------
+"""
+
         prompt = f"""
 You are building a Playwright test step-by-step. Here's the context of what you've done so far:
 
 {previous_code}
+
+{existing_code_section}
 
 CURRENT STEP ({step_number}): {step_description}
 
