@@ -145,6 +145,7 @@ class StepExecutorAgent:
         step_number: int,
         page: Page,
         config: Dict[str, Any],
+        execution_globals: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Execute a single step's code and capture results.
@@ -154,6 +155,7 @@ class StepExecutorAgent:
             step_number: Step number
             page: Playwright page instance
             config: Test configuration
+            execution_globals: Optional persistent globals dictionary to maintain state between steps
 
         Returns:
             Execution result dict with success, error, timing
@@ -170,12 +172,22 @@ class StepExecutorAgent:
         }
 
         try:
-            # Create execution namespace with page and config
-            exec_namespace = {
-                "page": page,
-                "config": config,
-                "TimeoutError": PlaywrightTimeoutError,
-            }
+            # Use provided globals or create new namespace
+            if execution_globals is not None:
+                exec_namespace = execution_globals
+                # Ensure critical variables are up to date
+                exec_namespace.update({
+                    "page": page,
+                    "config": config,
+                    "TimeoutError": PlaywrightTimeoutError,
+                })
+            else:
+                # Create execution namespace with page and config
+                exec_namespace = {
+                    "page": page,
+                    "config": config,
+                    "TimeoutError": PlaywrightTimeoutError,
+                }
 
             # Log the code being executed for debugging
             logger.debug(f"Executing code:\n{step_code}")

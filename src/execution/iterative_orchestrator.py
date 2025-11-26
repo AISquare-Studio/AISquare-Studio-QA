@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from crewai import Crew
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 
 from src.agents.step_executor_agent import StepExecutorAgent
 from src.execution.execution_context import ExecutionContext
@@ -106,6 +106,15 @@ class IterativeTestOrchestrator:
             # Initialize execution context
             exec_context = ExecutionContext(page, config)
 
+            # Initialize persistent execution globals for variable sharing between steps
+            # This allows variables defined in one step (like timestamp) to be used in later steps
+            execution_globals = {
+                "page": page,
+                "config": config,
+                "TimeoutError": PlaywrightTimeoutError,
+                # Add common modules that might be needed
+            }
+
             # Execute steps iteratively
             generated_steps = []
             final_test_code_lines = []
@@ -113,6 +122,8 @@ class IterativeTestOrchestrator:
             # Add imports and function definition
             final_test_code_lines.append("# Auto-generated test with active execution")
             final_test_code_lines.append("from playwright.sync_api import sync_playwright")
+            final_test_code_lines.append("from datetime import datetime")
+            final_test_code_lines.append("import time")
             final_test_code_lines.append("")
             final_test_code_lines.append("def run_test(page, config):")
             final_test_code_lines.append("    '''")
@@ -139,6 +150,7 @@ class IterativeTestOrchestrator:
                     config=config,
                     accumulated_code=self.accumulated_code,
                     existing_code=existing_code,
+                    execution_globals=execution_globals,
                 )
 
                 # Record result
@@ -245,6 +257,7 @@ class IterativeTestOrchestrator:
         config: Dict[str, Any],
         accumulated_code: List[Dict] = None,
         existing_code: Optional[str] = None,
+        execution_globals: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Execute a single step with retry logic.
@@ -257,6 +270,7 @@ class IterativeTestOrchestrator:
             config: Test config
             accumulated_code: Previously generated code
             existing_code: Optional existing test code for context
+            execution_globals: Optional persistent globals for variable sharing
 
         Returns:
             Step execution result
@@ -312,6 +326,7 @@ class IterativeTestOrchestrator:
                     step_number=step_number,
                     page=page,
                     config=config,
+                    execution_globals=execution_globals,
                 )
 
                 # If successful, return result
