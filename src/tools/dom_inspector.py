@@ -438,3 +438,42 @@ class DOMInspectorTool:
             score += 5
 
         return score
+
+    def find_relevant_elements(self, element_description: str) -> List[Dict[str, Any]]:
+        """
+        Find all relevant elements matching the description, without forcing a single best choice.
+
+        Args:
+            element_description: Natural language description
+
+        Returns:
+            List of relevant element dictionaries, sorted by relevance score
+        """
+        try:
+            # Discover elements
+            discovered = self.discover_selectors()
+
+            # Extract keywords from description
+            keywords = element_description.lower().split()
+
+            # Search for matching elements
+            candidates = []
+
+            for element_type, elements in discovered.items():
+                for element in elements:
+                    score = self._score_element_match(element, keywords)
+                    if score > 0:
+                        # Add score to element info for reference
+                        element_info = element.copy()
+                        element_info["match_score"] = score
+                        candidates.append(element_info)
+
+            # Sort by score (descending) but return all matches
+            candidates.sort(reverse=True, key=lambda x: x["match_score"])
+            
+            logger.info(f"Found {len(candidates)} relevant elements for '{element_description}'")
+            return candidates
+
+        except Exception as e:
+            logger.error(f"Error finding relevant elements for '{element_description}': {str(e)}")
+            return []

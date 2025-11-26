@@ -81,8 +81,8 @@ class StepExecutorAgent:
             inspector = DOMInspectorTool(page)
             page_structure = inspector.get_page_structure()
 
-            # Try to find best selector for this step
-            suggested_selector = inspector.find_best_selector_for_element(step_description)
+            # Find relevant elements for this step (without forcing a single best choice)
+            relevant_elements = inspector.find_relevant_elements(step_description)
             
             # Format accumulated code for context
             previous_code_context = self._format_accumulated_code(accumulated_code or [])
@@ -92,7 +92,7 @@ class StepExecutorAgent:
                 step_description=step_description,
                 step_number=step_number,
                 page_structure=page_structure,
-                suggested_selector=suggested_selector,
+                relevant_elements=relevant_elements,
                 execution_context=context.get_context_for_agent(),
                 config=config,
                 previous_code=previous_code_context,
@@ -274,7 +274,7 @@ class StepExecutorAgent:
         step_description: str,
         step_number: int,
         page_structure: Dict[str, Any],
-        suggested_selector: Optional[str],
+        relevant_elements: List[Dict[str, Any]],
         execution_context: Dict[str, Any],
         config: Dict[str, Any],
         previous_code: str = "",
@@ -282,11 +282,20 @@ class StepExecutorAgent:
     ) -> str:
         """Build context-aware prompt for step code generation."""
 
-        selector_info = (
-            f"\nSUGGESTED SELECTOR: {suggested_selector}"
-            if suggested_selector
-            else "\nNo specific selector found - infer from page structure"
-        )
+        elements_info = ""
+        if relevant_elements:
+            elements_info = "\nRELEVANT ELEMENTS FOUND (Select the best one based on context):"
+            for i, el in enumerate(relevant_elements[:5]):  # Show top 5 matches
+                data = el.get('data', {})
+                elements_info += f"\n{i+1}. Type: {el.get('type')}"
+                if data.get('text'): elements_info += f", Text: '{data.get('text')}'"
+                if data.get('placeholder'): elements_info += f", Placeholder: '{data.get('placeholder')}'"
+                if data.get('name'): elements_info += f", Name: '{data.get('name')}'"
+                if data.get('id'): elements_info += f", ID: '{data.get('id')}'"
+                if data.get('dataTestId'): elements_info += f", TestID: '{data.get('dataTestId')}'"
+                elements_info += f"\n   Suggested Selector: {el.get('best_selector')}"
+        else:
+            elements_info = "\nNo specific relevant elements found - infer from page structure or use generic selectors."
 
         existing_code_section = ""
         if existing_code:
@@ -314,7 +323,7 @@ CURRENT PAGE STATE:
 - Buttons available: {page_structure.get('buttons_count', 0)}
 - Inputs available: {page_structure.get('inputs_count', 0)}
 - Links available: {page_structure.get('links_count', 0)}
-{selector_info}
+{elements_info}
 
 EXECUTION CONTEXT:
 {execution_context.get('previous_steps', 'First step')}
@@ -325,7 +334,7 @@ RULES FOR THIS STEP:
 3. Keep consistency with previous code style and selectors
 4. Use the 'page' variable (already available in scope)
 5. Use the 'config' variable for any configuration values
-6. If suggested selector is provided, USE IT
+6. Choose the most robust selector from the RELEVANT ELEMENTS list, or construct a better one
 7. Always add appropriate waits (wait_for_selector, wait_for_load_state)
 8. For navigation: use page.goto(url)
 9. For clicks: use page.click(selector)
