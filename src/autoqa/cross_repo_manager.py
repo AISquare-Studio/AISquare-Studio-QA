@@ -444,7 +444,7 @@ if __name__ == "__main__":
         # Find all Python test files
         test_files = []
         for pattern in ["test_*.py", "*_test.py"]:
-            test_files.extend(test_dir.glob(pattern))
+            test_files.extend(test_dir.rglob(pattern))
 
         return test_files
 
