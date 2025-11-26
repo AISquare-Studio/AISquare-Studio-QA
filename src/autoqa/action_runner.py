@@ -63,7 +63,7 @@ class ActionRunner:
             "git_user_email": os.getenv("GIT_USER_EMAIL", "rabia.tahirr@opengrowth.com"),
             "pr_body": os.getenv("PR_BODY", ""),
             "test_directory": os.getenv("TEST_DIRECTORY", "tests/generated"),
-            "run_existing_tests": True,  # Always run existing tests
+            "execution_mode": os.getenv("EXECUTION_MODE", "generate").lower(),
             # Active execution settings
             "use_active_execution": os.getenv("USE_ACTIVE_EXECUTION", "true").lower() == "true",
             "max_retries": int(os.getenv("MAX_RETRIES", "2")),
@@ -76,6 +76,7 @@ class ActionRunner:
         """Main execution flow for AutoQA action"""
         try:
             logger.info(f"AutoQA Action starting for repository: {self.target_repo}")
+            logger.info(f"Execution Mode: {self.config['execution_mode']}")
 
             # Validate required configuration
             if not self.config["openai_api_key"]:
@@ -89,6 +90,17 @@ class ActionRunner:
             if not self.config["staging_url"]:
                 logger.warning("STAGING_URL not provided, using default for testing")
                 self.config["staging_url"] = "https://stg-home.aisquare.studio"
+
+            # Handle 'suite' mode (Regression only)
+            if self.config["execution_mode"] == "suite":
+                logger.info("Running full test suite (Regression Mode)...")
+                suite_results = self._run_test_suite()
+                
+                return self._set_outputs({
+                    "test_generated": "false",
+                    "suite_results": json.dumps(suite_results),
+                    "error": None if suite_results.get("success", False) else "Test suite failed"
+                })
 
             # Step 1: Check for AutoQA tag
             if not self.parser.has_autoqa_tag(self.config["pr_body"]):
@@ -174,13 +186,15 @@ class ActionRunner:
                 logger.warning(f"Error: {execution_result.get('error', 'Unknown error')}")
                 test_file_path = self._generate_preview_path(metadata)
 
-            # Step 8: Run existing tests only if new test passed
+            # Step 8: Run existing tests only if new test passed and mode is 'all'
             suite_results = {}
-            if execution_result["success"] and self.config["run_existing_tests"]:
-                logger.info("Running full test suite...")
+            if execution_result["success"] and self.config["execution_mode"] == "all":
+                logger.info("New test passed. Running full test suite...")
                 suite_results = self._run_test_suite()
+            elif self.config["execution_mode"] == "generate":
+                logger.info("Skipping full test suite (Execution Mode: generate)")
             elif not execution_result["success"]:
-                logger.info("Skipping test suite run (generated test failed)")
+                logger.info("New test failed. Skipping full test suite.")
 
             # Step 9: ALWAYS generate PR comment (success or failure)
             logger.info("Generating PR comment with results...")
