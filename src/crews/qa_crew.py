@@ -10,6 +10,7 @@ from typing import Any, Dict, Optional
 
 import yaml
 from crewai import Crew, Task
+from crewai_tools import FileReadTool, DirectoryReadTool
 
 from src.agents.executor_agent import ExecutorAgent
 from src.agents.planner_agent import PlannerAgent
@@ -35,12 +36,22 @@ class QACrew:
         )
         
         # Initialize agent wrappers with configured LLM
-        self.planner_agent_wrapper = PlannerAgent(llm=llm)
+        target_repo_path = os.getenv("TARGET_REPO_PATH", ".")
+        self.file_read_tool = FileReadTool(root_dir=target_repo_path)
+        self.directory_read_tool = DirectoryReadTool(root_dir=target_repo_path)
+        
+        self.planner_agent_wrapper = PlannerAgent(
+            llm=llm, 
+            tools=[self.file_read_tool, self.directory_read_tool]
+        )
         self.executor_agent_wrapper = ExecutorAgent(llm=llm)
         self.playwright_executor = create_playwright_executor_tool()
         
         # Initialize iterative orchestrator for active execution
-        self.iterative_orchestrator = IterativeTestOrchestrator(llm=llm)
+        self.iterative_orchestrator = IterativeTestOrchestrator(
+            llm=llm,
+            tools=[self.file_read_tool, self.directory_read_tool]
+        )
 
         # Initialize the actual CrewAI agents
         self.planner_agent = self.planner_agent_wrapper.agent

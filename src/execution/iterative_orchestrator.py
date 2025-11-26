@@ -28,6 +28,7 @@ class IterativeTestOrchestrator:
         llm=None,
         max_retries: int = 2,
         screenshot_dir: Optional[Path] = None,
+        tools: List[Any] = None,
     ):
         """
         Initialize orchestrator.
@@ -36,9 +37,10 @@ class IterativeTestOrchestrator:
             llm: Language model configuration
             max_retries: Maximum retry attempts per step
             screenshot_dir: Directory to save screenshots
+            tools: List of tools to provide to the agent
         """
         self.llm = llm
-        self.step_executor = StepExecutorAgent(llm=llm)
+        self.step_executor = StepExecutorAgent(llm=llm, tools=tools)
         self.retry_handler = RetryHandler(max_retries=max_retries)
         self.screenshot_dir = screenshot_dir or Path("reports/screenshots")
         self.screenshot_dir.mkdir(parents=True, exist_ok=True)

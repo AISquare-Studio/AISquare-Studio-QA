@@ -10,17 +10,23 @@ from crewai import Agent
 class PlannerAgent:
     """Agent responsible for generating Playwright test code from test scenarios."""
 
-    def __init__(self, llm=None):
+    def __init__(self, llm=None, tools=None):
         self.agent = Agent(
             role="QA Test Code Planner",
             goal="Generate robust and reliable Playwright Python code for automated testing",
             backstory="""You are a senior SDET (Software Development Engineer in Test) with extensive
             experience in web automation testing. You specialize in creating clean, maintainable,
             and reliable Playwright code that follows best practices. You always include proper
-            waits, error handling, and assertions in your generated code.""",
+            waits, error handling, and assertions in your generated code.
+            
+            You have access to the source code of the application under test. 
+            Use the directory_read_tool and file_read_tool to explore the codebase, 
+            understand the application structure, find route definitions, and identify 
+            stable selectors (like data-testid) directly from the component files.""",
             verbose=True,
             allow_delegation=False,
             llm=llm,  # Pass the configured LLM
+            tools=tools or [],
         )
 
     def get_system_prompt(self) -> str:

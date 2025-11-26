@@ -21,12 +21,13 @@ class StepExecutorAgent:
     Works with live page context to discover selectors and validate actions.
     """
 
-    def __init__(self, llm=None):
+    def __init__(self, llm=None, tools=None):
         """
         Initialize step executor agent.
 
         Args:
             llm: Language model configuration
+            tools: List of tools to provide to the agent
         """
         self.agent = Agent(
             role="Iterative Test Step Executor",
@@ -35,10 +36,15 @@ class StepExecutorAgent:
             precise, reliable Playwright code for individual test steps. You analyze the current 
             page state, discover the best selectors, and generate code that works on the first try. 
             You use real-time information about the page to make intelligent decisions about 
-            selectors and waits.""",
+            selectors and waits.
+            
+            You have access to the source code of the application. If the DOM structure is ambiguous,
+            use the file_read_tool to check the component source code for stable selectors 
+            (like data-testid) or to understand the expected behavior.""",
             verbose=False,  # Reduce console spam
             allow_delegation=False,
             llm=llm,
+            tools=tools or [],
         )
 
     def generate_step_code(
