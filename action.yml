@@ -134,28 +134,16 @@ runs:
         cache: 'pip'
         cache-dependency-path: '.autoqa-action/requirements.txt'
     
-    # Additional caching for Python packages and site-packages
-    - name: 📦 Cache Additional Dependencies  
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cache/pip
-          ~/.local/lib/python3.11/site-packages
-        key: ${{ runner.os }}-autoqa-deps-${{ hashFiles('.autoqa-action/requirements.txt') }}-v1
-        restore-keys: |
-          ${{ runner.os }}-autoqa-deps-v1
-          ${{ runner.os }}-autoqa-deps-
-    
     # Cache Playwright browsers to avoid downloading ~100MB each run
     - name: 🎭 Cache Playwright Browsers
       uses: actions/cache@v3
       id: playwright-cache
       with:
         path: ~/.cache/ms-playwright
-        key: ${{ runner.os }}-autoqa-playwright-${{ hashFiles('.autoqa-action/requirements.txt') }}-v1
+        key: ${{ runner.os }}-autoqa-playwright-${{ hashFiles('.autoqa-action/requirements.txt') }}-v2
         restore-keys: |
-          ${{ runner.os }}-autoqa-playwright-v1
-          ${{ runner.os }}-playwright-v1
+          ${{ runner.os }}-autoqa-playwright-v2
+          ${{ runner.os }}-playwright-v2
           ${{ runner.os }}-playwright-
     
     # Install Python dependencies (pip packages cached above)
