@@ -508,7 +508,8 @@ def main():
     result = runner.execute()
 
     # Exit with appropriate code
-    if result.get("test_generated") == "false" and "error" in result:
+    # Only fail if there is an actual error message (not None)
+    if result.get("test_generated") == "false" and result.get("error"):
         sys.exit(1)
     else:
         sys.exit(0)
