@@ -216,7 +216,7 @@ class CrossRepoManager:
 
         post_header = f'''
 import pytest
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, TimeoutError
 
 
 class {class_name}:
@@ -251,6 +251,9 @@ class {class_name}:
             try:
                 # Execute generated test code
 {self._indent_code(code, 16)}
+
+                # Run the test function
+                run_test(page, config)
             finally:
                 browser.close()
 
