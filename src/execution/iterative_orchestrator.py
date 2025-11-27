@@ -121,9 +121,6 @@ class IterativeTestOrchestrator:
             
             # Add imports and function definition
             final_test_code_lines.append("# Auto-generated test with active execution")
-            final_test_code_lines.append("from playwright.sync_api import sync_playwright")
-            final_test_code_lines.append("from datetime import datetime")
-            final_test_code_lines.append("import time")
             final_test_code_lines.append("")
             final_test_code_lines.append("def run_test(page, config):")
             final_test_code_lines.append("    '''")
