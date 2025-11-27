@@ -28,13 +28,16 @@ class GitHubCommentClient:
         self.target_repo = target_repo
         self.base_url = "https://api.github.com"
 
-    def post_or_update_comment(self, pr_number: str, comment_body: str) -> bool:
+    def post_or_update_comment(
+        self, pr_number: str, comment_body: str, marker: str = "<!-- AutoQA-Comment-Marker -->"
+    ) -> bool:
         """
         Post new comment or update existing AutoQA comment
 
         Args:
             pr_number: Pull request number
             comment_body: Comment content in markdown
+            marker: Unique marker to identify the comment type
 
         Returns:
             True if successful, False otherwise
@@ -46,7 +49,7 @@ class GitHubCommentClient:
         headers = self._get_headers()
 
         # Check for existing AutoQA comment
-        existing_comment_id = self._find_existing_autoqa_comment(pr_number, headers)
+        existing_comment_id = self._find_existing_autoqa_comment(pr_number, headers, marker)
 
         if existing_comment_id:
             # Update existing comment
@@ -55,21 +58,24 @@ class GitHubCommentClient:
             # Create new comment
             return self.create_comment(pr_number, comment_body, headers)
 
-    def find_existing_autoqa_comment(self, pr_number: str) -> Optional[int]:
+    def find_existing_autoqa_comment(
+        self, pr_number: str, marker: str = "<!-- AutoQA-Comment-Marker -->"
+    ) -> Optional[int]:
         """
         Find existing AutoQA comment by marker
 
         Args:
             pr_number: Pull request number
+            marker: Unique marker to identify the comment type
 
         Returns:
             Comment ID if found, None otherwise
         """
         headers = self._get_headers()
-        return self._find_existing_autoqa_comment(pr_number, headers)
+        return self._find_existing_autoqa_comment(pr_number, headers, marker)
 
     def _find_existing_autoqa_comment(
-        self, pr_number: str, headers: Dict[str, str]
+        self, pr_number: str, headers: Dict[str, str], marker: str
     ) -> Optional[int]:
         """
         Internal method to find existing AutoQA comment
@@ -77,6 +83,7 @@ class GitHubCommentClient:
         Args:
             pr_number: Pull request number
             headers: Request headers with authentication
+            marker: Unique marker to identify the comment type
 
         Returns:
             Comment ID if found, None otherwise
@@ -93,11 +100,14 @@ class GitHubCommentClient:
                 for comment in comments:
                     body = comment.get("body", "")
                     # Check for our hidden marker
-                    if "<!-- AutoQA-Comment-Marker -->" in body:
+                    if marker in body:
                         logger.info(f"Found existing AutoQA comment: {comment['id']}")
                         return comment["id"]
-                    # Fallback: check for AutoQA header (for legacy comments)
-                    elif "## ✅ AutoQA" in body or "## ❌ AutoQA" in body:
+                    # Fallback: check for AutoQA header (for legacy comments) - ONLY for default marker
+                    elif (
+                        marker == "<!-- AutoQA-Comment-Marker -->"
+                        and ("## ✅ AutoQA" in body or "## ❌ AutoQA" in body)
+                    ):
                         logger.info(f"Found existing AutoQA comment (legacy): {comment['id']}")
                         return comment["id"]
             else:

@@ -105,6 +105,24 @@ class ActionReporter:
         logger.info("AutoQA Results Summary:")
         logger.info(comment_body)
 
+    def create_suite_comment(self, suite_results: Dict[str, Any]) -> None:
+        """
+        Create or update PR comment with full test suite results
+
+        Args:
+            suite_results: Full test suite results
+        """
+        if not suite_results:
+            return
+
+        # Build comment body
+        comment_body = self.comment_builder.build_suite_comment_body(suite_results)
+
+        # Post to PR using GitHubCommentClient with specific marker
+        self.github_client.post_or_update_comment(
+            self.pr_number, comment_body, marker="<!-- AutoQA-Suite-Marker -->"
+        )
+
     def _process_screenshots(self, execution_result: Dict[str, Any]) -> Dict[str, str]:
         """
         Process screenshots and generate markdown sections

@@ -95,6 +95,10 @@ class ActionRunner:
             if self.config["execution_mode"] == "suite":
                 logger.info("Running full test suite (Regression Mode)...")
                 suite_results = self._run_test_suite()
+
+                # Generate Suite Result comment
+                logger.info("Generating Suite Result comment...")
+                self.reporter.create_suite_comment(suite_results)
                 
                 return self._set_outputs({
                     "test_generated": "false",
@@ -210,13 +214,21 @@ class ActionRunner:
 
             # Step 9: ALWAYS generate PR comment (success or failure)
             logger.info("Generating PR comment with results...")
-            self.reporter.create_pr_comment(
-                generation_result=generation_result,
-                execution_result=execution_result,
-                suite_results=suite_results,
-                test_file_path=str(test_file_path) if test_file_path else "Not committed (test failed)",
-                metadata=metadata,
-            )
+            
+            # 1. Post Generation Result Comment (if we attempted generation)
+            if self.config["execution_mode"] != "suite":
+                self.reporter.create_pr_comment(
+                    generation_result=generation_result,
+                    execution_result=execution_result,
+                    suite_results=suite_results, # Still pass for summary in generation comment
+                    test_file_path=str(test_file_path) if test_file_path else "Not committed (test failed)",
+                    metadata=metadata,
+                )
+
+            # 2. Post Suite Result Comment (if we ran the suite)
+            if suite_results:
+                logger.info("Generating Suite Result comment...")
+                self.reporter.create_suite_comment(suite_results)
 
             # Step 10: Set outputs (success or failure)
             test_generated = "true" if execution_result["success"] else "false"
@@ -399,12 +411,38 @@ class ActionRunner:
                 with open(results_file, "r") as f:
                     suite_data = json.load(f)
 
+                # Extract detailed results
+                detailed_results = []
+                for test in suite_data.get("tests", []):
+                    # Get test name (nodeid usually looks like tests/autoqa/A/test_login.py::TestLogin::test_login)
+                    nodeid = test.get("nodeid", "unknown")
+                    name = nodeid.split("::")[-1] if "::" in nodeid else nodeid
+                    
+                    # Get error message if failed
+                    error_message = ""
+                    if test.get("outcome") == "failed":
+                        # Try to get short error message
+                        if "call" in test and "crash" in test["call"]:
+                            error_message = test["call"]["crash"].get("message", "")
+                        # Fallback to longrepr if available
+                        if not error_message and "call" in test and "longrepr" in test["call"]:
+                            error_message = str(test["call"]["longrepr"])
+
+                    detailed_results.append({
+                        "name": name,
+                        "nodeid": nodeid,
+                        "outcome": test.get("outcome", "unknown"),
+                        "duration": test.get("call", {}).get("duration", 0),
+                        "error": error_message
+                    })
+
                 return {
                     "success": result.returncode == 0,
                     "total_tests": len(test_files),
                     "passed": suite_data.get("summary", {}).get("passed", 0),
                     "failed": suite_data.get("summary", {}).get("failed", 0),
                     "execution_time": suite_data.get("duration", 0),
+                    "detailed_results": detailed_results,
                 }
 
             return {
