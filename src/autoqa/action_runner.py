@@ -394,6 +394,7 @@ class ActionRunner:
                     "python",
                     "-m",
                     "pytest",
+                    "-n", "auto",  # Run in parallel using all available cores
                     str(self.target_workspace / self.config["test_directory"]),
                     "-v",
                     "--tb=short",

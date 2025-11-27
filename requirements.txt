@@ -3,6 +3,7 @@ playwright
 pytest
 pytest-html
 pytest-json-report
+pytest-xdist
 python-dotenv
 rich
 pyyaml
