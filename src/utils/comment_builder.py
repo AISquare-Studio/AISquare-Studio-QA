@@ -163,10 +163,12 @@ class CommentBuilder:
         if suite_results and suite_results.get("total_tests", 0) > 0:
             total = suite_results.get("total_tests", 0)
             passed = suite_results.get("passed", 0)
+            skipped = suite_results.get("skipped", 0)
             suite_time = suite_results.get("execution_time", 0)
 
+            skipped_text = f" ({skipped} skipped)" if skipped > 0 else ""
             results += f"""
-- **Full Test Suite:** {passed}/{total} passed
+- **Full Test Suite:** {passed}/{total} passed{skipped_text}
 - **Suite Execution Time:** {suite_time:.2f}s"""
 
         # Error details if failed
@@ -263,7 +265,15 @@ AutoQA only commits tests that pass successfully. This ensures your test suite r
         # Build table rows
         error_details = []
         for test in details:
-            status_icon = "✅" if test["outcome"] == "passed" else "❌" if test["outcome"] == "failed" else "⚠️"
+            if test["outcome"] == "passed":
+                status_icon = "✅"
+            elif test["outcome"] == "failed":
+                status_icon = "❌"
+            elif test["outcome"] == "skipped":
+                status_icon = "⏭️"
+            else:
+                status_icon = "⚠️"
+            
             duration = f"{test['duration']:.2f}s"
             name = test["name"]
             

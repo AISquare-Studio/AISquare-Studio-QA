@@ -437,11 +437,18 @@ class ActionRunner:
                         "error": error_message
                     })
 
+                summary = suite_data.get("summary", {})
+                passed = summary.get("passed", 0)
+                failed = summary.get("failed", 0)
+                skipped = summary.get("skipped", 0)
+                total = passed + failed + skipped
+
                 return {
                     "success": result.returncode == 0,
-                    "total_tests": len(test_files),
-                    "passed": suite_data.get("summary", {}).get("passed", 0),
-                    "failed": suite_data.get("summary", {}).get("failed", 0),
+                    "total_tests": total,
+                    "passed": passed,
+                    "failed": failed,
+                    "skipped": skipped,
                     "execution_time": suite_data.get("duration", 0),
                     "detailed_results": detailed_results,
                 }
