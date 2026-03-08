@@ -119,7 +119,7 @@ runs:
           ${{ runner.os }}-autoqa-repo-v1
           
     - name: 🔍 Checkout AutoQA Action Repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         repository: 'AISquare-Studio/AISquare-Studio-QA'
         token: ${{ inputs.qa-github-token }}
