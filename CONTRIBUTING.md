@@ -1,54 +1,137 @@
-# Contributing
+# Contributing to AISquare Studio AutoQA
 
-## Issues
+Thank you for your interest in contributing to AISquare Studio AutoQA! This guide will help you get started.
 
-Issues are very valuable to our projects within this GitHub organization.
+## Code of Conduct
 
-Ideas are a valuable source of contributions others can make.
-Problems highlight areas where our projects are lacking.
-Questions show where contributors can improve the user experience.
-Thank you for creating them.
+This project follows the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
 
+## How to Contribute
 
-## Pull Requests
+### Reporting Bugs
 
-Pull requests are a great way to get your ideas into our repositories.
+If you find a bug, please [open an issue](https://github.com/AISquare-Studio/AISquare-Studio-QA/issues/new?template=bug_report.md) using the bug report template. Include as much detail as possible:
 
-When deciding whether to merge a pull request, we look at the following criteria:
+- Steps to reproduce
+- Expected vs. actual behavior
+- Workflow configuration (redact secrets)
+- Relevant logs or screenshots
 
+### Suggesting Features
 
+Have an idea? [Open a feature request](https://github.com/AISquare-Studio/AISquare-Studio-QA/issues/new?template=feature_request.md) describing the problem you're solving and your proposed solution.
 
-### Does it state intent?
-You should be clear about which problem you're trying to solve with your contribution.
+### Submitting Pull Requests
 
-For example:
+1. **Fork** the repository and create your branch from `main`
+2. **Make your changes** following the coding standards below
+3. **Add or update tests** for your changes
+4. **Run linting and tests** to verify nothing is broken
+5. **Submit a pull request** using the PR template
 
-Add link to code of conduct in README.md
+## Development Setup
 
-Doesn't tell us anything about why you're doing that.
+### Prerequisites
 
-Add link to code of conduct in README.md because users don't always look in the CONTRIBUTING.md
+- Python 3.11 or higher
+- pip (Python package manager)
+- Git
 
-Tells us the problem that you have found, and the pull request shows us the action you have taken to solve it.
+### Local Setup
 
+```bash
+# Clone your fork
+git clone https://github.com/<your-username>/AISquare-Studio-QA.git
+cd AISquare-Studio-QA
 
+# Create a virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-### Is it of good quality?
-There are no spelling mistakes.
-It reads well.
-For English language contributions: Has a good score on Grammarly or Hemingway App.
+# Install dependencies
+pip install -r requirements.txt
 
+# Install development tools
+pip install flake8==7.0.0 black==24.4.2 isort==5.13.2
 
+# Install Playwright browsers
+playwright install chromium
+```
 
+### Environment Configuration
 
-### Does it move our repository closer to our vision for the organization?
-The aim of our repositories is:
-- To provide a README.md and assorted documents anyone can copy and paste into their project.
-- To ensure the content is usable by someone who hasn't written something like this before.
-- To foster a culture of respect and gratitude in the open-source community.
+Copy the environment template and fill in your values:
 
+```bash
+cp env.template .env
+```
 
+## Coding Standards
 
+### Style
 
-### Does it follow the Contributor Covenant?
-Our repositories adhere to a code of conduct. Contributions that do not respect it will be removed.
+- **Formatter:** [Black](https://black.readthedocs.io/) with default settings
+- **Import sorting:** [isort](https://pycqa.github.io/isort/) with Black-compatible profile
+- **Linting:** [Flake8](https://flake8.pycqa.org/) with configuration in `.flake8`
+
+### Running Linters
+
+```bash
+# Format code
+black .
+isort .
+
+# Check for lint errors
+flake8 .
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+pytest
+
+# Run with verbose output
+pytest -v
+
+# Run specific test markers
+pytest -m smoke
+pytest -m "not slow"
+```
+
+## Pull Request Guidelines
+
+When submitting a pull request, please ensure:
+
+- **Clear intent:** State which problem you're solving and why
+- **Quality:** No spelling mistakes, readable code
+- **Tests:** Include or update tests for your changes
+- **Documentation:** Update docs if your change affects usage
+- **Scope:** Keep PRs focused — one feature or fix per PR
+- **Commits:** Write clear, descriptive commit messages
+
+## Project Structure
+
+```
+├── action.yml              # GitHub Action definition
+├── src/
+│   ├── agents/             # CrewAI agents (planner, executor)
+│   ├── autoqa/             # Action logic (runner, parser, reporter)
+│   ├── crews/              # CrewAI orchestration
+│   ├── execution/          # Iterative execution engine
+│   ├── templates/          # Test execution templates
+│   ├── tools/              # Playwright & DOM tools
+│   └── utils/              # Utility modules
+├── tests/                  # Test suite
+├── config/                 # Configuration files
+├── docs/                   # Documentation
+└── examples/               # Example configurations
+```
+
+## Security
+
+If you discover a security vulnerability, **do not** open a public issue. Please see our [Security Policy](SECURITY.md) for responsible disclosure instructions.
+
+## License
+
+By contributing to this project, you agree that your contributions will be licensed under the [Apache License 2.0](LICENSE).
