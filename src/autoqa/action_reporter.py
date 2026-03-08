@@ -137,11 +137,13 @@ class ActionReporter:
 
         # Always provide artifact link at the top
         if self.github_run_id and self.target_repo:
-            artifacts_url = f"https://github.com/{self.target_repo}/actions/runs/{self.github_run_id}"
+            artifacts_url = (
+                f"https://github.com/{self.target_repo}/actions/runs/{self.github_run_id}"
+            )
             screenshot_sections["artifacts_header"] = (
-                f"\n### 📦 Artifacts\n"
+                "\n### 📦 Artifacts\n"
                 f"**[View All Screenshots & Reports]({artifacts_url})** - "
-                f"Available for 14 days\n"
+                "Available for 14 days\n"
             )
 
         # Success screenshot
@@ -153,7 +155,9 @@ class ActionReporter:
                     str(resolved_path), "Success Screenshot"
                 )
                 if embedded_screenshot:
-                    screenshot_sections["success"] = f"\n### 📸 Success Screenshot\n{embedded_screenshot}\n"
+                    screenshot_sections["success"] = (
+                        f"\n### 📸 Success Screenshot\n{embedded_screenshot}\n"
+                    )
                 else:
                     screenshot_sections["success"] = (
                         "\n### 📸 Success Screenshot\n"
@@ -162,8 +166,7 @@ class ActionReporter:
             else:
                 logger.warning(f"Screenshot file not found: {screenshot_path}")
                 screenshot_sections["success"] = (
-                    "\n### 📸 Success Screenshot\n"
-                    "*Screenshot captured - view in artifacts above*\n"
+                    "\n### 📸 Success Screenshot\n*Screenshot captured - view in artifacts above*\n"
                 )
 
         # Error screenshot (for failures)
@@ -175,7 +178,9 @@ class ActionReporter:
                     str(error_file), "Error Screenshot"
                 )
                 if embedded_error:
-                    screenshot_sections["error"] = f"\n### 🚨 Failure Screenshot\n{embedded_error}\n"
+                    screenshot_sections["error"] = (
+                        f"\n### 🚨 Failure Screenshot\n{embedded_error}\n"
+                    )
                 else:
                     screenshot_sections["error"] = (
                         "\n### 🚨 Failure Screenshot\n"
@@ -191,9 +196,11 @@ class ActionReporter:
         if not execution_result.get("success", False) and "error" not in screenshot_sections:
             if screenshot_path and "success" in screenshot_sections:
                 # Rename success screenshot to failure screenshot for failed tests
-                screenshot_sections["error"] = screenshot_sections.pop("success").replace(
-                    "Success Screenshot", "Failure Screenshot"
-                ).replace("📸", "🚨")
+                screenshot_sections["error"] = (
+                    screenshot_sections.pop("success")
+                    .replace("Success Screenshot", "Failure Screenshot")
+                    .replace("📸", "🚨")
+                )
 
         return screenshot_sections
 

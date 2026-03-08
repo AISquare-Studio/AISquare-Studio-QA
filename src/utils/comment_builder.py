@@ -49,6 +49,7 @@ class CommentBuilder:
             Complete markdown comment body
         """
         from datetime import datetime, timezone
+
         timestamp = datetime.now(timezone.utc).astimezone().isoformat()
 
         # Determine overall status
@@ -232,11 +233,11 @@ AutoQA only commits tests that pass successfully. This ensures your test suite r
 
             # Add success screenshot
             if screenshot_sections.get("success"):
-                artifacts += screenshot_sections['success']
+                artifacts += screenshot_sections["success"]
 
             # Add error screenshot (for failures)
             if screenshot_sections.get("error"):
-                artifacts += screenshot_sections['error']
+                artifacts += screenshot_sections["error"]
 
         return artifacts
 
@@ -327,6 +328,7 @@ AutoQA only commits tests that pass successfully. This ensures your test suite r
             Complete markdown comment body
         """
         from datetime import datetime, timezone
+
         timestamp = datetime.now(timezone.utc).astimezone().isoformat()
 
         # Determine overall status

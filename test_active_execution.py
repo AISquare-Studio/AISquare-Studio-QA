@@ -41,7 +41,7 @@ def test_active_execution():
             "flow_name": "active_test_login",
             "tier": "A",
             "area": "auth",
-        }
+        },
     }
 
     # Create test config
@@ -70,7 +70,9 @@ def test_active_execution():
     logger.info("RESULTS")
     logger.info("=" * 60)
     logger.info(f"Success: {result.get('success')}")
-    logger.info(f"Completed Steps: {result.get('completed_steps', 0)}/{result.get('total_steps', 0)}")
+    logger.info(
+        f"Completed Steps: {result.get('completed_steps', 0)}/{result.get('total_steps', 0)}"
+    )
     logger.info(f"Failed Steps: {result.get('failed_steps', 0)}")
     logger.info(f"Total Time: {result.get('total_execution_time', 0):.2f}s")
 
@@ -79,12 +81,12 @@ def test_active_execution():
 
     logger.info("\nGenerated Code:")
     logger.info("-" * 60)
-    print(result.get('generated_code', 'No code generated'))
+    print(result.get("generated_code", "No code generated"))
     logger.info("-" * 60)
 
-    if result.get('discovered_selectors'):
+    if result.get("discovered_selectors"):
         logger.info("\nDiscovered Selectors:")
-        for elem_type, selectors in result['discovered_selectors'].items():
+        for elem_type, selectors in result["discovered_selectors"].items():
             logger.info(f"  {elem_type}: {len(selectors)} found")
 
     return result

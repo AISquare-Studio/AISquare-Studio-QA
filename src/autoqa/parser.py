@@ -75,10 +75,7 @@ class AutoQAParser:
         if not steps:
             return None
 
-        return {
-            "metadata": metadata,
-            "steps": steps
-        }
+        return {"metadata": metadata, "steps": steps}
 
     def parse_autoqa_metadata(self, metadata_block: str) -> Dict[str, Any]:
         """
@@ -154,7 +151,8 @@ class AutoQAParser:
             errors.append("Missing required field: tier")
         elif metadata["tier"] not in self.valid_tiers:
             errors.append(
-                f"Invalid tier value: {metadata['tier']}. Must be one of: {', '.join(self.valid_tiers)}"
+                f"Invalid tier value: {metadata['tier']}. Must be one of:"
+                f" {', '.join(self.valid_tiers)}"
             )
 
         # Optional field: area (validate length if present)
@@ -183,7 +181,7 @@ class AutoQAParser:
             "flow_name": metadata.get("flow_name", ""),
             "tier": metadata.get("tier", ""),
             "area": metadata.get("area", ""),
-            "steps": canonical_steps
+            "steps": canonical_steps,
         }
 
         hash_input = json.dumps(payload, sort_keys=True)
@@ -214,13 +212,13 @@ class AutoQAParser:
             Normalized snake_case identifier
         """
         # Replace spaces and special chars with underscores
-        normalized = re.sub(r'[^\w]+', '_', value.strip())
+        normalized = re.sub(r"[^\w]+", "_", value.strip())
         # Remove leading/trailing underscores
-        normalized = normalized.strip('_')
+        normalized = normalized.strip("_")
         # Convert to lowercase
         normalized = normalized.lower()
         # Collapse multiple underscores
-        normalized = re.sub(r'_+', '_', normalized)
+        normalized = re.sub(r"_+", "_", normalized)
 
         return normalized
 
@@ -256,7 +254,9 @@ class AutoQAParser:
 
         return steps
 
-    def steps_to_scenario(self, steps: List[str], metadata: Dict[str, Any] = None) -> Dict[str, Any]:
+    def steps_to_scenario(
+        self, steps: List[str], metadata: Dict[str, Any] = None
+    ) -> Dict[str, Any]:
         """
         Convert parsed steps and metadata to test scenario format
 
@@ -270,7 +270,11 @@ class AutoQAParser:
         if not steps:
             return {}
 
-        scenario_name = metadata.get("flow_name", "AutoQA Generated Test") if metadata else "AutoQA Generated Test"
+        scenario_name = (
+            metadata.get("flow_name", "AutoQA Generated Test")
+            if metadata
+            else "AutoQA Generated Test"
+        )
 
         # Create scenario with metadata
         scenario = {
@@ -312,7 +316,7 @@ class AutoQAParser:
         lines.append(f"Flow: {metadata.get('flow_name', 'unknown')}")
         lines.append(f"Tier: {metadata.get('tier', 'unknown')}")
 
-        area = metadata.get('area', '')
+        area = metadata.get("area", "")
         if area and area != self.default_area:
             lines.append(f"Area: {area}")
 

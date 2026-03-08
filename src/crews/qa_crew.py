@@ -10,7 +10,7 @@ from typing import Any, Dict, Optional
 
 import yaml
 from crewai import Crew, Task
-from crewai_tools import FileReadTool, DirectoryReadTool
+from crewai_tools import DirectoryReadTool, FileReadTool
 
 from src.agents.executor_agent import ExecutorAgent
 from src.agents.planner_agent import PlannerAgent
@@ -27,6 +27,7 @@ class QACrew:
     def __init__(self, model_name=None):
         # Configure LLM - use gpt-4.1 by default or from environment
         from crewai import LLM
+
         model = model_name or os.getenv("OPENAI_MODEL_NAME", "openai/gpt-4.1")
 
         llm = LLM(
@@ -41,16 +42,14 @@ class QACrew:
         self.directory_read_tool = DirectoryReadTool(root_dir=target_repo_path)
 
         self.planner_agent_wrapper = PlannerAgent(
-            llm=llm,
-            tools=[self.file_read_tool, self.directory_read_tool]
+            llm=llm, tools=[self.file_read_tool, self.directory_read_tool]
         )
         self.executor_agent_wrapper = ExecutorAgent(llm=llm)
         self.playwright_executor = create_playwright_executor_tool()
 
         # Initialize iterative orchestrator for active execution
         self.iterative_orchestrator = IterativeTestOrchestrator(
-            llm=llm,
-            tools=[self.file_read_tool, self.directory_read_tool]
+            llm=llm, tools=[self.file_read_tool, self.directory_read_tool]
         )
 
         # Initialize the actual CrewAI agents
@@ -286,10 +285,7 @@ class QACrew:
             return {"success": False, "error": str(e), "scenario": scenario}
 
     def run_active_autoqa_scenario(
-        self,
-        scenario: Dict[str, Any],
-        config: Dict[str, Any],
-        existing_code: Optional[str] = None
+        self, scenario: Dict[str, Any], config: Dict[str, Any], existing_code: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Run AutoQA scenario with active iterative execution.
@@ -323,10 +319,7 @@ class QACrew:
 
             # Run active execution
             result = self.iterative_orchestrator.run_active_execution(
-                steps=steps,
-                config=config,
-                scenario=scenario,
-                existing_code=existing_code
+                steps=steps, config=config, scenario=scenario, existing_code=existing_code
             )
 
             # Enhance result with scenario metadata
@@ -340,6 +333,7 @@ class QACrew:
         except Exception as e:
             logger.error(f"Active AutoQA execution failed: {str(e)}")
             import traceback
+
             logger.error(traceback.format_exc())
 
             return {

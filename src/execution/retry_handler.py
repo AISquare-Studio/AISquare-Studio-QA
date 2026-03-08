@@ -118,8 +118,7 @@ class RetryHandler:
         # Try alternative selectors if available
         if analysis.get("alternative_selectors"):
             return self._replace_selector(
-                original_code,
-                analysis["alternative_selectors"][retry_attempt - 1]
+                original_code, analysis["alternative_selectors"][retry_attempt - 1]
             )
 
         # Apply suggestions
@@ -133,11 +132,7 @@ class RetryHandler:
         return modified_code
 
     def _analyze_timeout_error(
-        self,
-        step_code: str,
-        error: str,
-        page: Page,
-        step_description: str = None
+        self, step_code: str, error: str, page: Page, step_description: str = None
     ) -> Dict[str, Any]:
         """Analyze timeout errors."""
         # Extract selector from error or code
@@ -151,14 +146,15 @@ class RetryHandler:
                 "Verify element visibility",
                 "Increase wait timeout (last resort)",
             ],
-            "alternative_selectors": self._find_alternative_selectors(selector, page, step_description) if selector else []
+            "alternative_selectors": (
+                self._find_alternative_selectors(selector, page, step_description)
+                if selector
+                else []
+            ),
         }
 
     def _analyze_selector_error(
-        self,
-        step_description: str,
-        step_code: str,
-        page: Page
+        self, step_description: str, step_code: str, page: Page
     ) -> Dict[str, Any]:
         """Analyze selector-related errors."""
         inspector = DOMInspectorTool(page)
@@ -224,10 +220,7 @@ class RetryHandler:
         return None
 
     def _find_alternative_selectors(
-        self,
-        original_selector: Optional[str],
-        page: Page,
-        step_description: str = None
+        self, original_selector: Optional[str], page: Page, step_description: str = None
     ) -> List[str]:
         """Find alternative selectors similar to the original or matching description."""
         if not original_selector and not step_description:
@@ -264,9 +257,9 @@ class RetryHandler:
         """Replace selector in code with new one."""
         # Replace in common Playwright methods
         patterns = [
-            (r'(\.click\(["\'])([^"\']+)(["\'])', rf'\g<1>{new_selector}\g<3>'),
-            (r'(\.fill\(["\'])([^"\']+)(["\'])', rf'\g<1>{new_selector}\g<3>'),
-            (r'(\.wait_for_selector\(["\'])([^"\']+)(["\'])', rf'\g<1>{new_selector}\g<3>'),
+            (r'(\.click\(["\'])([^"\']+)(["\'])', rf"\g<1>{new_selector}\g<3>"),
+            (r'(\.fill\(["\'])([^"\']+)(["\'])', rf"\g<1>{new_selector}\g<3>"),
+            (r'(\.wait_for_selector\(["\'])([^"\']+)(["\'])', rf"\g<1>{new_selector}\g<3>"),
         ]
 
         modified = code
@@ -279,24 +272,20 @@ class RetryHandler:
         """Increase timeout values in code."""
         # Increase wait_for_timeout values
         code = re.sub(
-            r'wait_for_timeout\((\d+)\)',
-            lambda m: f'wait_for_timeout({int(m.group(1)) * 2})',
-            code
+            r"wait_for_timeout\((\d+)\)", lambda m: f"wait_for_timeout({int(m.group(1)) * 2})", code
         )
 
         # Add timeout parameter if not present
-        if 'wait_for_selector' in code and 'timeout=' not in code:
+        if "wait_for_selector" in code and "timeout=" not in code:
             code = re.sub(
-                r'wait_for_selector\(([^)]+)\)',
-                r'wait_for_selector(\1, timeout=10000)',
-                code
+                r"wait_for_selector\(([^)]+)\)", r"wait_for_selector(\1, timeout=10000)", code
             )
 
         return code
 
     def _add_wait_before(self, code: str) -> str:
         """Add wait before action."""
-        lines = code.split('\n')
+        lines = code.split("\n")
         if lines:
             # Add wait before first action line
             return "page.wait_for_load_state('networkidle')\n" + code

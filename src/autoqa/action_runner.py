@@ -105,12 +105,15 @@ class ActionRunner:
 
             # Execute, commit, report, and return outputs
             return self._finalize_generation(
-                generation_result, metadata, etag,
+                generation_result,
+                metadata,
+                etag,
             )
 
         except Exception as e:
             logger.error(f"AutoQA Action failed: {str(e)}")
             import traceback
+
             logger.error(traceback.format_exc())
             return self._set_outputs({"test_generated": "false", "error": str(e)})
 
@@ -138,11 +141,13 @@ class ActionRunner:
         logger.info("Generating Suite Result comment...")
         self.reporter.create_suite_comment(suite_results)
 
-        return self._set_outputs({
-            "test_generated": "false",
-            "suite_results": json.dumps(suite_results),
-            "error": None if suite_results.get("success", False) else "Test suite failed"
-        })
+        return self._set_outputs(
+            {
+                "test_generated": "false",
+                "suite_results": json.dumps(suite_results),
+                "error": None if suite_results.get("success", False) else "Test suite failed",
+            }
+        )
 
     def _parse_and_validate_pr(self) -> Dict[str, Any]:
         """Parse and validate the PR body. Returns metadata/steps or error dict."""
@@ -193,9 +198,7 @@ class ActionRunner:
                 logger.warning(f"Failed to read existing test: {e}")
         return existing_code
 
-    def _get_execution_result(
-        self, generation_result: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _get_execution_result(self, generation_result: Dict[str, Any]) -> Dict[str, Any]:
         """Get execution result, normalizing active vs legacy mode output."""
         if generation_result.get("metadata", {}).get("execution_mode") == "active_iterative":
             logger.info("Using execution results from active iterative execution...")
@@ -203,9 +206,7 @@ class ActionRunner:
 
             error = None
             if not raw.get("success"):
-                details = generation_result.get("execution_result", {}).get(
-                    "step_details", [{}]
-                )
+                details = generation_result.get("execution_result", {}).get("step_details", [{}])
                 error = details[-1].get("error") if details else None
 
             return {
@@ -249,12 +250,20 @@ class ActionRunner:
 
         # Step 9: ALWAYS generate PR comment (success or failure)
         self._post_pr_comments(
-            generation_result, execution_result, suite_results, test_file_path, metadata,
+            generation_result,
+            execution_result,
+            suite_results,
+            test_file_path,
+            metadata,
         )
 
         # Step 10: Set outputs (success or failure)
         return self._build_outputs(
-            execution_result, test_file_path, suite_results, metadata, etag,
+            execution_result,
+            test_file_path,
+            suite_results,
+            metadata,
+            etag,
         )
 
     def _maybe_run_suite(self, execution_result: Dict[str, Any]) -> Dict:
@@ -284,7 +293,9 @@ class ActionRunner:
                 generation_result=generation_result,
                 execution_result=execution_result,
                 suite_results=suite_results,
-                test_file_path=str(test_file_path) if test_file_path else "Not committed (test failed)",
+                test_file_path=(
+                    str(test_file_path) if test_file_path else "Not committed (test failed)"
+                ),
                 metadata=metadata,
             )
 
@@ -320,7 +331,9 @@ class ActionRunner:
 
         return self._set_outputs(outputs)
 
-    def _generate_test_code(self, steps: List[str], metadata: Dict[str, Any], existing_code: str = None) -> Dict[str, Any]:
+    def _generate_test_code(
+        self, steps: List[str], metadata: Dict[str, Any], existing_code: str = None
+    ) -> Dict[str, Any]:
         """
         Generate test code using CrewAI components
 
@@ -341,7 +354,9 @@ class ActionRunner:
                 logger.info("Using ACTIVE ITERATIVE EXECUTION mode")
 
                 # Create test configuration for active execution
-                base_url = self.config.get("staging_url", "https://stg-home.aisquare.studio").rstrip("/")
+                base_url = self.config.get(
+                    "staging_url", "https://stg-home.aisquare.studio"
+                ).rstrip("/")
                 test_config = {
                     "base_url": base_url,
                     "login_url": f"{base_url}/login",
@@ -354,9 +369,7 @@ class ActionRunner:
 
                 # Use active execution
                 result = self.qa_crew.run_active_autoqa_scenario(
-                    scenario=scenario,
-                    config=test_config,
-                    existing_code=existing_code
+                    scenario=scenario, config=test_config, existing_code=existing_code
                 )
 
                 if not result.get("success"):
@@ -413,6 +426,7 @@ class ActionRunner:
         except Exception as e:
             logger.error(f"Test code generation failed: {str(e)}")
             import traceback
+
             logger.error(traceback.format_exc())
             return {"success": False, "error": f"CrewAI generation failed: {str(e)}"}
 
@@ -457,7 +471,8 @@ class ActionRunner:
                     "python",
                     "-m",
                     "pytest",
-                    "-n", "auto",  # Run in parallel using all available cores
+                    "-n",
+                    "auto",  # Run in parallel using all available cores
                     str(self.target_workspace / self.config["test_directory"]),
                     "-v",
                     "--tb=short",
@@ -492,13 +507,15 @@ class ActionRunner:
                         if not error_message and "call" in test and "longrepr" in test["call"]:
                             error_message = str(test["call"]["longrepr"])
 
-                    detailed_results.append({
-                        "name": name,
-                        "nodeid": nodeid,
-                        "outcome": test.get("outcome", "unknown"),
-                        "duration": test.get("call", {}).get("duration", 0),
-                        "error": error_message
-                    })
+                    detailed_results.append(
+                        {
+                            "name": name,
+                            "nodeid": nodeid,
+                            "outcome": test.get("outcome", "unknown"),
+                            "duration": test.get("call", {}).get("duration", 0),
+                            "error": error_message,
+                        }
+                    )
 
                 summary = suite_data.get("summary", {})
                 passed = summary.get("passed", 0)

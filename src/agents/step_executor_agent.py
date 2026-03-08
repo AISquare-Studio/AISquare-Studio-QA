@@ -2,12 +2,13 @@
 Step Executor Agent: Generates and executes single test steps with context awareness.
 """
 
-import time
 import textwrap
+import time
 from typing import Any, Dict, List, Optional, Tuple
 
 from crewai import Agent, Crew, Task
-from playwright.sync_api import Page, TimeoutError as PlaywrightTimeoutError
+from playwright.sync_api import Page
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 from src.execution.execution_context import ExecutionContext
 from src.tools.dom_inspector import DOMInspectorTool
@@ -112,16 +113,12 @@ class StepExecutorAgent:
                 # Update persistent crew's tasks and execute
                 crew.tasks = [code_generation_task]
                 result = crew.kickoff()
-                generated_code = result.raw if hasattr(result, 'raw') else str(result)
+                generated_code = result.raw if hasattr(result, "raw") else str(result)
             else:
                 # Fallback: create temporary crew (for backward compatibility)
-                temp_crew = Crew(
-                    agents=[self.agent],
-                    tasks=[code_generation_task],
-                    verbose=False
-                )
+                temp_crew = Crew(agents=[self.agent], tasks=[code_generation_task], verbose=False)
                 result = temp_crew.kickoff()
-                generated_code = result.raw if hasattr(result, 'raw') else str(result)
+                generated_code = result.raw if hasattr(result, "raw") else str(result)
 
             # Clean the code
             cleaned_code = self._clean_generated_code(str(generated_code))
@@ -177,11 +174,13 @@ class StepExecutorAgent:
             if execution_globals is not None:
                 exec_namespace = execution_globals
                 # Ensure critical variables are up to date
-                exec_namespace.update({
-                    "page": page,
-                    "config": config,
-                    "TimeoutError": PlaywrightTimeoutError,
-                })
+                exec_namespace.update(
+                    {
+                        "page": page,
+                        "config": config,
+                        "TimeoutError": PlaywrightTimeoutError,
+                    }
+                )
             else:
                 # Create execution namespace with page and config
                 exec_namespace = {
@@ -202,8 +201,7 @@ class StepExecutorAgent:
             result["execution_time"] = time.time() - start_time
 
             logger.info(
-                f"✓ Step {step_number} executed successfully "
-                f"({result['execution_time']:.2f}s)"
+                f"✓ Step {step_number} executed successfully ({result['execution_time']:.2f}s)"
             )
 
         except PlaywrightTimeoutError as e:
@@ -263,8 +261,8 @@ class StepExecutorAgent:
         lines = ["# Previously generated code (for context):"]
         for item in accumulated_code:
             lines.append(f"\n# Step {item['step_number']}: {item['description']}")
-            lines.append(item['code'])
-            if item.get('url_after'):
+            lines.append(item["code"])
+            if item.get("url_after"):
                 lines.append(f"# After this step, URL was: {item['url_after']}")
 
         lines.append("\n# Now generate the next step...")
@@ -287,21 +285,24 @@ class StepExecutorAgent:
         if relevant_elements:
             elements_info = "\nRELEVANT ELEMENTS FOUND (Select the best one based on context):"
             for i, el in enumerate(relevant_elements[:5]):  # Show top 5 matches
-                data = el.get('data', {})
+                data = el.get("data", {})
                 elements_info += f"\n{i+1}. Type: {el.get('type')}"
-                if data.get('text'):
+                if data.get("text"):
                     elements_info += f", Text: '{data.get('text')}'"
-                if data.get('placeholder'):
+                if data.get("placeholder"):
                     elements_info += f", Placeholder: '{data.get('placeholder')}'"
-                if data.get('name'):
+                if data.get("name"):
                     elements_info += f", Name: '{data.get('name')}'"
-                if data.get('id'):
+                if data.get("id"):
                     elements_info += f", ID: '{data.get('id')}'"
-                if data.get('dataTestId'):
+                if data.get("dataTestId"):
                     elements_info += f", TestID: '{data.get('dataTestId')}'"
                 elements_info += f"\n   Suggested Selector: {el.get('best_selector')}"
         else:
-            elements_info = "\nNo specific relevant elements found - infer from page structure or use generic selectors."
+            elements_info = (
+                "\nNo specific relevant elements found - infer from page structure or use generic"
+                " selectors."
+            )
 
         existing_code_section = ""
         if existing_code:
@@ -432,20 +433,28 @@ Generate code for: {step_description}
         if "navigate" in step_lower or "go to" in step_lower or "visit" in step_lower:
             # Extract path if present
             if '"/signup"' in step_description or "'/signup'" in step_description:
-                return 'page.goto(config.get("base_url", "") + "/signup")\npage.wait_for_load_state("networkidle")'
+                return (
+                    'page.goto(config.get("base_url", "") +'
+                    ' "/signup")\npage.wait_for_load_state("networkidle")'
+                )
             elif '"/login"' in step_description or "'/login'" in step_description:
-                return 'page.goto(config.get("base_url", "") + "/login")\npage.wait_for_load_state("networkidle")'
+                return (
+                    'page.goto(config.get("base_url", "") +'
+                    ' "/login")\npage.wait_for_load_state("networkidle")'
+                )
             else:
                 # Generic navigation
-                return 'page.goto(config.get("base_url", ""))\npage.wait_for_load_state("networkidle")'
+                return (
+                    'page.goto(config.get("base_url", ""))\npage.wait_for_load_state("networkidle")'
+                )
 
         # Handle click actions
         elif "click" in step_lower:
-            return 'page.wait_for_timeout(1000)  # Wait for elements to be ready'
+            return "page.wait_for_timeout(1000)  # Wait for elements to be ready"
 
         # Handle fill/input actions
         elif "fill" in step_lower or "enter" in step_lower or "type" in step_lower:
-            return 'page.wait_for_timeout(1000)  # Wait for form to be ready'
+            return "page.wait_for_timeout(1000)  # Wait for form to be ready"
 
         # Default: just wait
-        return 'page.wait_for_timeout(1000)  # Waiting for page state'
+        return "page.wait_for_timeout(1000)  # Waiting for page state"

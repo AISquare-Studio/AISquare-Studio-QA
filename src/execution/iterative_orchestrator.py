@@ -7,7 +7,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from crewai import Crew
-from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+from playwright.sync_api import sync_playwright
 
 from src.agents.step_executor_agent import StepExecutorAgent
 from src.execution.execution_context import ExecutionContext
@@ -51,7 +52,7 @@ class IterativeTestOrchestrator:
             tasks=[],  # Start empty, add tasks dynamically
             memory=True,  # Enable built-in memory
             verbose=False,  # Reduce console spam
-            process="sequential"
+            process="sequential",
         )
 
         # Track accumulated code for explicit context passing
@@ -98,7 +99,9 @@ class IterativeTestOrchestrator:
 
             context = browser.new_context(
                 viewport={"width": 1280, "height": 720},
-                record_video_dir=str(self.screenshot_dir / "videos") if config.get("record_video") else None,
+                record_video_dir=(
+                    str(self.screenshot_dir / "videos") if config.get("record_video") else None
+                ),
             )
 
             page = context.new_page()
@@ -125,7 +128,9 @@ class IterativeTestOrchestrator:
             final_test_code_lines.append("def run_test(page, config):")
             final_test_code_lines.append("    '''")
             final_test_code_lines.append(f"    Test: {scenario.get('name', 'Generated Test')}")
-            final_test_code_lines.append(f"    Generated with active execution - {len(steps)} steps")
+            final_test_code_lines.append(
+                f"    Generated with active execution - {len(steps)} steps"
+            )
             final_test_code_lines.append("    '''")
             final_test_code_lines.append("")
 
@@ -166,12 +171,14 @@ class IterativeTestOrchestrator:
 
                 # Add to accumulated code on success
                 if step_result["success"]:
-                    self.accumulated_code.append({
-                        'step_number': i,
-                        'description': step_description,
-                        'code': step_result['code'],
-                        'url_after': page.url
-                    })
+                    self.accumulated_code.append(
+                        {
+                            "step_number": i,
+                            "description": step_description,
+                            "code": step_result["code"],
+                            "url_after": page.url,
+                        }
+                    )
 
                 # Add code to final test (with proper indentation)
                 if step_result["success"]:
@@ -183,7 +190,9 @@ class IterativeTestOrchestrator:
                 else:
                     # Add as comment if failed
                     final_test_code_lines.append(f"    # Step {i} FAILED: {step_description}")
-                    final_test_code_lines.append(f"    # Error: {step_result.get('error', 'Unknown')}")
+                    final_test_code_lines.append(
+                        f"    # Error: {step_result.get('error', 'Unknown')}"
+                    )
                     final_test_code_lines.append("")
 
                 # Decide whether to continue
@@ -197,9 +206,7 @@ class IterativeTestOrchestrator:
             # Take final screenshot
             final_screenshot = None
             try:
-                final_screenshot = str(
-                    self.screenshot_dir / f"final_state_{int(time.time())}.png"
-                )
+                final_screenshot = str(self.screenshot_dir / f"final_state_{int(time.time())}.png")
                 page.screenshot(path=final_screenshot)
                 logger.info(f"Final screenshot saved: {final_screenshot}")
             except Exception as e:
@@ -350,7 +357,9 @@ class IterativeTestOrchestrator:
         return {
             "success": False,
             "code": last_code or f"# Failed to generate code for: {step_description}",
-            "error": last_error.get("error", "Unknown error") if last_error else "Failed to execute",
+            "error": (
+                last_error.get("error", "Unknown error") if last_error else "Failed to execute"
+            ),
             "error_type": last_error.get("error_type", "unknown") if last_error else "unknown",
             "execution_time": 0,
             "attempts": attempt,
@@ -362,7 +371,7 @@ class IterativeTestOrchestrator:
         self.accumulated_code = []
 
         # Reset crew memory
-        if hasattr(self.crew, 'memory') and self.crew.memory:
+        if hasattr(self.crew, "memory") and self.crew.memory:
             try:
                 self.crew.memory.reset()
             except Exception as e:
