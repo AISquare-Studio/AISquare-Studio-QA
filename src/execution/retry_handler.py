@@ -118,7 +118,7 @@ class RetryHandler:
         # Try alternative selectors if available
         if analysis.get("alternative_selectors"):
             return self._replace_selector(
-                original_code, 
+                original_code,
                 analysis["alternative_selectors"][retry_attempt - 1]
             )
 
@@ -133,9 +133,9 @@ class RetryHandler:
         return modified_code
 
     def _analyze_timeout_error(
-        self, 
-        step_code: str, 
-        error: str, 
+        self,
+        step_code: str,
+        error: str,
         page: Page,
         step_description: str = None
     ) -> Dict[str, Any]:
@@ -155,23 +155,23 @@ class RetryHandler:
         }
 
     def _analyze_selector_error(
-        self, 
-        step_description: str, 
-        step_code: str, 
+        self,
+        step_description: str,
+        step_code: str,
         page: Page
     ) -> Dict[str, Any]:
         """Analyze selector-related errors."""
         inspector = DOMInspectorTool(page)
-        
+
         # Try to find better selector
         alternative = inspector.find_best_selector_for_element(step_description)
-        
+
         alternatives = [alternative] if alternative else []
-        
+
         # Also get other potential selectors
         discovered = inspector.discover_selectors()
         current_selector = self._extract_selector_from_code(step_code)
-        
+
         # Add more alternatives from discovered elements
         for element_type, elements in discovered.items():
             for element in elements[:3]:  # Top 3 of each type
@@ -196,7 +196,7 @@ class RetryHandler:
 
         if "assert" in error.lower():
             suggestions.append("Assertion failed - verify expected condition")
-        
+
         if "attribute" in error.lower():
             suggestions.append("Check if element has expected attributes")
 
@@ -224,8 +224,8 @@ class RetryHandler:
         return None
 
     def _find_alternative_selectors(
-        self, 
-        original_selector: Optional[str], 
+        self,
+        original_selector: Optional[str],
         page: Page,
         step_description: str = None
     ) -> List[str]:
@@ -244,7 +244,7 @@ class RetryHandler:
                     sel = el.get("best_selector")
                     if sel and sel != original_selector:
                         alternatives.append(sel)
-            
+
             # Fallback to general discovery if needed
             if not alternatives:
                 discovered = inspector.discover_selectors()

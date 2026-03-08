@@ -44,7 +44,7 @@ class IterativeTestOrchestrator:
         self.retry_handler = RetryHandler(max_retries=max_retries)
         self.screenshot_dir = screenshot_dir or Path("reports/screenshots")
         self.screenshot_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Initialize persistent Crew with memory enabled
         self.crew = Crew(
             agents=[self.step_executor.agent],
@@ -53,7 +53,7 @@ class IterativeTestOrchestrator:
             verbose=False,  # Reduce console spam
             process="sequential"
         )
-        
+
         # Track accumulated code for explicit context passing
         self.accumulated_code = []
 
@@ -84,23 +84,23 @@ class IterativeTestOrchestrator:
         logger.info("=" * 60)
 
         overall_start = time.time()
-        
+
         # Clear accumulated code for new test
         self.accumulated_code = []
         logger.info("Starting fresh execution - memory will accumulate naturally")
-        
+
         with sync_playwright() as playwright:
             # Launch browser
             browser = playwright.chromium.launch(
                 headless=config.get("headless", True),
                 slow_mo=500,  # Slow down for better observation
             )
-            
+
             context = browser.new_context(
                 viewport={"width": 1280, "height": 720},
                 record_video_dir=str(self.screenshot_dir / "videos") if config.get("record_video") else None,
             )
-            
+
             page = context.new_page()
 
             # Initialize execution context
@@ -118,7 +118,7 @@ class IterativeTestOrchestrator:
             # Execute steps iteratively
             generated_steps = []
             final_test_code_lines = []
-            
+
             # Add imports and function definition
             final_test_code_lines.append("# Auto-generated test with active execution")
             final_test_code_lines.append("")
@@ -163,7 +163,7 @@ class IterativeTestOrchestrator:
 
                 # Add to generated steps
                 generated_steps.append(step_result)
-                
+
                 # Add to accumulated code on success
                 if step_result["success"]:
                     self.accumulated_code.append({
@@ -294,7 +294,7 @@ class IterativeTestOrchestrator:
                 else:
                     # Retry - analyze failure and modify
                     logger.info(f"Retry attempt {attempt} for step {step_number}")
-                    
+
                     analysis = self.retry_handler.analyze_failure(
                         step_description=step_description,
                         step_code=last_code,
@@ -302,17 +302,17 @@ class IterativeTestOrchestrator:
                         error_type=last_error["error_type"],
                         page=page,
                     )
-                    
+
                     logger.info(f"Failure analysis: {analysis['likely_cause']}")
                     logger.info(f"Suggestions: {', '.join(analysis['suggestions'][:2])}")
-                    
+
                     # Generate retry code
                     step_code = self.retry_handler.generate_retry_code(
                         original_code=last_code,
                         analysis=analysis,
                         retry_attempt=attempt,
                     )
-                    
+
                     self.retry_handler.increment_retry(step_number)
 
                 last_code = step_code
@@ -346,7 +346,7 @@ class IterativeTestOrchestrator:
 
         # All retries exhausted
         logger.error(f"Step {step_number} failed after {attempt} attempts")
-        
+
         return {
             "success": False,
             "code": last_code or f"# Failed to generate code for: {step_description}",
@@ -360,12 +360,12 @@ class IterativeTestOrchestrator:
         """Reset orchestrator state for new execution."""
         self.retry_handler.reset()
         self.accumulated_code = []
-        
+
         # Reset crew memory
         if hasattr(self.crew, 'memory') and self.crew.memory:
             try:
                 self.crew.memory.reset()
             except Exception as e:
                 logger.warning(f"Could not reset crew memory: {str(e)}")
-        
+
         logger.info("Orchestrator reset")

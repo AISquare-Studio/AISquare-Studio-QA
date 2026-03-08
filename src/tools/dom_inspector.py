@@ -2,8 +2,7 @@
 DOM Inspector Tool: Extracts selectors and inspects page structure from live pages.
 """
 
-import json
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from playwright.sync_api import Page
 
@@ -470,7 +469,7 @@ class DOMInspectorTool:
 
             # Sort by score (descending) but return all matches
             candidates.sort(reverse=True, key=lambda x: x["match_score"])
-            
+
             logger.info(f"Found {len(candidates)} relevant elements for '{element_description}'")
             return candidates
 

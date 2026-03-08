@@ -134,7 +134,7 @@ class ActionReporter:
             Dict with 'success' and 'error' screenshot markdown sections
         """
         screenshot_sections = {}
-        
+
         # Always provide artifact link at the top
         if self.github_run_id and self.target_repo:
             artifacts_url = f"https://github.com/{self.target_repo}/actions/runs/{self.github_run_id}"
@@ -156,14 +156,14 @@ class ActionReporter:
                     screenshot_sections["success"] = f"\n### 📸 Success Screenshot\n{embedded_screenshot}\n"
                 else:
                     screenshot_sections["success"] = (
-                        f"\n### 📸 Success Screenshot\n"
-                        f"*Screenshot captured - view in artifacts above*\n"
+                        "\n### 📸 Success Screenshot\n"
+                        "*Screenshot captured - view in artifacts above*\n"
                     )
             else:
                 logger.warning(f"Screenshot file not found: {screenshot_path}")
                 screenshot_sections["success"] = (
-                    f"\n### 📸 Success Screenshot\n"
-                    f"*Screenshot captured - view in artifacts above*\n"
+                    "\n### 📸 Success Screenshot\n"
+                    "*Screenshot captured - view in artifacts above*\n"
                 )
 
         # Error screenshot (for failures)
@@ -178,13 +178,13 @@ class ActionReporter:
                     screenshot_sections["error"] = f"\n### 🚨 Failure Screenshot\n{embedded_error}\n"
                 else:
                     screenshot_sections["error"] = (
-                        f"\n### 🚨 Failure Screenshot\n"
-                        f"*Screenshot captured at failure - view in artifacts above*\n"
+                        "\n### 🚨 Failure Screenshot\n"
+                        "*Screenshot captured at failure - view in artifacts above*\n"
                     )
             else:
                 screenshot_sections["error"] = (
-                    f"\n### 🚨 Failure Screenshot\n"
-                    f"*Screenshot captured at failure - view in artifacts above*\n"
+                    "\n### 🚨 Failure Screenshot\n"
+                    "*Screenshot captured at failure - view in artifacts above*\n"
                 )
 
         # If test failed but no specific error screenshot, use main screenshot

@@ -28,21 +28,20 @@ class CrossRepoManager:
     def commit_test_file(self, code: str, metadata: Dict[str, Any]) -> Path:
         """
         Commit generated test file to target repository
-        
+
         Args:
             code: Generated test code
             metadata: AutoQA metadata including flow_name, tier, area, steps, etag
-            
+
         Returns:
             Path to created test file
         """
         # Extract components from metadata
         tier = metadata.get("tier", "B")
         area = metadata.get("area", "general")
-        flow_name = metadata.get("flow_name", "unknown")
-        
+
         # Ensure directory structure exists
-        test_dir = self._ensure_directory_structure(tier, area)
+        self._ensure_directory_structure(tier, area)
 
         # Generate test file path
         test_file_path = self._generate_test_file_path(metadata)
@@ -59,97 +58,97 @@ class CrossRepoManager:
     def _ensure_directory_structure(self, tier: str, area: str = None) -> Path:
         """
         Ensure tests/autoqa/{tier}/{area}/ directory structure exists
-        
+
         Args:
             tier: Test tier (A, B, or C)
             area: Optional area/module name (defaults to 'general')
-            
+
         Returns:
             Path to the tier/area directory
         """
         # Base autoqa directory
         base_dir = self.target_workspace / self.test_directory
         base_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Create base __init__.py
         base_init = base_dir / "__init__.py"
         if not base_init.exists():
             base_init.write_text('"""AutoQA Generated Tests"""\n')
-        
+
         # Tier directory
         tier_dir = base_dir / tier
         tier_dir.mkdir(exist_ok=True)
-        
+
         tier_init = tier_dir / "__init__.py"
         if not tier_init.exists():
             tier_init.write_text(f'"""AutoQA Tier {tier} Tests"""\n')
-        
+
         # Area directory (if specified and not default)
         if area and area != "general":
             area_dir = tier_dir / area
             area_dir.mkdir(exist_ok=True)
-            
+
             area_init = area_dir / "__init__.py"
             if not area_init.exists():
                 area_init.write_text(f'"""AutoQA {area.title()} Tests"""\n')
-            
+
             return area_dir
-        
+
         return tier_dir
-    
+
     def find_test_for_flow(self, metadata: Dict[str, Any]) -> Optional[Path]:
         """
         Find existing test file for a flow
-        
+
         Args:
             metadata: AutoQA metadata with tier, area, flow_name
-            
+
         Returns:
             Path object if found, else None
         """
         tier = metadata.get("tier", "B")
         area = metadata.get("area", "general")
         flow_name = metadata.get("flow_name", "unknown")
-        
+
         # Get the tier/area directory
         test_dir = self._ensure_directory_structure(tier, area)
-        
+
         # Expected filename
         expected_path = test_dir / f"test_{flow_name}.py"
-        
+
         if expected_path.exists():
             return expected_path
-            
+
         return None
 
     def _generate_test_file_path(self, metadata: Dict[str, Any]) -> Path:
         """
         Generate test file path following pattern: tests/autoqa/{tier}/{area}/test_{flow_name}.py
-        
+
         Args:
             metadata: AutoQA metadata with tier, area, flow_name
-            
+
         Returns:
             Path object for the test file
         """
         tier = metadata.get("tier", "B")
         area = metadata.get("area", "general")
         flow_name = metadata.get("flow_name", "unknown")
-        
+
         # Get the tier/area directory
         test_dir = self._ensure_directory_structure(tier, area)
-        
+
         # Base filename - Always overwrite existing file (no versioning)
         return test_dir / f"test_{flow_name}.py"
 
     def _create_test_file_content(self, code: str, metadata: Dict[str, Any]) -> str:
         """
         Create complete test file content with AutoQA-Generated header and metadata
-        
+
         Args:
             code: Generated test code
             metadata: AutoQA metadata with all fields
-            
+
         Returns:
             Complete file content as string
         """
@@ -160,10 +159,10 @@ class CrossRepoManager:
         etag = metadata.get("etag", "")
         steps = metadata.get("steps", [])
         timestamp = self._format_iso8601_timestamp()
-        
+
         # Build test class name from flow_name (CamelCase)
         class_name = self._flow_name_to_class_name(flow_name)
-        
+
         # Build test method name from flow_name (snake_case)
         method_name = f"test_{flow_name}"
 
@@ -171,7 +170,7 @@ class CrossRepoManager:
         existing_path = self.find_test_for_flow(metadata)
         history_lines = []
         original_generated = f"# Generated: {timestamp}"
-        
+
         if existing_path and existing_path.exists():
             try:
                 content = existing_path.read_text()
@@ -183,7 +182,7 @@ class CrossRepoManager:
                         history_lines.append(line.strip())
             except Exception:
                 pass
-            
+
             # Add new update timestamp
             history_lines.append(f"# Updated: {timestamp} | ETag: {etag}")
 
@@ -193,11 +192,11 @@ class CrossRepoManager:
             '# AutoQA-Generated',
             original_generated
         ]
-        
+
         # Add update history if exists
         if history_lines:
             header_lines.extend(history_lines)
-            
+
         header_lines.extend([
             f'# Flow: {flow_name}',
             f'# Tier: {tier}',
@@ -211,7 +210,7 @@ class CrossRepoManager:
             'For policy details, see: .github/autoqa-policy.yml',
             '"""'
         ])
-        
+
         header = '\n'.join(header_lines)
 
         post_header = f'''
@@ -266,14 +265,14 @@ if __name__ == "__main__":
 '''
 
         return header + post_header
-    
+
     def _flow_name_to_class_name(self, flow_name: str) -> str:
         """
         Convert flow_name to CamelCase class name
-        
+
         Args:
             flow_name: Snake_case flow name
-            
+
         Returns:
             CamelCase class name with Test prefix
         """
@@ -281,11 +280,11 @@ if __name__ == "__main__":
         parts = flow_name.split('_')
         camel = ''.join(word.capitalize() for word in parts)
         return f"Test{camel}"
-    
+
     def _format_iso8601_timestamp(self) -> str:
         """
         Generate ISO8601 timestamp with timezone
-        
+
         Returns:
             ISO8601 formatted timestamp string
         """
@@ -308,7 +307,7 @@ if __name__ == "__main__":
     def _commit_file_to_repo(self, test_file_path: Path, metadata: Dict[str, Any]) -> None:
         """
         Commit the test file to the target repository
-        
+
         Args:
             test_file_path: Path to the test file
             metadata: AutoQA metadata for commit message
@@ -329,12 +328,12 @@ if __name__ == "__main__":
 
             # Add the test file and any new __init__.py files
             relative_path = test_file_path.relative_to(self.target_workspace)
-            
+
             # Add the specific file
             subprocess.run(
                 ["git", "add", str(relative_path)], cwd=self.target_workspace, check=True
             )
-            
+
             # Add any __init__.py files in the directory tree
             test_dir = test_file_path.parent
             while str(test_dir) != str(self.target_workspace):
@@ -342,8 +341,8 @@ if __name__ == "__main__":
                 if init_file.exists():
                     init_relative = init_file.relative_to(self.target_workspace)
                     subprocess.run(
-                        ["git", "add", str(init_relative)], 
-                        cwd=self.target_workspace, 
+                        ["git", "add", str(init_relative)],
+                        cwd=self.target_workspace,
                         check=False  # Don't fail if already tracked
                     )
                 test_dir = test_dir.parent
@@ -421,14 +420,14 @@ if __name__ == "__main__":
     def _create_pull_request(self, metadata: Dict[str, Any]) -> None:
         """
         Create a pull request with the AutoQA test changes
-        
+
         Args:
             metadata: AutoQA metadata for branch naming and description
         """
         try:
             flow_name = metadata.get("flow_name", "test")
             tier = metadata.get("tier", "B")
-            
+
             # Create a new branch for the PR
             branch_name = f"autoqa/{tier.lower()}/{flow_name}"
 
@@ -457,10 +456,10 @@ if __name__ == "__main__":
     def _generate_commit_message(self, metadata: Dict[str, Any]) -> str:
         """
         Generate descriptive commit message from metadata
-        
+
         Args:
             metadata: AutoQA metadata
-            
+
         Returns:
             Formatted commit message
         """
@@ -468,17 +467,17 @@ if __name__ == "__main__":
         tier = metadata.get("tier", "B")
         area = metadata.get("area", "general")
         steps = metadata.get("steps", [])
-        
+
         message = f"AutoQA: Add {flow_name} test"
-        
+
         if area and area != "general":
             message += f" [{tier}/{area}]"
         else:
             message += f" [Tier {tier}]"
-        
+
         if steps:
             message += f" ({len(steps)} steps)"
-        
+
         return message
 
     def discover_tests(self) -> List[Path]:

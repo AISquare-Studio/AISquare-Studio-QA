@@ -109,7 +109,7 @@ class CommentBuilder:
         tier = metadata.get("tier", "B")
         area = metadata.get("area", "general")
         etag = metadata.get("etag", "")
-        
+
         # Optionally hide area if it's the default
         area_line = ""
         if area and area != "general":
@@ -174,9 +174,7 @@ class CommentBuilder:
         # Error details if failed
         if not execution_result.get("success", False):
             error = execution_result.get("error", "Unknown error")
-            screenshot_path = execution_result.get("screenshot_path", "")
-            error_screenshot = execution_result.get("error_screenshot_path", "")
-            
+
             results += f"""
 
 ### ❌ Test Execution Failed
@@ -231,11 +229,11 @@ AutoQA only commits tests that pass successfully. This ensures your test suite r
             # Add artifacts header with link (from action_reporter)
             if screenshot_sections.get("artifacts_header"):
                 artifacts += f"\n\n{screenshot_sections['artifacts_header']}"
-            
+
             # Add success screenshot
             if screenshot_sections.get("success"):
                 artifacts += screenshot_sections['success']
-            
+
             # Add error screenshot (for failures)
             if screenshot_sections.get("error"):
                 artifacts += screenshot_sections['error']
@@ -256,7 +254,7 @@ AutoQA only commits tests that pass successfully. This ensures your test suite r
             return ""
 
         details = suite_results.get("detailed_results", [])
-        
+
         # Build table header
         section = "### 🔍 Full Suite Details\n\n"
         section += "| Test Name | Status | Duration |\n"
@@ -273,10 +271,10 @@ AutoQA only commits tests that pass successfully. This ensures your test suite r
                 status_icon = "⏭️"
             else:
                 status_icon = "⚠️"
-            
+
             duration = f"{test['duration']:.2f}s"
             name = test["name"]
-            
+
             section += f"| `{name}` | {status_icon} | {duration} |\n"
 
             # Collect errors for later
@@ -296,7 +294,7 @@ AutoQA only commits tests that pass successfully. This ensures your test suite r
 ```
 </details>
 """
-        
+
         return section
 
     def build_header(self, status: str, test_file_path: str) -> str:
@@ -335,7 +333,7 @@ AutoQA only commits tests that pass successfully. This ensures your test suite r
         success = suite_results.get("success", False)
         overall_status = "✅ PASSED" if success else "❌ FAILED"
         status_emoji = "✅" if success else "❌"
-        
+
         total = suite_results.get("total_tests", 0)
         passed = suite_results.get("passed", 0)
         failed = suite_results.get("failed", 0)

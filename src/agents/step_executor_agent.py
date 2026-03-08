@@ -33,14 +33,14 @@ class StepExecutorAgent:
         self.agent = Agent(
             role="Iterative Test Step Executor",
             goal="Generate and execute individual test steps with real-time page context",
-            backstory="""You are an expert test automation engineer who excels at writing 
-            precise, reliable Playwright code for individual test steps. You analyze the current 
-            page state, discover the best selectors, and generate code that works on the first try. 
-            You use real-time information about the page to make intelligent decisions about 
+            backstory="""You are an expert test automation engineer who excels at writing
+            precise, reliable Playwright code for individual test steps. You analyze the current
+            page state, discover the best selectors, and generate code that works on the first try.
+            You use real-time information about the page to make intelligent decisions about
             selectors and waits.
-            
+
             You have access to the source code of the application. If the DOM structure is ambiguous,
-            use the file_read_tool to check the component source code for stable selectors 
+            use the file_read_tool to check the component source code for stable selectors
             (like data-testid) or to understand the expected behavior.""",
             verbose=False,  # Reduce console spam
             allow_delegation=False,
@@ -84,7 +84,7 @@ class StepExecutorAgent:
 
             # Find relevant elements for this step (without forcing a single best choice)
             relevant_elements = inspector.find_relevant_elements(step_description)
-            
+
             # Format accumulated code for context
             previous_code_context = self._format_accumulated_code(accumulated_code or [])
 
@@ -106,7 +106,7 @@ class StepExecutorAgent:
                 expected_output="Single Python statement or block for this step only",
                 agent=self.agent,
             )
-            
+
             # Use persistent crew if provided, otherwise create temporary one
             if crew is not None:
                 # Update persistent crew's tasks and execute
@@ -116,8 +116,8 @@ class StepExecutorAgent:
             else:
                 # Fallback: create temporary crew (for backward compatibility)
                 temp_crew = Crew(
-                    agents=[self.agent], 
-                    tasks=[code_generation_task], 
+                    agents=[self.agent],
+                    tasks=[code_generation_task],
                     verbose=False
                 )
                 result = temp_crew.kickoff()
@@ -125,7 +125,7 @@ class StepExecutorAgent:
 
             # Clean the code
             cleaned_code = self._clean_generated_code(str(generated_code))
-            
+
             # Validate the cleaned code
             if not cleaned_code or len(cleaned_code.strip()) == 0:
                 logger.warning(f"Empty code generated for step {step_number}, using fallback")
@@ -250,23 +250,23 @@ class StepExecutorAgent:
     def _format_accumulated_code(self, accumulated_code: List[Dict]) -> str:
         """
         Format previously generated code for context.
-        
+
         Args:
             accumulated_code: List of previous step dicts
-            
+
         Returns:
             Formatted string with previous code
         """
         if not accumulated_code:
             return "# This is the first step - no previous code"
-        
+
         lines = ["# Previously generated code (for context):"]
         for item in accumulated_code:
             lines.append(f"\n# Step {item['step_number']}: {item['description']}")
             lines.append(item['code'])
             if item.get('url_after'):
                 lines.append(f"# After this step, URL was: {item['url_after']}")
-        
+
         lines.append("\n# Now generate the next step...")
         return "\n".join(lines)
 
@@ -289,11 +289,16 @@ class StepExecutorAgent:
             for i, el in enumerate(relevant_elements[:5]):  # Show top 5 matches
                 data = el.get('data', {})
                 elements_info += f"\n{i+1}. Type: {el.get('type')}"
-                if data.get('text'): elements_info += f", Text: '{data.get('text')}'"
-                if data.get('placeholder'): elements_info += f", Placeholder: '{data.get('placeholder')}'"
-                if data.get('name'): elements_info += f", Name: '{data.get('name')}'"
-                if data.get('id'): elements_info += f", ID: '{data.get('id')}'"
-                if data.get('dataTestId'): elements_info += f", TestID: '{data.get('dataTestId')}'"
+                if data.get('text'):
+                    elements_info += f", Text: '{data.get('text')}'"
+                if data.get('placeholder'):
+                    elements_info += f", Placeholder: '{data.get('placeholder')}'"
+                if data.get('name'):
+                    elements_info += f", Name: '{data.get('name')}'"
+                if data.get('id'):
+                    elements_info += f", ID: '{data.get('id')}'"
+                if data.get('dataTestId'):
+                    elements_info += f", TestID: '{data.get('dataTestId')}'"
                 elements_info += f"\n   Suggested Selector: {el.get('best_selector')}"
         else:
             elements_info = "\nNo specific relevant elements found - infer from page structure or use generic selectors."
@@ -302,7 +307,7 @@ class StepExecutorAgent:
         if existing_code:
             existing_code_section = f"""
 EXISTING TEST CODE (FOR REFERENCE):
-The following is the previous implementation of this test. Use it to understand the intended logic, 
+The following is the previous implementation of this test. Use it to understand the intended logic,
 selectors, and flow. However, prioritize the CURRENT page structure and step description if they differ.
 --------------------------------------------------------------------------------
 {existing_code}
@@ -378,7 +383,7 @@ Generate code for: {step_description}
             code = code[:-3]
 
         code = code.strip("`").strip()
-        
+
         # Dedent to handle cases where the whole block is indented
         code = textwrap.dedent(code)
 
@@ -389,15 +394,15 @@ Generate code for: {step_description}
             # Skip empty lines and explanation comments
             if not stripped:
                 continue
-                
+
             if stripped.startswith("# Here") or stripped.startswith("# This"):
                 continue
-                
+
             # Keep the line with its indentation (rstrip to remove trailing spaces)
             code_lines.append(line.rstrip())
 
         result = "\n".join(code_lines)
-        
+
         # Additional safety: remove any function definitions that shouldn't be there
         if result.startswith("def "):
             # Extract just the body if a function was mistakenly generated
@@ -407,22 +412,22 @@ Generate code for: {step_description}
             # Re-join and dedent the body
             if body_lines:
                 result = textwrap.dedent("\n".join(body_lines))
-        
+
         return result.strip()
 
     def _generate_fallback_code(self, step_description: str, config: Dict[str, Any]) -> str:
         """
         Generate basic fallback code when LLM generation fails.
-        
+
         Args:
             step_description: The step description
             config: Test configuration
-            
+
         Returns:
             Basic executable code
         """
         step_lower = step_description.lower()
-        
+
         # Handle navigation steps
         if "navigate" in step_lower or "go to" in step_lower or "visit" in step_lower:
             # Extract path if present
@@ -433,14 +438,14 @@ Generate code for: {step_description}
             else:
                 # Generic navigation
                 return 'page.goto(config.get("base_url", ""))\npage.wait_for_load_state("networkidle")'
-        
+
         # Handle click actions
         elif "click" in step_lower:
             return 'page.wait_for_timeout(1000)  # Wait for elements to be ready'
-        
-        # Handle fill/input actions  
+
+        # Handle fill/input actions
         elif "fill" in step_lower or "enter" in step_lower or "type" in step_lower:
             return 'page.wait_for_timeout(1000)  # Wait for form to be ready'
-        
+
         # Default: just wait
         return 'page.wait_for_timeout(1000)  # Waiting for page state'
