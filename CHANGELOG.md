@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-03-08
+
 ### Added
 
 - Apache 2.0 license
@@ -26,6 +28,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated `README.md` license section to reference Apache 2.0 license
 - Enhanced issue templates with labels and GitHub Action-specific context
 - Fixed `action.yml` checkout ref to use `github.action_ref` for version-pinned releases
+
+### Fixed
+
+- Fixed release workflow test to use correct parser API (`extract_autoqa_block`)
+- Fixed release workflow flake8 flag from `--ignore` to `--extend-ignore` for consistency
 
 ## [0.1.0] - 2025-05-01
 
