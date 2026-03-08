@@ -25,7 +25,7 @@ jobs:
       
       # Cache Playwright browsers to speed up test runs (saves ~2-3 minutes)
       - name: 🎭 Cache Playwright Browsers
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         id: playwright-cache
         with:
           path: ~/.cache/ms-playwright
@@ -87,7 +87,7 @@ jobs:
       
       # Cache Playwright browsers for the action test
       - name: 🎭 Cache Playwright Browsers (for Action)
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-action-${{ hashFiles('requirements.txt') }}-v1
