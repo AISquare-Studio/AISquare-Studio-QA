@@ -298,7 +298,7 @@ All AI-generated code is validated before execution:
 - **Sandboxed execution** — Tests run in isolated Playwright browser contexts
 - **Secret redaction** — Sensitive values are masked in logs and reports
 
-See [`docs/SECURITY.md`](docs/SECURITY.md) for the full security model.
+See the [Security Model](docs/ARCHITECTURE.md#security-model) section in the architecture documentation for details.
 
 ---
 
