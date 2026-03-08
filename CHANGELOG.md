@@ -17,12 +17,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Code owners file (`.github/CODEOWNERS`)
 - Dependabot configuration (`.github/dependabot.yml`)
 - Funding configuration (`.github/FUNDING.yml`)
+- Automated release pipeline (`.github/workflows/release.yml`)
+- Release process documentation (`docs/RELEASE_PROCESS.md`)
 
 ### Changed
 
 - Expanded `CONTRIBUTING.md` with development setup, testing, and coding standards
 - Updated `README.md` license section to reference Apache 2.0 license
 - Enhanced issue templates with labels and GitHub Action-specific context
+- Fixed `action.yml` checkout ref to use `github.action_ref` for version-pinned releases
 
 ## [0.1.0] - 2025-05-01
 
