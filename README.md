@@ -1,133 +1,61 @@
-# AISquare Studio AutoQA 🚀
+# AISquare Studio AutoQA
 
-**AI-Powered Test Generation with Active Execution**
+[![GitHub Action](https://img.shields.io/badge/GitHub%20Action-AutoQA-2088FF?logo=github-actions&logoColor=white)](https://github.com/AISquare-Studio/AISquare-Studio-QA)
+[![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Playwright](https://img.shields.io/badge/Playwright-Enabled-2EAD33?logo=playwright&logoColor=white)](https://playwright.dev/)
+[![CrewAI](https://img.shields.io/badge/CrewAI-Multi--Agent-FF6B6B)](https://www.crewai.com/)
 
-> 🆕 **New Feature**: Active Execution Mode - Iterative step-by-step test generation with real-time context awareness and automatic retry logic. [Learn more →](docs/ACTIVE_EXECUTION.md)
+**AI-powered GitHub Action that converts natural language test descriptions in pull request bodies into fully automated Playwright tests.** Write what you want to test in plain English — AutoQA generates, executes, and commits production-ready test code using CrewAI multi-agent orchestration and OpenAI GPT-4.
 
-## ✨ Features
+---
 
-- 🤖 **AI-Powered Test Generation**: Convert natural language to Playwright tests
-- 🔄 **Active Execution**: Step-by-step generation with live browser context
-- 🔍 **Smart Selector Discovery**: Automatically finds best selectors from live pages
-- 🔁 **Intelligent Retry**: Automatic error recovery with alternative selectors
-- 📊 **Comprehensive Reporting**: Detailed execution logs and screenshots
-- 🛡️ **Security First**: AST validation ensures safe code generation
-- 🚀 **GitHub Integration**: Seamless PR workflow integration
+## Features
 
-## 🚀 Quick Start
+- **AI-Powered Test Generation** — Natural language steps become executable Playwright Python tests
+- **Active Execution Mode** — Iterative step-by-step generation with real-time browser context
+- **Smart Selector Discovery** — Auto-discovers optimal selectors from live pages via DOMInspectorTool
+- **Intelligent Retry** — Automatic error recovery with alternative selectors and failure analysis
+- **AST-Based Security Validation** — Prevents unsafe code patterns before execution
+- **Cross-Repository Architecture** — Deploys as a GitHub Action, runs in any repository
+- **Comprehensive Reporting** — PR comments with screenshots, HTML reports, and JSON artifacts
+- **ETag-Based Idempotency** — Prevents duplicate test generation for unchanged PR descriptions
+- **Multi-Tier Test Organization** — Categorize tests into A/B/C tiers by criticality
+- **Caching Strategy** — Pip and Playwright browser caching for fast CI runs
 
-### 1. Setup ## 🚀 How It Works
+---
 
-### **For Repository Owners**
-1. **Add the GitHub Action** to your repository workflow
-2. **Configure staging secrets** (login URL, credentials, OpenAI API key)
-3. **Your developers use AutoQA tags** in PR descriptions
+## How It Works
 
-### **For Developers**
-1. **Write test steps** in natural language in PR descriptions:
-   ```markdown
-   AutoQA
-   1. Navigate to user profile page
-   2. Update email address
-   3. Save changes
-   4. Verify email updated successfully
-   ```
-2. **Create pull request** - tests generate automatically
-3. **Review generated tests** committed to your repository
-4. **Tests execute on every future PR** as part of your test suite
-
-### **AI Process**
-1. **AutoQA Detection**: Parses PR descriptions for AutoQA tags
-2. **CrewAI Generation**: Planner Agent converts steps to Playwright code  
-3. **Security Validation**: AST parser ensures code safety
-4. **Staging Execution**: Tests run against staging environment
-5. **Test Persistence**: Successful tests commit to repository
-6. **Suite Execution**: All tests (existing + generated) run together## 📊 Reporting
-
-After every test execution, comprehensive reports are automatically generated:
-- `reports/html/` - Interactive HTML test reports with screenshots
-- `reports/json/` - Machine-readable test results for CI/CD integration
-- `reports/screenshots/` - Visual evidence of test execution and failures
-
-### CI/CD Integration
-- 🤖 **Automated on PR**: Tests run automatically on every pull request
-- 💬 **PR Comments**: Results posted directly in GitHub PR comments with embedded screenshots
-- 📁 **Artifact Upload**: Reports and screenshots downloadable from GitHub Actions (30 day retention)
-- 🛡️ **Status Checks**: Pass/fail status for branch protection
-
-Reports include:
-- ✅ Test execution summary and results
-- 📸 **Screenshots**: Automatically captured and embedded in PR comments (small images) or linked via artifacts
-- ⏱️ Detailed timing and performance metrics
-- 🔍 AI-generated code and validation results
-
-> **📸 Screenshot Support**: Screenshots are now automatically embedded in PR comments (for images <100KB) and always available via GitHub Actions artifacts. See [SCREENSHOT_QUICK_REFERENCE.md](SCREENSHOT_QUICK_REFERENCE.md) for details.
-# Copy the template and fill in your values
-cp env.template .env
+```
+PR Description          AutoQA Action              Your Repository
+┌──────────────┐     ┌──────────────────┐     ┌──────────────────┐
+│  ```autoqa   │     │ 1. Parse PR body │     │ tests/autoqa/    │
+│  flow: login │────▶│ 2. Generate code │────▶│   A/auth/        │
+│  tier: A     │     │ 3. Validate AST  │     │     test_login.py│
+│  area: auth  │     │ 4. Execute tests │     └──────────────────┘
+│  ```         │     │ 5. Commit on pass│
+│              │     │ 6. Comment on PR │
+│  1. Go to /  │     └──────────────────┘
+│  2. Login    │
+│  3. Verify   │
+└──────────────┘
 ```
 
-Edit the `.env` file with your actual values:
-```bash
-# Required: Your staging environment
-STAGING_LOGIN_URL=https://stg-home.aisquare.studio/login
-STAGING_EMAIL=your-test-email@domain.com
-STAGING_PASSWORD=your-test-password
+1. A developer writes numbered test steps in the PR description inside a fenced `autoqa` block
+2. The GitHub Action triggers on PR open/edit/sync events
+3. AutoQA parses the PR body for metadata (`flow_name`, `tier`, `area`) and test steps
+4. CrewAI agents generate Playwright Python test code from the steps
+5. Generated code is validated via AST analysis and executed against your staging environment
+6. On success, the test file is committed to `tests/autoqa/{tier}/{area}/test_{flow_name}.py`
+7. Results and screenshots are posted as a PR comment
 
-# Required: OpenAI API key for AI test generation
-OPENAI_API_KEY=sk-your-openai-api-key-here
+---
 
-# Optional: Browser settings
-HEADLESS_MODE=true
-DEFAULT_TIMEOUT=30000
-```
+## Quick Start
 
-### 2. Run Tests
-```bash
-# Run all AI-powered tests against staging
-python qa_runner.py
+### 1. Add the workflow
 
-# Get detailed help
-python qa_runner.py --help-detailed
-```a `.env` file in the project root with your staging configuration:
-
-```bash
-# Copy the template and fill in your values
-cp env.template .env
-```
-
-Edit the `.env` file with your actual values:
-```bash
-# Required: Your staging environment
-STAGING_LOGIN_URL=https://stg-home.aisquare.studio/login
-STAGING_EMAIL=your-test-email@domain.com
-STAGING_PASSWORD=your-test-password
-
-# Required: OpenAI API key for AI test generation
-OPENAI_API_KEY=sk-your-openai-api-key-here
-
-# Optional: Browser settings
-HEADLESS_MODE=true
-DEFAULT_TIMEOUT=30000
-```
-
-### 2. Run Tests
-```bash
-# Run all AI-powered tests against staging
-python qa_runner.py
-
-# Get detailed help
-python qa_runner.py --help-detailed
-```ed Test Automation
-
-# AISquare Studio QA - AI-Powered Test Automation Action
-
-🚀 **GitHub Action for automated testing** powered by **CrewAI** + **Playwright** + **OpenAI GPT-4** for intelligent test generation and execution.
-
-## 🎯 Use This Action in Your Repository
-
-### **Quick Setup**
-
-1. **Add to your workflow** (`.github/workflows/autoqa.yml`):
+Create `.github/workflows/autoqa.yml` in your repository:
 
 ```yaml
 name: AutoQA Test Generation
@@ -143,8 +71,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          
-      - name: 🤖 Generate and Execute Tests
+
+      - name: Generate and Execute Tests
         uses: AISquare-Studio/AISquare-Studio-QA@main
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
@@ -153,314 +81,287 @@ jobs:
           staging-password: ${{ secrets.STAGING_PASSWORD }}
 ```
 
-2. **Configure secrets** in your repository settings
-3. **Use AutoQA tag** in PR descriptions:
+### 2. Configure secrets
 
-```markdown
-AutoQA
-1. Navigate to login page at "/login"
-2. Enter valid credentials  
-3. Click login button
-4. Verify dashboard appears
+Add the following secrets in your repository's **Settings → Secrets and variables → Actions**:
+
+| Secret             | Description                       |
+| ------------------ | --------------------------------- |
+| `OPENAI_API_KEY`   | OpenAI API key (GPT-4 access)     |
+| `STAGING_URL`      | Staging environment login URL     |
+| `STAGING_EMAIL`    | Test account email                |
+| `STAGING_PASSWORD` | Test account password             |
+
+### 3. Write test steps in a PR
+
+Include a fenced `autoqa` block in your pull request description:
+
+````markdown
+```autoqa
+flow_name: user_login_success
+tier: A
+area: auth
 ```
 
-4. **Watch tests generate automatically!** 🎉
+1. Navigate to the login page
+2. Enter valid email address
+3. Enter valid password
+4. Click the login button
+5. Verify the dashboard appears
+````
 
-📖 **[Complete Usage Guide](docs/ACTION_USAGE.md)**
+Open the PR and AutoQA takes care of the rest.
 
-## 🚀 FE-REACT Integration
+---
 
-### **Quick Setup for FE-REACT Repository**
+## PR Format Reference
 
-Use our automated setup script for instant integration:
+The `autoqa` code block defines metadata. Numbered steps below it describe the test scenario.
 
-```bash
-# In your FE-REACT repository
-curl -sSL https://raw.githubusercontent.com/AISquare-Studio/AISquare-Studio-QA/main/scripts/setup-fe-react.sh | bash
+````markdown
+```autoqa
+flow_name: <snake_case_test_name>
+tier: <A|B|C>
+area: <feature_area>
 ```
 
-**Or manual setup:**
+1. First test step in plain English
+2. Second test step
+3. ...
+````
 
-1. **Copy workflow file**:
-   ```bash
-   mkdir -p .github/workflows
-   curl -o .github/workflows/autoqa.yml https://raw.githubusercontent.com/AISquare-Studio/AISquare-Studio-QA/main/examples/fe-react-autoqa-workflow.yml
-   ```
+| Field       | Required | Description                                               |
+| ----------- | -------- | --------------------------------------------------------- |
+| `flow_name` | Yes      | Snake-case identifier used for the generated file name    |
+| `tier`      | Yes      | `A` (critical), `B` (important), or `C` (nice-to-have)   |
+| `area`      | Yes      | Feature area used as subdirectory (e.g., `auth`, `billing`) |
 
-2. **Configure repository secrets**:
-   - `OPENAI_API_KEY`: Your OpenAI API key
-   - `STAGING_URL`: Your staging environment URL
-   - `STAGING_EMAIL` & `STAGING_PASSWORD`: Test credentials
+---
 
-3. **Add test scripts to package.json**:
-   ```json
-   {
-     "scripts": {
-       "test:autoqa": "playwright test tests/autoqa/",
-       "test:autoqa:headed": "playwright test tests/autoqa/ --headed"
-     }
-   }
-   ```
+## Configuration Reference
 
-4. **Create PR with AutoQA steps** and watch the magic happen! ✨
+### Action Inputs
 
-📖 **[FE-REACT Integration Guide](docs/FE_REACT_INTEGRATION.md)**
+| Input               | Required | Default          | Description                                       |
+| ------------------- | -------- | ---------------- | ------------------------------------------------- |
+| `openai-api-key`    | **Yes**  | —                | OpenAI API key                                    |
+| `staging-url`       | **Yes**  | —                | Staging environment URL                           |
+| `qa-github-token`   | No       | `github.token`   | GitHub token (for private repo access)             |
+| `staging-email`     | No       | `test@example.com` | Test account email                              |
+| `staging-password`  | No       | —                | Test account password                             |
+| `target-repo-path`  | No       | `.`              | Path to the target repository                     |
+| `git-user-name`     | No       | `AutoQA Bot`     | Git user name for test commits                    |
+| `git-user-email`    | No       | —                | Git user email for test commits                   |
+| `pr-body`           | No       | *(auto-detected)* | PR description text                              |
+| `test-directory`    | No       | `tests/autoqa`   | Base directory for generated tests                |
+| `create-pr`         | No       | `false`          | Create a PR for tests instead of pushing directly |
+| `execution-mode`    | No       | `generate`       | Execution mode: `generate`, `suite`, or `all`     |
 
-## ✨ Features
+### Action Outputs
 
-- 🤖 **AI-Powered Test Generation**: CrewAI agents generate Playwright test code from natural language in PR descriptions
-- 🔒 **Security-First**: AST-based code validation ensures generated code is safe to execute
-- 📁 **Cross-Repository**: Deploy as GitHub Action, use in any repository to generate and store tests
-- 🌐 **Staging Environment Testing**: Automated execution against staging environments
-- 📊 **Comprehensive Reporting**: Test results, screenshots, and execution logs
-- � **Test Persistence**: Generated tests commit directly to your repository
-- 🔧 **Zero Configuration**: Works out-of-the-box with minimal setup
+| Output                | Description                             |
+| --------------------- | --------------------------------------- |
+| `test_generated`      | Whether a test was generated (`true`/`false`) |
+| `test_file_path`      | Path to the generated test file         |
+| `test_results`        | JSON object with execution results      |
+| `generation_metadata` | JSON object with generation metadata    |
+| `screenshot_path`     | Path to captured screenshots            |
+| `etag`                | Idempotency hash of the PR description  |
+| `flow_name`           | Parsed flow name                        |
+| `tier`                | Parsed tier                             |
+| `area`                | Parsed area                             |
+| `error`               | Error message (if failed)               |
 
-## � Quick Start
+### Execution Modes
 
-### 1. Setup Environment
-```bash
-# Configure staging environment (interactive)
-python qa_runner.py --setup
+| Mode       | Behavior                                                          |
+| ---------- | ----------------------------------------------------------------- |
+| `generate` | Parse PR, generate a new test, execute it, and commit on success  |
+| `suite`    | Run the existing test suite only (regression testing)             |
+| `all`      | Generate a new test **and** run the full existing suite           |
 
-# Test connectivity
-python qa_runner.py --test-connection
-```
+---
 
-### 2. Run Tests
-```bash
-# Run all AI-powered tests against staging
-python qa_runner.py
-
-# Get detailed help
-python qa_runner.py --help-detailed
-```
-
-## 📁 Project Structure
+## Project Structure
 
 ```
 AISquare-Studio-QA/
-├── qa_runner.py           # 🎯 Main test runner (production entry point)
-├── .github/               # 🔄 CI/CD workflows and templates
-│   ├── workflows/         # GitHub Actions workflows
-│   │   ├── pr-qa-checks.yml        # Main PR QA automation
-│   │   └── setup-qa-environment.yml # Environment validation
-│   └── PULL_REQUEST_TEMPLATE.md    # PR template with QA section
-├── config/                # ⚙️ Configuration files
-│   └── test_data.yaml     # Test scenarios and selectors
-├── src/                   # 🤖 AI framework components
-│   ├── agents/            # CrewAI agents for test planning and execution
-│   ├── crews/             # AI crew orchestration
-│   └── tools/             # Playwright execution tools
-├── tests/                 # 🧪 Pytest test suites
-│   ├── test_login.py      # Login functionality tests
-│   └── conftest.py        # Pytest configuration
-├── docs/                  # 📚 Documentation
-│   ├── WEEK1_DEMO_PLAN.md      # Week 1 demo execution guide
-│   ├── SETUP_GUIDE.md          # CI/CD setup instructions
-│   ├── WEEK1_DEMO_CHECKLIST.md # Demo preparation checklist
-│   └── SECURITY.md             # Security & compliance guide
-├── scripts/               # 🛠️ Utility scripts and tools
-│   └── README.md          # Scripts documentation
-├── reports/               # 📊 Test reports and screenshots
-└── requirements.txt       # 📦 Python dependencies
+├── action.yml                          # GitHub Action definition
+├── qa_runner.py                        # Local test runner entry point
+├── requirements.txt                    # Python dependencies
+├── pyproject.toml                      # Python project configuration
+├── pytest.ini                          # Pytest configuration
+├── env.template                        # Environment variables template
+├── config/
+│   ├── autoqa_config.yaml              # AutoQA policy and settings
+│   └── test_data.yaml                  # Test scenarios and selectors
+├── src/
+│   ├── agents/
+│   │   ├── planner_agent.py            # Generates Playwright code via CrewAI
+│   │   ├── executor_agent.py           # Validates and executes code (AST safety)
+│   │   └── step_executor_agent.py      # Active execution step agent
+│   ├── autoqa/
+│   │   ├── action_runner.py            # Main GitHub Action orchestrator
+│   │   ├── parser.py                   # PR body metadata parser
+│   │   ├── action_reporter.py          # PR comment generator
+│   │   └── cross_repo_manager.py       # Test file commits across repos
+│   ├── crews/
+│   │   └── qa_crew.py                  # CrewAI agent orchestration
+│   ├── execution/
+│   │   ├── iterative_orchestrator.py   # Step-by-step execution coordinator
+│   │   ├── execution_context.py        # State tracking between steps
+│   │   └── retry_handler.py            # Failure analysis and retry logic
+│   ├── tools/
+│   │   ├── playwright_executor.py      # Test code execution engine
+│   │   └── dom_inspector.py            # Live page selector discovery
+│   ├── templates/
+│   │   └── test_execution_template.py  # Execution template
+│   └── utils/
+│       ├── logger.py                   # GitHub Actions-aware logging
+│       ├── github_comment_client.py    # GitHub API client
+│       ├── comment_builder.py          # Markdown comment builder
+│       ├── screenshot_handler.py       # Screenshot capture
+│       └── screenshot_embed_manager.py # Screenshot embedding
+├── tests/                              # Pytest test suites
+├── docs/                               # Documentation
+├── examples/                           # Example workflows and configs
+├── reports/                            # Generated test artifacts
+└── scripts/                            # Utility scripts
 ```
 
-## 🔧 Configuration
+---
 
-### Environment Variables
-Create a `.env` file (copy from `env.template`):
+## Local Development
+
+### Prerequisites
+
+- Python 3.11+
+- An OpenAI API key with GPT-4 access
+
+### Setup
 
 ```bash
-# Staging Environment
-STAGING_LOGIN_URL=https://your-staging.com/login
-STAGING_EMAIL=test@example.com
-STAGING_PASSWORD=your_password
+# Clone the repository
+git clone https://github.com/AISquare-Studio/AISquare-Studio-QA.git
+cd AISquare-Studio-QA
 
-# OpenAI Configuration (required)
-OPENAI_API_KEY=your_openai_api_key
-
-# Browser Settings
-HEADLESS_MODE=true
-BROWSER_TYPE=chromium
-```
-
-### Test Scenarios
-Configure test scenarios in `config/test_data.yaml`:
-
-```yaml
-test_scenarios:
-  login:
-    valid_login:
-      name: "Valid Login Test"
-      description: "Test successful login with correct credentials"
-      steps:
-        - "Navigate to the login page"
-        - "Enter valid email address"
-        - "Enter valid password"
-        - "Click login button"
-        - "Verify successful login"
-```
-
-## 🤖 How It Works
-
-1. **AI Planning**: CrewAI Planner Agent generates Playwright test code from natural language scenarios
-2. **Security Validation**: AST parser validates generated code for security compliance
-3. **Test Execution**: Playwright Executor runs validated code against staging environment
-4. **Result Collection**: Framework captures screenshots, logs, and generates comprehensive reports
-
-## � Reporting
-
-After test execution, find reports in:
-- `reports/html/` - Interactive HTML test reports
-- `reports/screenshots/` - Visual evidence of test execution
-- `reports/json/` - Machine-readable test results
-
-## 🔧 Advanced Usage
-
-### Custom Test Scenarios
-1. Add scenarios to `config/test_data.yaml`
-2. Define page selectors in the `selectors` section
-3. Run tests with `python qa_runner.py`
-
-### Debugging
-```bash
-# Run with visible browser
-export HEADLESS_MODE=false && python qa_runner.py
-```
-
-# Check individual scripts
-python scripts/test_staging_direct.py
-```
-
-### CI/CD Integration
-```bash
-# Set environment variables
-export OPENAI_API_KEY=your_key
-export STAGING_LOGIN_URL=https://staging.com/login
-
-# Run tests
-python qa_runner.py
-```
-
-## 🛠️ Development
-
-### Adding New Test Types
-1. Create new scenarios in `config/test_data.yaml`
-2. Add corresponding selectors
-3. Create test methods in `tests/`
-
-### Extending AI Agents
-- Modify `src/agents/planner_agent.py` for code generation logic
-- Update `src/agents/executor_agent.py` for execution handling
-- Enhance `src/crews/qa_crew.py` for orchestration
-
-## 📦 Dependencies
-
-Core requirements:
-- **Python 3.11+**
-- **CrewAI** - AI agent framework
-- **Playwright** - Browser automation
-- **OpenAI** - GPT-4 API for code generation
-- **Pytest** - Testing framework
-
-Install all dependencies:
-```bash
+# Install dependencies
 pip install -r requirements.txt
-playwright install
+playwright install --with-deps chromium
+
+# Configure environment
+cp env.template .env
+# Edit .env with your staging URL, credentials, and OpenAI API key
 ```
 
-## 🔒 Security
+### Running locally
 
-- **Code Validation**: All AI-generated code is validated using AST parsing
-- **Restricted Imports**: Only safe Playwright imports are allowed
-- **Sandboxed Execution**: Tests run in isolated browser contexts
-- **No File Access**: Generated code cannot perform file operations
-
-## 🤝 Contributing
-
-1. Follow existing code structure and patterns
-2. Add tests for new functionality
-3. Update documentation as needed
-4. Ensure security validation passes
-
-## ⚡ Performance & Caching
-
-AutoQA includes comprehensive caching optimizations for faster CI/CD runs:
-
-### 🚀 **Caching Strategy**
-- **Python Dependencies**: Pip packages cached using `requirements.txt` hash
-- **Playwright Browsers**: Browser binaries (~100MB) cached to avoid repeated downloads
-- **System Dependencies**: OS-level dependencies cached separately
-- **Repository Cache**: Action repository cached to speed up checkout
-
-### 📊 **Performance Benefits**
-- **Cold Run**: ~3-4 minutes (first time, no cache)
-- **Warm Run**: ~45-60 seconds (with full cache hits)
-- **Typical Savings**: 2-3 minutes per workflow run
-
-### 🔧 **Cache Configuration**
-```yaml
-# Automatic caching in action.yml and workflows
-- Python packages: ~/.cache/pip + site-packages
-- Playwright browsers: ~/.cache/ms-playwright  
-- Cache keys include requirements.txt hash for invalidation
-- Multi-level restore keys for fallback scenarios
-```
-
-Cache automatically invalidates when `requirements.txt` changes, ensuring fresh dependencies while maximizing reuse.
-
-## 🧹 Code Quality & Linting
-
-AutoQA maintains high code quality standards with automated linting:
-
-### 🔧 **Linting Tools**
-- **black**: Code formatting (line length: 100)
-- **isort**: Import organization
-- **flake8**: Code quality and PEP 8 compliance
-
-### 🤖 **Automated Workflow**
-- Runs on every push and pull request
-- Auto-fixes formatting issues on PRs
-- Commits fixes as "chore: fix linting issues"
-
-### 💻 **Local Development**
 ```bash
-# Install linting tools
-pip install flake8==7.0.0 black==24.4.2 isort==5.13.2
+# Run the test runner
+python qa_runner.py
 
-# Format and check code
-black . --line-length=100 --preview
+# Run with visible browser for debugging
+HEADLESS_MODE=false python qa_runner.py
+
+# Show detailed help
+python qa_runner.py --help-detailed
+```
+
+### Running the test suite
+
+```bash
+pytest tests/ -v
+```
+
+---
+
+## Architecture
+
+AutoQA uses a multi-agent architecture powered by [CrewAI](https://www.crewai.com/):
+
+- **Planner Agent** — Converts natural language steps into Playwright Python code
+- **Executor Agent** — Validates generated code via AST analysis and runs it in a sandboxed browser
+- **Step Executor Agent** — Handles Active Execution Mode, processing one step at a time with live browser context
+
+The **Iterative Orchestrator** coordinates step-by-step execution, maintaining state via `ExecutionContext` and handling failures through `RetryHandler`.
+
+For a detailed architecture walkthrough, see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
+---
+
+## Security
+
+All AI-generated code is validated before execution:
+
+- **AST-based validation** — Blocks dangerous constructs (`eval`, `exec`, `open`, `subprocess`, file I/O)
+- **Restricted imports** — Only `playwright.sync_api`, `time`, `datetime`, and `re` are permitted
+- **Sandboxed execution** — Tests run in isolated Playwright browser contexts
+- **Secret redaction** — Sensitive values are masked in logs and reports
+
+See the [Security Model](docs/ARCHITECTURE.md#security-model) section in the architecture documentation for details.
+
+---
+
+## Performance and Caching
+
+AutoQA caches dependencies to minimize CI run times:
+
+| Layer                 | Cache Key                       | Typical Size |
+| --------------------- | ------------------------------- | ------------ |
+| Python pip packages   | Hash of `requirements.txt`      | ~200 MB      |
+| Playwright browsers   | Playwright version              | ~100 MB      |
+| Action repository     | Commit SHA                      | ~5 MB        |
+
+| Scenario  | Approximate Time |
+| --------- | ---------------- |
+| Cold run  | 3–4 minutes      |
+| Warm run  | 45–60 seconds    |
+
+Caches automatically invalidate when `requirements.txt` changes.
+
+---
+
+## Code Quality and Linting
+
+The project enforces consistent style via automated tooling:
+
+| Tool      | Purpose                       | Configuration          |
+| --------- | ----------------------------- | ---------------------- |
+| **black** | Code formatting               | Line length: 100       |
+| **isort** | Import sorting                | Black-compatible profile |
+| **flake8**| PEP 8 compliance              | Standard rules         |
+
+The `lint.yml` workflow runs on every push and pull request, auto-fixing formatting issues.
+
+```bash
+# Run locally
+black . --line-length=100
 isort . --profile=black --line-length=100
 flake8 .
 ```
 
-� **Full Guide**: See [`docs/LINTING.md`](docs/LINTING.md) for complete documentation  
-⚡ **Quick Reference**: See [`.github/LINTING_QUICK_REF.md`](.github/LINTING_QUICK_REF.md)
+---
 
-## �📄 License
+## Contributing
 
-[Your License Here]
+Contributions are welcome! Please see [`CONTRIBUTING.md`](CONTRIBUTING.md) for guidelines.
 
-## 🆘 Support
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes with tests
+4. Ensure linting passes (`black`, `isort`, `flake8`)
+5. Submit a pull request
 
-For help and troubleshooting:
-1. **CI/CD Setup**: See [`docs/SETUP_GUIDE.md`](docs/SETUP_GUIDE.md)
-2. **Week 1 Demo**: See [`docs/WEEK1_DEMO_PLAN.md`](docs/WEEK1_DEMO_PLAN.md)
-3. **Security Guide**: See [`docs/SECURITY.md`](docs/SECURITY.md)
-4. **Linting Guide**: See [`docs/LINTING.md`](docs/LINTING.md)
-5. Run `python qa_runner.py --help-detailed` for local testing
-6. Review generated reports in `reports/` directory
-7. Check .env configuration matches your staging environment
-8. Verify OpenAI API key is valid and has sufficient credits
-
-### 🎯 Week 1 Demo Ready!
-This framework is **production-ready** for Week 1 CI/CD demonstration with:
-- ✅ Complete GitHub Actions workflows
-- ✅ Automated PR comments and status checks  
-- ✅ Comprehensive security and compliance
-- ✅ Professional documentation and setup guides
+Please review the [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) before contributing.
 
 ---
 
-**Built with ❤️ by AISquare Studio**
+## License
+
+<!-- TODO: Add license before public release -->
+
+License information will be added prior to open-source release.
+
+---
+
+Built by **AISquare Studio**

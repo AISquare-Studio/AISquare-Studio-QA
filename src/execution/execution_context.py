@@ -160,9 +160,7 @@ class ExecutionContext:
         summary_lines = ["Previous steps executed:"]
         for step in self.step_history[-5:]:  # Last 5 steps
             status = "✓" if step["success"] else "✗"
-            summary_lines.append(
-                f"  {status} Step {step['step_number']}: {step['description']}"
-            )
+            summary_lines.append(f"  {status} Step {step['step_number']}: {step['description']}")
 
         return "\n".join(summary_lines)
 
@@ -234,8 +232,7 @@ class ExecutionContext:
             "successful_steps": self.execution_metadata["successful_steps"],
             "failed_steps": self.execution_metadata["failed_steps"],
             "success_rate": (
-                self.execution_metadata["successful_steps"]
-                / self.execution_metadata["total_steps"]
+                self.execution_metadata["successful_steps"] / self.execution_metadata["total_steps"]
                 if self.execution_metadata["total_steps"] > 0
                 else 0
             ),

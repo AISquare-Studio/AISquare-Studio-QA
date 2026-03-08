@@ -104,9 +104,8 @@ class GitHubCommentClient:
                         logger.info(f"Found existing AutoQA comment: {comment['id']}")
                         return comment["id"]
                     # Fallback: check for AutoQA header (for legacy comments) - ONLY for default marker
-                    elif (
-                        marker == "<!-- AutoQA-Comment-Marker -->"
-                        and ("## ✅ AutoQA" in body or "## ❌ AutoQA" in body)
+                    elif marker == "<!-- AutoQA-Comment-Marker -->" and (
+                        "## ✅ AutoQA" in body or "## ❌ AutoQA" in body
                     ):
                         logger.info(f"Found existing AutoQA comment (legacy): {comment['id']}")
                         return comment["id"]

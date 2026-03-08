@@ -10,7 +10,7 @@ from typing import Any, Dict, Optional
 
 import yaml
 from crewai import Crew, Task
-from crewai_tools import FileReadTool, DirectoryReadTool
+from crewai_tools import DirectoryReadTool, FileReadTool
 
 from src.agents.executor_agent import ExecutorAgent
 from src.agents.planner_agent import PlannerAgent
@@ -27,30 +27,29 @@ class QACrew:
     def __init__(self, model_name=None):
         # Configure LLM - use gpt-4.1 by default or from environment
         from crewai import LLM
+
         model = model_name or os.getenv("OPENAI_MODEL_NAME", "openai/gpt-4.1")
-        
+
         llm = LLM(
             model=model,
             timeout=300,  # 5 minutes
             max_retries=3,
         )
-        
+
         # Initialize agent wrappers with configured LLM
         target_repo_path = os.getenv("TARGET_REPO_PATH", ".")
         self.file_read_tool = FileReadTool(root_dir=target_repo_path)
         self.directory_read_tool = DirectoryReadTool(root_dir=target_repo_path)
-        
+
         self.planner_agent_wrapper = PlannerAgent(
-            llm=llm, 
-            tools=[self.file_read_tool, self.directory_read_tool]
+            llm=llm, tools=[self.file_read_tool, self.directory_read_tool]
         )
         self.executor_agent_wrapper = ExecutorAgent(llm=llm)
         self.playwright_executor = create_playwright_executor_tool()
-        
+
         # Initialize iterative orchestrator for active execution
         self.iterative_orchestrator = IterativeTestOrchestrator(
-            llm=llm,
-            tools=[self.file_read_tool, self.directory_read_tool]
+            llm=llm, tools=[self.file_read_tool, self.directory_read_tool]
         )
 
         # Initialize the actual CrewAI agents
@@ -286,23 +285,20 @@ class QACrew:
             return {"success": False, "error": str(e), "scenario": scenario}
 
     def run_active_autoqa_scenario(
-        self, 
-        scenario: Dict[str, Any], 
-        config: Dict[str, Any],
-        existing_code: Optional[str] = None
+        self, scenario: Dict[str, Any], config: Dict[str, Any], existing_code: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Run AutoQA scenario with active iterative execution.
-        
+
         This method uses the new IterativeTestOrchestrator to execute steps
         one at a time with real-time context awareness, selector discovery,
         and automatic retry logic.
-        
+
         Args:
             scenario: Test scenario with steps
             config: Test configuration including URLs and credentials
             existing_code: Optional existing test code for context
-            
+
         Returns:
             Execution result with generated code and execution details
         """
@@ -314,7 +310,7 @@ class QACrew:
         try:
             # Extract steps from scenario
             steps = scenario.get("steps", [])
-            
+
             if not steps:
                 return {
                     "success": False,
@@ -323,10 +319,7 @@ class QACrew:
 
             # Run active execution
             result = self.iterative_orchestrator.run_active_execution(
-                steps=steps,
-                config=config,
-                scenario=scenario,
-                existing_code=existing_code
+                steps=steps, config=config, scenario=scenario, existing_code=existing_code
             )
 
             # Enhance result with scenario metadata
@@ -340,8 +333,9 @@ class QACrew:
         except Exception as e:
             logger.error(f"Active AutoQA execution failed: {str(e)}")
             import traceback
+
             logger.error(traceback.format_exc())
-            
+
             return {
                 "success": False,
                 "error": str(e),

@@ -2,8 +2,7 @@
 DOM Inspector Tool: Extracts selectors and inspects page structure from live pages.
 """
 
-import json
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from playwright.sync_api import Page
 
@@ -311,78 +310,96 @@ class DOMInspectorTool:
 
         # data-testid (highest priority)
         if element_data.get("dataTestId"):
-            selectors.append({
-                "type": "data-testid",
-                "value": f"[data-testid='{element_data['dataTestId']}']",
-                "priority": self.SELECTOR_PRIORITY["data-testid"],
-            })
+            selectors.append(
+                {
+                    "type": "data-testid",
+                    "value": f"[data-testid='{element_data['dataTestId']}']",
+                    "priority": self.SELECTOR_PRIORITY["data-testid"],
+                }
+            )
 
         # id
         if element_data.get("id"):
-            selectors.append({
-                "type": "id",
-                "value": f"#{element_data['id']}",
-                "priority": self.SELECTOR_PRIORITY["id"],
-            })
+            selectors.append(
+                {
+                    "type": "id",
+                    "value": f"#{element_data['id']}",
+                    "priority": self.SELECTOR_PRIORITY["id"],
+                }
+            )
 
         # name attribute
         if element_data.get("name"):
-            selectors.append({
-                "type": "name",
-                "value": f"[name='{element_data['name']}']",
-                "priority": self.SELECTOR_PRIORITY["name"],
-            })
+            selectors.append(
+                {
+                    "type": "name",
+                    "value": f"[name='{element_data['name']}']",
+                    "priority": self.SELECTOR_PRIORITY["name"],
+                }
+            )
 
         # aria-label
         if element_data.get("ariaLabel"):
-            selectors.append({
-                "type": "aria-label",
-                "value": f"[aria-label='{element_data['ariaLabel']}']",
-                "priority": self.SELECTOR_PRIORITY["aria-label"],
-            })
+            selectors.append(
+                {
+                    "type": "aria-label",
+                    "value": f"[aria-label='{element_data['ariaLabel']}']",
+                    "priority": self.SELECTOR_PRIORITY["aria-label"],
+                }
+            )
 
         # placeholder
         if element_data.get("placeholder"):
-            selectors.append({
-                "type": "placeholder",
-                "value": f"[placeholder='{element_data['placeholder']}']",
-                "priority": self.SELECTOR_PRIORITY["placeholder"],
-            })
+            selectors.append(
+                {
+                    "type": "placeholder",
+                    "value": f"[placeholder='{element_data['placeholder']}']",
+                    "priority": self.SELECTOR_PRIORITY["placeholder"],
+                }
+            )
 
         # type (for inputs)
         if element_data.get("type") and element_data["type"] not in ["text", "button"]:
-            selectors.append({
-                "type": "type",
-                "value": f"{element_data.get('tag', 'input')}[type='{element_data['type']}']",
-                "priority": self.SELECTOR_PRIORITY["type"],
-            })
+            selectors.append(
+                {
+                    "type": "type",
+                    "value": f"{element_data.get('tag', 'input')}[type='{element_data['type']}']",
+                    "priority": self.SELECTOR_PRIORITY["type"],
+                }
+            )
 
         # text content (for buttons/links)
         if element_data.get("text") and len(element_data["text"]) < 50:
             text = element_data["text"].replace("'", "\\'")
-            selectors.append({
-                "type": "text",
-                "value": f"{element_data.get('tag', 'button')}:has-text('{text}')",
-                "priority": self.SELECTOR_PRIORITY["text"],
-            })
+            selectors.append(
+                {
+                    "type": "text",
+                    "value": f"{element_data.get('tag', 'button')}:has-text('{text}')",
+                    "priority": self.SELECTOR_PRIORITY["text"],
+                }
+            )
 
         # class (lower priority, can be unstable)
         if element_data.get("class") and " " not in element_data["class"][:30]:
             classes = element_data["class"].split()[:2]  # First 2 classes
             class_selector = "." + ".".join(classes)
-            selectors.append({
-                "type": "class",
-                "value": class_selector,
-                "priority": self.SELECTOR_PRIORITY["class"],
-            })
+            selectors.append(
+                {
+                    "type": "class",
+                    "value": class_selector,
+                    "priority": self.SELECTOR_PRIORITY["class"],
+                }
+            )
 
         # tag (fallback)
         if element_data.get("tag"):
-            selectors.append({
-                "type": "tag",
-                "value": element_data["tag"],
-                "priority": self.SELECTOR_PRIORITY["tag"],
-            })
+            selectors.append(
+                {
+                    "type": "tag",
+                    "value": element_data["tag"],
+                    "priority": self.SELECTOR_PRIORITY["tag"],
+                }
+            )
 
         return selectors
 
@@ -418,15 +435,17 @@ class DOMInspectorTool:
         data = element.get("data", {})
 
         # Convert element data to searchable text
-        searchable_text = " ".join([
-            str(data.get("text", "")),
-            str(data.get("placeholder", "")),
-            str(data.get("ariaLabel", "")),
-            str(data.get("id", "")),
-            str(data.get("name", "")),
-            str(data.get("type", "")),
-            element.get("type", ""),
-        ]).lower()
+        searchable_text = " ".join(
+            [
+                str(data.get("text", "")),
+                str(data.get("placeholder", "")),
+                str(data.get("ariaLabel", "")),
+                str(data.get("id", "")),
+                str(data.get("name", "")),
+                str(data.get("type", "")),
+                element.get("type", ""),
+            ]
+        ).lower()
 
         # Score based on keyword matches
         for keyword in keywords:
@@ -470,7 +489,7 @@ class DOMInspectorTool:
 
             # Sort by score (descending) but return all matches
             candidates.sort(reverse=True, key=lambda x: x["match_score"])
-            
+
             logger.info(f"Found {len(candidates)} relevant elements for '{element_description}'")
             return candidates
 
