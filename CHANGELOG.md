@@ -7,10 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.0.0] - 2026-03-08
+## [0.1.0] - 2025-05-01
 
 ### Added
 
+- Initial release of AISquare Studio AutoQA
+- AI-powered test generation from PR descriptions using CrewAI + Playwright
+- Active Execution Mode with step-by-step browser interaction
+- Smart selector discovery via DOMInspectorTool
+- Intelligent retry with alternative selectors
+- AST-based security validation for generated code
+- Cross-repository test file management
+- PR comment reporting with screenshots
+- ETag-based idempotency
+- Multi-tier test organization (A/B/C tiers)
+- Multi-layer caching (pip, Playwright, repository)
+- Lint workflow (`lint.yml`)
+- Test workflow (`test-action.yml`)
+- Bug report and feature request issue templates
+- Contributing guidelines and Code of Conduct
 - Apache 2.0 license
 - Security policy (`SECURITY.md`)
 - Changelog (`CHANGELOG.md`)
@@ -33,23 +48,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed release workflow test to use correct parser API (`extract_autoqa_block`)
 - Fixed release workflow flake8 flag from `--ignore` to `--extend-ignore` for consistency
-
-## [0.1.0] - 2025-05-01
-
-### Added
-
-- Initial release of AISquare Studio AutoQA
-- AI-powered test generation from PR descriptions using CrewAI + Playwright
-- Active Execution Mode with step-by-step browser interaction
-- Smart selector discovery via DOMInspectorTool
-- Intelligent retry with alternative selectors
-- AST-based security validation for generated code
-- Cross-repository test file management
-- PR comment reporting with screenshots
-- ETag-based idempotency
-- Multi-tier test organization (A/B/C tiers)
-- Multi-layer caching (pip, Playwright, repository)
-- Lint workflow (`lint.yml`)
-- Test workflow (`test-action.yml`)
-- Bug report and feature request issue templates
-- Contributing guidelines and Code of Conduct
