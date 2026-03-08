@@ -358,9 +358,9 @@ Please review the [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) before contributing
 
 ## License
 
-<!-- TODO: Add license before public release -->
+This project is licensed under the [Apache License 2.0](LICENSE).
 
-License information will be added prior to open-source release.
+Copyright 2025 AISquare Studio
 
 ---
 

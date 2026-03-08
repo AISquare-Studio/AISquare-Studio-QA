@@ -1,0 +1,178 @@
+name: 🚀 Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  # ─── Validate ──────────────────────────────────────────────
+  validate:
+    name: Validate Action
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate action.yml structure
+        shell: bash
+        run: |
+          echo "::group::Validating action.yml"
+          python3 -c "
+          import yaml, sys
+          with open('action.yml') as f:
+              action = yaml.safe_load(f)
+
+          required = ['name', 'description', 'inputs', 'runs']
+          missing = [k for k in required if k not in action]
+          if missing:
+              print(f'::error::Missing required fields: {missing}')
+              sys.exit(1)
+
+          if action['runs'].get('using') != 'composite':
+              print('::error::Action must use composite runs')
+              sys.exit(1)
+
+          print('✅ action.yml is valid')
+          print(f'   Name: {action[\"name\"]}')
+          print(f'   Inputs: {len(action.get(\"inputs\", {}))}')
+          print(f'   Outputs: {len(action.get(\"outputs\", {}))}')
+          print(f'   Steps: {len(action[\"runs\"].get(\"steps\", []))}')
+          "
+          echo "::endgroup::"
+
+  # ─── Lint ──────────────────────────────────────────────────
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install linting tools
+        run: pip install flake8==7.0.0 black==24.4.2 isort==5.13.2
+
+      - name: Check formatting (black)
+        run: black --check --line-length=100 --preview .
+
+      - name: Check imports (isort)
+        run: isort --check-only --profile=black --line-length=100 .
+
+      - name: Lint (flake8)
+        run: flake8 --max-line-length=100 --ignore=E203,W503,E501 .
+
+  # ─── Test ──────────────────────────────────────────────────
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Validate action components
+        shell: bash
+        run: |
+          python3 -c "
+          import sys
+          sys.path.insert(0, '.')
+          from src.autoqa.parser import AutoQAParser
+
+          parser = AutoQAParser()
+          test_body = '''
+          \`\`\`autoqa
+          flow_name: test_release
+          tier: A
+          area: auth
+          \`\`\`
+
+          1. Navigate to login page
+          2. Enter valid credentials
+          3. Click login button
+          '''
+
+          result = parser.parse(test_body)
+          assert result is not None, 'Parser returned None'
+          print('✅ AutoQA parser validated successfully')
+          "
+
+  # ─── Release ───────────────────────────────────────────────
+  release:
+    name: Create Release
+    needs: [validate, lint, test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          VERSION="${TAG#v}"
+          MAJOR="${VERSION%%.*}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "major=$MAJOR" >> "$GITHUB_OUTPUT"
+          echo "📦 Release: $TAG (version $VERSION, major v$MAJOR)"
+
+      - name: Extract changelog for this version
+        id: changelog
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          # Extract the section for this version from CHANGELOG.md
+          # Matches from "## [X.Y.Z]" to the next "## [" or end of file
+          NOTES=$(awk -v ver="$VERSION" '
+            /^## \[/ {
+              if (found) exit
+              if (index($0, "[" ver "]")) found=1
+              next
+            }
+            found { print }
+          ' CHANGELOG.md)
+
+          if [ -z "$NOTES" ]; then
+            NOTES="Release ${{ steps.version.outputs.tag }}"
+          fi
+
+          # Write to file for the release body
+          echo "$NOTES" > /tmp/release-notes.md
+          echo "📝 Release notes extracted"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.version.outputs.tag }}
+          body_path: /tmp/release-notes.md
+          draft: false
+          prerelease: ${{ contains(steps.version.outputs.tag, '-') }}
+          generate_release_notes: true
+          make_latest: true
+
+      - name: Update major version tag
+        run: |
+          MAJOR="v${{ steps.version.outputs.major }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -fa "$MAJOR" -m "Update $MAJOR tag to ${{ steps.version.outputs.tag }}"
+          git push origin "$MAJOR" --force
+          echo "🏷️ Updated $MAJOR → ${{ steps.version.outputs.tag }}"

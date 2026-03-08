@@ -1,38 +1,50 @@
 ---
 name: Bug report
-about: Create a report to help us improve
-title: ''
-labels: ''
+about: Report a bug in AISquare Studio AutoQA
+title: '[BUG] '
+labels: 'bug'
 assignees: ''
 
 ---
 
 **Describe the bug**
-A clear and concise description of what the bug is.
+A clear and concise description of the bug.
+
+**Action Version**
+<!-- e.g., v0.1.0, or the commit SHA you're using -->
 
 **To Reproduce**
 Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+1. Configure the action with '...'
+2. Open a PR with '...'
+3. See error in '...'
 
 **Expected behavior**
 A clear and concise description of what you expected to happen.
 
+**Workflow Configuration**
+<!-- Paste your workflow YAML (redact any secrets) -->
+```yaml
+
+```
+
+**PR Body / AutoQA Block**
+<!-- Paste the autoqa block from your PR body -->
+```
+```
+
+**Logs / Error Output**
+<!-- Paste relevant logs or error messages -->
+```
+```
+
 **Screenshots**
 If applicable, add screenshots to help explain your problem.
 
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
-
-**Smartphone (please complete the following information):**
- - Device: [e.g. iPhone6]
- - OS: [e.g. iOS8.1]
- - Browser [e.g. stock browser, safari]
- - Version [e.g. 22]
+**Environment:**
+- Runner OS: [e.g., ubuntu-latest]
+- Python version: [e.g., 3.11]
+- Browser: [e.g., Chromium]
 
 **Additional context**
 Add any other context about the problem here.

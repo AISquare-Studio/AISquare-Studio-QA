@@ -1,0 +1,19 @@
+# Code Owners for AISquare Studio AutoQA
+# These owners will be automatically requested for review on PRs.
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owners for everything in the repo
+* @AISquare-Studio/maintainers
+
+# Action definition
+action.yml @AISquare-Studio/maintainers
+
+# Core source code
+src/ @AISquare-Studio/maintainers
+
+# CI/CD workflows
+.github/workflows/ @AISquare-Studio/maintainers
+
+# Documentation
+docs/ @AISquare-Studio/maintainers
+README.md @AISquare-Studio/maintainers
