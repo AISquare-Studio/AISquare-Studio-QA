@@ -43,6 +43,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated `README.md` license section to reference Apache 2.0 license
 - Enhanced issue templates with labels and GitHub Action-specific context
 - Fixed `action.yml` checkout ref to use `github.action_ref` for version-pinned releases
+- Bumped `actions/cache` from 3 to 5 ([#10](https://github.com/AISquare-Studio/AISquare-Studio-QA/pull/10))
+- Bumped `actions/setup-python` from 4 to 6 ([#11](https://github.com/AISquare-Studio/AISquare-Studio-QA/pull/11))
+- Bumped `actions/upload-artifact` from 4 to 7 ([#12](https://github.com/AISquare-Studio/AISquare-Studio-QA/pull/12))
+- Bumped `stefanzweifel/git-auto-commit-action` from 5 to 7 ([#13](https://github.com/AISquare-Studio/AISquare-Studio-QA/pull/13))
 
 ### Fixed
 
