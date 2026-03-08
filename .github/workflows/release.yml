@@ -67,7 +67,7 @@ jobs:
         run: isort --check-only --profile=black --line-length=100 .
 
       - name: Lint (flake8)
-        run: flake8 --max-line-length=100 --ignore=E203,W503,E501 .
+        run: flake8 --max-line-length=100 --extend-ignore=E203,W503,E501 .
 
   # ─── Test ──────────────────────────────────────────────────
   test:
@@ -95,20 +95,20 @@ jobs:
           from src.autoqa.parser import AutoQAParser
 
           parser = AutoQAParser()
-          test_body = '''
-          \`\`\`autoqa
+          test_body = '''\`\`\`autoqa
           flow_name: test_release
           tier: A
           area: auth
           \`\`\`
-
           1. Navigate to login page
           2. Enter valid credentials
           3. Click login button
           '''
 
-          result = parser.parse(test_body)
+          result = parser.extract_autoqa_block(test_body)
           assert result is not None, 'Parser returned None'
+          assert 'metadata' in result, 'Missing metadata in result'
+          assert 'steps' in result, 'Missing steps in result'
           print('✅ AutoQA parser validated successfully')
           "
 
