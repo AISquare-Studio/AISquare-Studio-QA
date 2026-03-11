@@ -373,7 +373,7 @@ Copyright 2025 AISquare Studio
 | ------ | ---- | ---- |
 | 🤖 | **AutoQA Bot** | Automation |
 | 👩‍💻 | **Zahwah** | Contributor |
-| 👩‍💼 | **Rabia** (rabia.tahirr@opengrowth.com) | Maintainer |
+| 👩‍💼 | **Rabia** | Maintainer |
 <!-- END ALL-CONTRIBUTORS-BOARD -->
 
 ---
