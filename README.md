@@ -5,6 +5,8 @@
 [![Playwright](https://img.shields.io/badge/Playwright-Enabled-2EAD33?logo=playwright&logoColor=white)](https://playwright.dev/)
 [![CrewAI](https://img.shields.io/badge/CrewAI-Multi--Agent-FF6B6B)](https://www.crewai.com/)
 
+`ai` `automation` `testing` `playwright` `github-action` `crewai` `openai` `qa` `test-generation` `multi-agent`
+
 **AI-powered GitHub Action that converts natural language test descriptions in pull request bodies into fully automated Playwright tests.** Write what you want to test in plain English — AutoQA generates, executes, and commits production-ready test code using CrewAI multi-agent orchestration and OpenAI GPT-4.
 
 ---
@@ -361,6 +363,17 @@ Please review the [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) before contributing
 This project is licensed under the [Apache License 2.0](LICENSE).
 
 Copyright 2025 AISquare Studio
+
+---
+
+## Contributors
+
+<!-- ALL-CONTRIBUTORS-BOARD -->
+| Avatar | Name | Role |
+| ------ | ---- | ---- |
+| 🤖 | **AutoQA Bot** | Automation |
+| 👩‍💻 | **Zahwah** | Contributor |
+<!-- END ALL-CONTRIBUTORS-BOARD -->
 
 ---
 
