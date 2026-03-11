@@ -14,7 +14,7 @@ We take the security of AISquare Studio AutoQA seriously. If you discover a secu
 
 **Please do NOT report security vulnerabilities through public GitHub issues.**
 
-Instead, please report them via email to **security@aisquare.studio**.
+Instead, please report them via email to **bots@aisquare.studio**.
 
 Include the following information in your report:
 
