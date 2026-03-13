@@ -9,7 +9,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 # Add action components to path - must be before other src imports
 action_path = Path(os.getenv("ACTION_PATH", "."))
@@ -17,6 +17,7 @@ sys.path.insert(0, str(action_path))
 
 # noqa comments tell flake8 these imports are intentionally after path manipulation
 from src.autoqa.action_reporter import ActionReporter  # noqa: E402
+from src.autoqa.criteria_generator import TestCriteriaGenerator  # noqa: E402
 from src.autoqa.cross_repo_manager import CrossRepoManager  # noqa: E402
 from src.autoqa.parser import AutoQAParser  # noqa: E402
 from src.crews.qa_crew import QACrew  # noqa: E402
@@ -68,6 +69,14 @@ class ActionRunner:
             "use_active_execution": os.getenv("USE_ACTIVE_EXECUTION", "true").lower() == "true",
             "max_retries": int(os.getenv("MAX_RETRIES", "2")),
             "headless": os.getenv("HEADLESS_MODE", "true").lower() == "true",
+            # Auto-criteria settings (Proposal 16)
+            "auto_criteria_fallback": (
+                os.getenv("AUTO_CRITERIA_FALLBACK", "false").lower() == "true"
+            ),
+            "auto_criteria_mode": os.getenv("AUTO_CRITERIA_MODE", "suggest"),
+            "auto_criteria_threshold": int(os.getenv("AUTO_CRITERIA_THRESHOLD", "85")),
+            "auto_criteria_approval": os.getenv("AUTO_CRITERIA_APPROVAL", "reaction"),
+            "pr_number": os.getenv("PR_NUMBER", ""),
         }
 
         return config
@@ -87,8 +96,21 @@ class ActionRunner:
             if self.config["execution_mode"] == "suite":
                 return self._execute_suite_mode()
 
+            # Handle 'auto-criteria' mode (Proposal 16)
+            if self.config["execution_mode"] == "auto-criteria":
+                return self._execute_auto_criteria_mode()
+
             # Parse and validate PR body
             parse_result = self._parse_and_validate_pr()
+
+            # If no autoqa block found and auto-criteria is not explicitly
+            # disabled, try the auto-criteria workflow as a fallback
+            if "error" not in parse_result and "message" in parse_result:
+                # "message" key means no autoqa block was found (not an error)
+                if self.config.get("auto_criteria_fallback", False):
+                    logger.info("No AutoQA block found — falling back to auto-criteria generation")
+                    return self._execute_auto_criteria_mode()
+
             if "error" in parse_result:
                 return self._set_outputs(parse_result)
 
@@ -146,6 +168,180 @@ class ActionRunner:
                 "test_generated": "false",
                 "suite_results": json.dumps(suite_results),
                 "error": None if suite_results.get("success", False) else "Test suite failed",
+            }
+        )
+
+    def _execute_auto_criteria_mode(self) -> Dict[str, Any]:
+        """Generate test criteria from PR diff and post for review (Proposal 16).
+
+        Workflow:
+          1. Fetch PR diff via GitHub API
+          2. Feed diff to LLM to generate test criteria
+          3. Post suggested criteria as a PR comment
+          4. Check if developer has approved (reaction / comment / label)
+          5. If approved, proceed with test generation using the criteria
+          6. If auto-proceed is enabled and confidence is high, skip approval
+        """
+        pr_number = self._get_pr_number()
+        if not pr_number:
+            return self._set_outputs(
+                {
+                    "test_generated": "false",
+                    "error": "PR number not available for auto-criteria mode",
+                }
+            )
+
+        logger.info(f"Running auto-criteria generation for PR #{pr_number}...")
+
+        # Build criteria generator config from action config
+        criteria_config = {
+            "mode": self.config.get("auto_criteria_mode", "suggest"),
+            "auto_proceed_threshold": self.config.get("auto_criteria_threshold", 85),
+            "approval_mechanism": self.config.get("auto_criteria_approval", "reaction"),
+        }
+
+        generator = TestCriteriaGenerator(
+            github_token=self.config["github_token"],
+            target_repo=self.target_repo,
+            config=criteria_config,
+        )
+
+        # Fetch PR title for context
+        pr_info = generator.diff_analyzer.get_pr_info(pr_number)
+        pr_title = pr_info.get("title", "") if pr_info else ""
+
+        # Generate criteria from diff
+        result = generator.generate_criteria(
+            pr_number=pr_number,
+            pr_title=pr_title,
+        )
+
+        if not result.get("success"):
+            error = result.get("error", "Auto-criteria generation failed")
+            logger.error(f"Auto-criteria generation failed: {error}")
+            return self._set_outputs({"test_generated": "false", "error": error})
+
+        criteria = result.get("criteria", [])
+
+        if not criteria:
+            logger.info("No user-facing flows detected — posting notice")
+            if result.get("comment_body"):
+                generator.post_criteria_comment(pr_number, result["comment_body"])
+            return self._set_outputs(
+                {
+                    "test_generated": "false",
+                    "message": "No user-facing flows detected in PR",
+                }
+            )
+
+        # Post suggested criteria as PR comment
+        comment_body = result.get("comment_body", "")
+        if comment_body:
+            generator.post_criteria_comment(pr_number, comment_body)
+            logger.info("Posted suggested criteria comment on PR")
+
+        # Check if we should auto-proceed
+        if generator.should_auto_proceed(criteria):
+            logger.info("All criteria meet auto-proceed threshold — proceeding without approval")
+            return self._run_criteria_flows(criteria)
+
+        # Check for existing approval
+        approval = generator.check_approval(pr_number)
+        if approval.get("approved"):
+            logger.info(
+                f"Developer approval detected via {approval['mechanism']}"
+                " — proceeding with test generation"
+            )
+            return self._run_criteria_flows(criteria)
+
+        # Not yet approved — exit and wait for next trigger
+        logger.info("Criteria posted — waiting for developer approval before generating tests")
+        return self._set_outputs(
+            {
+                "test_generated": "false",
+                "message": "Auto-criteria posted for review. Approve to trigger test generation.",
+                "criteria": json.dumps(criteria),
+            }
+        )
+
+    def _get_pr_number(self) -> Optional[str]:
+        """Resolve the current PR number from config or environment."""
+        pr_number = self.config.get("pr_number") or os.getenv("PR_NUMBER")
+        if pr_number:
+            return str(pr_number)
+
+        # Try to extract from GITHUB_REF
+        github_ref = os.getenv("GITHUB_REF", "")
+        if "/pull/" in github_ref:
+            return github_ref.split("/pull/")[1].split("/")[0]
+
+        return None
+
+    def _run_criteria_flows(self, criteria: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Execute test generation for each approved criteria flow.
+
+        Builds a synthetic ``autoqa`` block for each criterion and feeds
+        it through the standard generation pipeline.
+        """
+        all_results = []
+
+        for c in criteria:
+            flow_name = c.get("flow_name", "unknown")
+            logger.info(f"Generating test for flow: {flow_name}")
+
+            metadata = {
+                "flow_name": flow_name,
+                "tier": c.get("tier", "C"),
+                "area": c.get("area", "general"),
+            }
+            steps = c.get("steps", [])
+
+            # Validate metadata
+            is_valid, errors = self.parser.validate_metadata(metadata)
+            if not is_valid:
+                logger.warning(f"Skipping flow {flow_name}: " + ", ".join(errors))
+                all_results.append({"flow_name": flow_name, "success": False, "error": errors})
+                continue
+
+            # Compute ETag
+            etag = self.parser.compute_etag(metadata, steps)
+            metadata["etag"] = etag
+            metadata["steps"] = steps
+
+            # Generate test code
+            existing_code = self._load_existing_code(metadata)
+            generation_result = self._generate_test_code(steps, metadata, existing_code)
+
+            if not generation_result.get("success"):
+                all_results.append(
+                    {
+                        "flow_name": flow_name,
+                        "success": False,
+                        "error": generation_result.get("error"),
+                    }
+                )
+                continue
+
+            # Finalise: execute, commit, report
+            outputs = self._finalize_generation(generation_result, metadata, etag)
+            all_results.append(
+                {
+                    "flow_name": flow_name,
+                    "success": outputs.get("test_generated") == "true",
+                    "outputs": outputs,
+                }
+            )
+
+        # Summarise
+        success_count = sum(1 for r in all_results if r.get("success"))
+        total = len(all_results)
+        overall_success = success_count > 0
+
+        return self._set_outputs(
+            {
+                "test_generated": "true" if overall_success else "false",
+                "auto_criteria_results": json.dumps(all_results),
+                "message": f"Auto-criteria: {success_count}/{total} flows generated successfully",
             }
         )
 
