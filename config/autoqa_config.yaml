@@ -196,6 +196,16 @@ autoqa:
     include_execution_logs: true
     create_github_checks: false
 
+  # Memory tracking for test status and coverage gaps
+  memory:
+    enabled: true
+    memory_file: "reports/autoqa_memory.json"
+    test_dir: "tests"
+    source_dirs: ["src"]
+    history_limit: 10       # Max history entries per test
+    update_on_ci: true      # Update memory on CI runs
+    report_on_pr: true      # Post memory report as PR comment
+
 # Cross-repository settings
 cross_repo:
   action_repository: "AISquare-Studio/AISquare-Studio-QA"

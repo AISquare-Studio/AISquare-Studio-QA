@@ -101,6 +101,58 @@ def run_staging_tests():
     return result.returncode == 0
 
 
+def run_memory_scan():
+    """Scan tests and source files, update memory without running tests."""
+    from src.autoqa.memory_tracker import AutoQAMemoryTracker
+
+    tracker = AutoQAMemoryTracker(project_root=str(project_root))
+    tracker.load()
+    tracker.identify_coverage_gaps()
+    tracker.save()
+
+    summary = tracker.get_summary()
+    print("📋 AutoQA Memory Scan Complete")
+    print(f"   Source modules:  {summary['total_source_modules']}")
+    print(f"   Covered:         {summary['covered_modules']}")
+    print(f"   Missing tests:   {summary['uncovered_modules']}")
+    print(f"   Coverage:        {summary['coverage_percentage']}%")
+    print(f"   Memory saved to: {tracker.memory_path}")
+    return True
+
+
+def run_memory_update():
+    """Run tests and update the memory with results."""
+    from src.autoqa.memory_tracker import AutoQAMemoryTracker
+
+    tracker = AutoQAMemoryTracker(project_root=str(project_root))
+    summary = tracker.update(run_tests=True)
+
+    print("📋 AutoQA Memory Update Complete")
+    print(f"   Total tests:     {summary['total_tests']}")
+    for status, count in sorted(summary["status_counts"].items()):
+        emoji = {"passed": "✅", "failed": "❌", "error": "💥", "skipped": "⏭️"}.get(status, "❓")
+        print(f"   {emoji} {status.title()}: {count}")
+    print(f"   Coverage:        {summary['coverage_percentage']}%")
+    print(f"   Memory saved to: {tracker.memory_path}")
+    return summary["status_counts"].get("failed", 0) == 0
+
+
+def run_memory_report():
+    """Generate and print a markdown report from current memory."""
+    from src.autoqa.memory_tracker import AutoQAMemoryTracker
+
+    tracker = AutoQAMemoryTracker(project_root=str(project_root))
+    if not tracker.load():
+        print("❌ No memory file found. Run --memory-update first.")
+        return False
+
+    # Reload coverage gaps from disk
+    tracker.identify_coverage_gaps()
+    report = tracker.generate_report()
+    print(report)
+    return True
+
+
 def show_help():
     """Show detailed help information."""
     print_banner()
@@ -113,6 +165,9 @@ def show_help():
     print()
     print("🔧 COMMANDS:")
     print("   --help              Show this help message")
+    print("   --memory-scan       Scan tests and source files for coverage gaps")
+    print("   --memory-update     Run tests and update memory with results")
+    print("   --memory-report     Print a markdown report from current memory")
     print()
     print("📁 PROJECT STRUCTURE:")
     print("   config/             Configuration files (YAML)")
@@ -145,11 +200,29 @@ def main():
         epilog="""
 Examples:
     python qa_runner.py                    # Run all staging tests
+    python qa_runner.py --memory-scan      # Scan for coverage gaps
+    python qa_runner.py --memory-update    # Run tests and update memory
+    python qa_runner.py --memory-report    # Print memory report
         """,
     )
 
     parser.add_argument(
         "--help-detailed", action="store_true", help="Show detailed help and documentation"
+    )
+    parser.add_argument(
+        "--memory-scan",
+        action="store_true",
+        help="Scan tests and source files for coverage gaps",
+    )
+    parser.add_argument(
+        "--memory-update",
+        action="store_true",
+        help="Run tests and update memory with results",
+    )
+    parser.add_argument(
+        "--memory-report",
+        action="store_true",
+        help="Print a markdown report from current memory",
     )
 
     args = parser.parse_args()
@@ -158,6 +231,18 @@ Examples:
     if args.help_detailed:
         show_help()
         return True
+
+    # Handle memory commands
+    if args.memory_scan:
+        print_banner()
+        return run_memory_scan()
+
+    if args.memory_update:
+        print_banner()
+        return run_memory_update()
+
+    if args.memory_report:
+        return run_memory_report()
 
     # Default: run staging tests
     print("🎯 Running AI-powered tests against staging environment...")
