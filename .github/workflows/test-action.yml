@@ -109,7 +109,7 @@ jobs:
           target-repo-path: '.'
           git-user-name: 'AutoQA Test Bot'
           git-user-email: 'rabia.tahirr@opengrowth.com'
-          action-ref: ${{ github.sha }}
+          action-ref: ${{ github.head_ref || github.ref_name }}
           pr-body: |
             ## Test PR for AutoQA
             
