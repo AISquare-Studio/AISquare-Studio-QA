@@ -235,7 +235,7 @@ python qa_runner.py --memory-report
 
 The memory file is saved at `reports/autoqa_memory.json` inside your repository (configurable via `memory_file` in `config/autoqa_config.yaml`). It contains:
 
-- **test_entries** — per-test status, last run timestamp, duration, error messages, and history (up to 10 runs)
+- **test_entries** — per-test status, last run timestamp, duration, error messages, and history (up to 10 runs by default, configurable via `history_limit` in `config/autoqa_config.yaml`)
 - **coverage_gaps** — list of source modules and whether they have a corresponding test file
 - **summary** — aggregate counts (total tests, status breakdown, coverage percentage)
 
