@@ -128,11 +128,11 @@ jobs:
         run: |
           if [ -d "tests/autoQA-self-test" ]; then
             echo "✅ Test directory created"
-            ls -la tests/autoQA-self-test/
+            find tests/autoQA-self-test -type f -name '*.py' | head -20
             
-            if ls tests/autoQA-self-test/test_*.py 1> /dev/null 2>&1; then
+            if find tests/autoQA-self-test -type f -name 'test_*.py' | grep -q .; then
               echo "✅ Test files generated"
-              cat tests/autoQA-self-test/test_*.py | head -20
+              find tests/autoQA-self-test -type f -name 'test_*.py' -exec head -20 {} +
             else
               echo "❌ No test files found"
               exit 1

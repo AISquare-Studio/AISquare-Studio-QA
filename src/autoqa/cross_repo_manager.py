@@ -378,6 +378,22 @@ if __name__ == "__main__":
             )
             current_branch = result.stdout.strip()
 
+            # In detached HEAD state (common in CI), --show-current returns empty
+            if not current_branch:
+                # Try to determine the branch from GITHUB_HEAD_REF or GITHUB_REF
+                current_branch = os.getenv("GITHUB_HEAD_REF", "")
+                if not current_branch:
+                    github_ref = os.getenv("GITHUB_REF", "")
+                    if github_ref.startswith("refs/heads/"):
+                        current_branch = github_ref.removeprefix("refs/heads/")
+
+            if not current_branch:
+                logger.warning(
+                    "Could not determine current branch (detached HEAD). "
+                    "Skipping push. Changes are committed locally."
+                )
+                return
+
             # Check if we have a remote configured
             remote_result = subprocess.run(
                 ["git", "remote", "get-url", "origin"],
