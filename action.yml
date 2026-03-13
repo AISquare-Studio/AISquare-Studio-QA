@@ -64,6 +64,11 @@ inputs:
     description: 'Mode of operation: "generate" (new test only), "suite" (run all tests), or "all" (generate + run all)'
     required: false
     default: 'generate'
+  
+  action-ref:
+    description: 'Git ref (branch, tag, or SHA) to checkout for the AutoQA action repository. Override this when pinning the action to a specific version.'
+    required: false
+    default: 'main'
 
 outputs:
   test_generated:
@@ -124,7 +129,7 @@ runs:
         repository: 'AISquare-Studio/AISquare-Studio-QA'
         token: ${{ inputs.qa-github-token }}
         path: '.autoqa-action'
-        ref: 'main'
+        ref: ${{ inputs.action-ref }}
     
     # Setup Python with pip caching based on requirements.txt hash
     - name: 🐍 Setup Python Environment
