@@ -21,12 +21,12 @@ _Inspired by [Lucent AI](https://lucenthq.com/) and [Meticulous AI](https://www.
 
 AutoQA currently excels at **AI-powered test generation from PR descriptions** — converting natural language into Playwright tests with smart selector discovery and iterative execution. However, industry leaders like Lucent AI and Meticulous AI demonstrate capabilities that could make AutoQA significantly more robust while reducing human intervention.
 
-This roadmap proposes **15 concrete enhancements** organized into three phases, drawing from two key inspirations:
+This roadmap proposes **16 concrete enhancements** organized into four phases, drawing from two key inspirations:
 
 - **Lucent AI**: Automatic session replay watching, proactive bug detection, affected user tracking, auto-generated bug reports with reproduction steps
 - **Meticulous AI**: Session recording → test generation, visual regression detection, deterministic replay engine, self-maintaining test suites, backend response mocking
 
-The overarching goal: **shift AutoQA from reactive test generation (human writes steps → AI generates tests) to proactive quality assurance (AI watches, detects, generates, and maintains — human reviews and approves).**
+The overarching goal: **shift AutoQA from reactive test generation (human writes steps → AI generates tests) to proactive quality assurance (AI analyzes code changes, generates test criteria, executes tests, and maintains them — developer only reviews and approves).**
 
 ---
 
@@ -70,6 +70,7 @@ The overarching goal: **shift AutoQA from reactive test generation (human writes
 | Workflow integrations (Slack, Issues) | ❌ PR comments only | ✅ | ✅ CI integration | **Medium gap** |
 | Console error / network failure monitoring | ❌ | ✅ | ❌ | **Medium gap** |
 | Stale test detection | ❌ | ❌ | ✅ Auto-prune | **Medium gap** |
+| Auto-generated test criteria from code changes | ❌ Developer writes test steps manually | ❌ | ✅ Auto-generates from recordings | **Large gap** |
 | Multi-LLM provider support | ❌ OpenAI only | N/A | N/A | **Small gap** |
 
 ---
@@ -382,18 +383,117 @@ The overarching goal: **shift AutoQA from reactive test generation (human writes
 
 ---
 
+### Proposal 16: AI-Generated PR Test Criteria (Developer-Review Workflow)
+
+**Inspired by**: Meticulous AI's zero-effort test generation and the core goal of minimizing developer intervention
+
+**What**: Instead of requiring developers to manually write test criteria in PR descriptions (the `autoqa` metadata block with `flow_name`, `tier`, `area`, and numbered test steps), AutoQA **automatically analyzes the PR's code diff** and generates the test criteria itself. The developer's only responsibility is to **review and approve** the suggested criteria — or let it auto-proceed if confidence is high enough.
+
+**Why**: Today's workflow requires developers to context-switch from coding to QA thinking — they must understand which flows their changes affect, write natural-language test steps, classify tiers, and tag areas. This is the single largest friction point in AutoQA adoption. By inverting the workflow, AutoQA becomes truly proactive: it reads the code changes, determines what should be tested, generates the test criteria, and only asks the developer to confirm.
+
+**Current workflow** (high developer effort):
+```
+Developer writes code → Developer writes autoqa block in PR description →
+AutoQA reads criteria → AutoQA generates tests → AutoQA executes and reports
+```
+
+**Proposed workflow** (minimal developer effort):
+```
+Developer writes code → Opens PR (no autoqa block needed) →
+AutoQA analyzes the diff → AutoQA generates test criteria →
+AutoQA posts suggested criteria as PR comment for review →
+Developer approves (or edits) → AutoQA generates and executes tests →
+AutoQA reports results
+```
+
+**Implementation approach**:
+- Add a `TestCriteriaGenerator` module in `src/autoqa/`
+- **Diff analysis**: Use `github.event.pull_request` to fetch the PR diff via GitHub API
+- **Code understanding**: Feed the diff to the LLM with a prompt like: "Given these code changes to a web application, identify which user-facing flows are affected and generate test criteria including flow_name, tier, area, and step-by-step test instructions"
+- **Context enrichment**: Include existing test files, component structure, and route definitions to help the LLM understand the application
+- **Criteria suggestion**: Post the generated `autoqa` block as a PR comment with an "Approve" reaction mechanism (e.g., developer adds 👍 reaction or replies with `/autoqa approve`)
+- **Auto-proceed option**: If confidence score (Proposal 11) exceeds a configurable threshold (e.g., 85), skip waiting for approval and proceed automatically
+- **Multiple flow detection**: A single PR may affect multiple flows — generate criteria for each affected flow
+- **Tier inference**: Automatically classify tier based on the affected area:
+  - Changes to auth/payment/core routes → Tier A (critical)
+  - Changes to settings/profile/secondary features → Tier B (important)
+  - Changes to docs/cosmetic/minor features → Tier C (nice-to-have)
+- **Fallback**: If the developer provides their own `autoqa` block in the PR description, use that instead (backward compatible)
+
+**Configuration in `autoqa_config.yaml`**:
+```yaml
+auto_criteria:
+  enabled: true
+  mode: "suggest"               # "suggest" (post for review) | "auto" (proceed if high confidence)
+  auto_proceed_threshold: 85    # Confidence score threshold for auto mode
+  include_existing_tests: true  # Use existing tests as context for generation
+  max_flows_per_pr: 5           # Cap on number of flows to suggest per PR
+  approval_mechanism: "reaction" # "reaction" (👍) | "comment" (/autoqa approve) | "label" (autoqa:approved)
+  tier_inference:
+    critical_paths: ["auth", "payment", "checkout", "signup"]
+    important_paths: ["dashboard", "settings", "profile", "search"]
+    # Everything else defaults to Tier C
+```
+
+**GitHub Action workflow changes**:
+- Add a new trigger: `pull_request: types: [opened, synchronize]` (in addition to existing triggers)
+- New execution flow:
+  1. PR opened → check if `autoqa` block exists in description
+  2. If yes → use existing workflow (backward compatible)
+  3. If no → analyze diff → generate criteria → post as comment → wait for approval
+  4. On approval → generate tests → execute → report
+- Add `auto-criteria` as a new `execution-mode` option in `action.yml`
+
+**Developer experience**:
+```
+# Developer opens PR with just their code changes — no autoqa block needed
+
+# AutoQA automatically posts a comment:
+# ────────────────────────────────────────
+# 🤖 AutoQA Suggested Test Criteria
+#
+# Based on the changes in this PR, I suggest testing the following flows:
+#
+# **Flow 1: Login Form Validation** (Tier A, Area: auth)
+# ```autoqa
+# flow_name: login_form_validation
+# tier: A
+# area: auth
+# ```
+# 1. Navigate to login page at "/login"
+# 2. Enter invalid email "invalid" in email field
+# 3. Click the "Login" button
+# 4. Verify error message "Please enter a valid email" appears
+# 5. Enter valid email "test@example.com" in email field
+# 6. Enter password "testpass123" in password field
+# 7. Click the "Login" button
+# 8. Verify redirect to "/dashboard"
+#
+# **Confidence: 92/100** ✅ High confidence
+#
+# React with 👍 to approve, or reply with `/autoqa edit` to modify.
+# ────────────────────────────────────────
+
+# Developer simply reacts with 👍 → AutoQA proceeds
+```
+
+**Impact**: This is the **highest-impact change for developer adoption**. It transforms AutoQA from a tool that requires QA expertise to use ("write test steps") into a tool that requires only a thumbs-up ("approve or reject AI's suggestions"). Combined with Proposal 11 (confidence scoring), high-confidence criteria can auto-proceed without any developer interaction at all — achieving true zero-effort QA for routine changes while still keeping the developer in the loop for complex or ambiguous changes.
+
+---
+
 ## Implementation Plan
 
 ### Phase 1: Foundation (Weeks 1-4) — Quick Wins with High Impact
 
 | # | Feature | Effort | Impact | Dependencies |
 | --- | --- | --- | --- | --- |
+| **P16** | AI-generated PR test criteria (developer-review workflow) | Medium | Very High (adoption) | None |
 | **P14** | Per-step AST validation | Small | High (security) | None |
 | **P2** | Console error & network failure monitoring | Small | High | None |
 | **P5** | Playwright trace recording | Small | High (debugging) | None |
 | **P11** | Confidence scoring | Medium | High (reduces human review) | None |
 
-**Phase 1 outcome**: Every test execution captures traces for debugging, monitors for hidden errors, validates security at every step, and reports a confidence score. Human review is only needed for low-confidence tests.
+**Phase 1 outcome**: Developers no longer need to write test criteria — AutoQA analyzes their code changes and suggests criteria for review. Every test execution captures traces for debugging, monitors for hidden errors, validates security at every step, and reports a confidence score. Human review is only needed for low-confidence tests and criteria approval.
 
 ### Phase 2: Intelligence Layer (Weeks 5-10) — Proactive Detection
 
@@ -435,7 +535,7 @@ The overarching goal: **shift AutoQA from reactive test generation (human writes
 
 | Activity | Today | After Phase 1 | After Phase 2 | After Phase 4 |
 | --- | --- | --- | --- | --- |
-| Writing test steps in PR description | Manual | Manual | Manual | **Optional** (trace → test) |
+| Writing test criteria in PR description | Manual (developer writes autoqa block) | **AI-generated** (developer reviews/approves) | **AI-generated** (auto-proceed if high confidence) | **Fully automatic** (trace → test + auto-criteria) |
 | Reviewing generated tests | Always required | Only low-confidence tests | Only low-confidence tests | Only low-confidence tests |
 | Debugging test failures | Manual (single screenshot) | Semi-auto (trace + console logs) | Semi-auto (trace + auto-issue) | **Minimal** (self-heal + trace) |
 | Maintaining stale tests | Fully manual | Fully manual | **Automatic** (self-heal) | **Automatic** (self-heal) |
@@ -447,7 +547,8 @@ The overarching goal: **shift AutoQA from reactive test generation (human writes
 
 | Dimension | Today | After Full Implementation |
 | --- | --- | --- |
-| **What's tested** | Only explicitly described flows | Described flows + visual regression + console errors + UX behavior |
+| **How tests are initiated** | Developer manually writes test criteria in PR | AI analyzes code diff, suggests criteria, developer approves with one click |
+| **What's tested** | Only explicitly described flows | Described flows + AI-inferred flows + visual regression + console errors + UX behavior |
 | **When it runs** | Only on PR events | PR events + scheduled nightly + on-demand |
 | **What's reported** | PR comment with pass/fail | PR comment + GitHub Issue + Slack alert + analytics dashboard |
 | **How failures are handled** | Manual investigation | Auto-generated bug report + trace + self-heal attempt |
@@ -461,6 +562,7 @@ The overarching goal: **shift AutoQA from reactive test generation (human writes
 | Capability | Lucent AI | Meticulous AI | AutoQA (After Roadmap) |
 | --- | --- | --- | --- |
 | AI-powered test generation from natural language | ❌ | ❌ | ✅ **Unique advantage** |
+| AI-generated test criteria from code diffs | ❌ | ❌ | ✅ **Unique advantage** |
 | Session replay watching | ✅ | ❌ | ✅ Via trace recording + behavioral analysis |
 | Visual regression detection | ❌ | ✅ | ✅ Via baseline screenshot comparison |
 | Automatic bug detection | ✅ | ❌ | ✅ Via console/network monitoring |
@@ -469,19 +571,20 @@ The overarching goal: **shift AutoQA from reactive test generation (human writes
 | Structured bug reports | ✅ | ❌ | ✅ Via auto-issue creation |
 | Workflow integrations | ✅ Slack, Linear | ✅ CI/CD | ✅ Slack, webhooks, GitHub Issues |
 | Test generation from recordings | ❌ | ✅ | ✅ Via trace → test generation |
+| Zero-effort developer workflow | ❌ | ✅ Zero-config | ✅ AI suggests criteria, developer approves |
 | Confidence scoring | ❌ | ❌ | ✅ **Unique advantage** |
 | Cross-flow impact analysis | ❌ | ❌ | ✅ **Unique advantage** |
 | Multi-LLM support | N/A | N/A | ✅ **Unique advantage** |
 
-**Result**: AutoQA would combine the best of both worlds — Lucent's proactive bug detection and reporting with Meticulous's visual regression and self-maintenance — while retaining its unique natural language test generation capability. The addition of confidence scoring and cross-flow impact analysis would give AutoQA capabilities neither competitor offers.
+**Result**: AutoQA would combine the best of both worlds — Lucent's proactive bug detection and reporting with Meticulous's visual regression and self-maintenance — while retaining its unique natural language test generation capability. The AI-generated test criteria workflow (P16) eliminates the biggest adoption barrier by removing the need for developers to write test steps. The addition of confidence scoring and cross-flow impact analysis would give AutoQA capabilities neither competitor offers.
 
 ---
 
 ## Next Steps
 
 1. **Validate priorities** with the team — are Phase 1 items the right starting point?
-2. **Create GitHub Issues** for each proposal (P1-P15) with detailed acceptance criteria
-3. **Begin Phase 1** implementation, starting with P14 (per-step AST validation) as it closes a known security gap
+2. **Create GitHub Issues** for each proposal (P1-P16) with detailed acceptance criteria
+3. **Begin Phase 1** implementation, starting with P16 (AI-generated test criteria) as it has the highest adoption impact, followed by P14 (per-step AST validation) to close the security gap
 4. **Measure impact** after each phase to validate assumptions and adjust priorities
 
 ---

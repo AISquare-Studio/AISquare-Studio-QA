@@ -346,7 +346,7 @@ flake8 .
 
 ## Roadmap
 
-See [`docs/AUTOQA_ENHANCEMENT_ROADMAP.md`](docs/AUTOQA_ENHANCEMENT_ROADMAP.md) for the full enhancement roadmap, including 15 feature proposals inspired by [Lucent AI](https://lucenthq.com/) and [Meticulous AI](https://www.meticulous.ai/) covering visual regression detection, self-healing tests, automatic bug reports, and more.
+See [`docs/AUTOQA_ENHANCEMENT_ROADMAP.md`](docs/AUTOQA_ENHANCEMENT_ROADMAP.md) for the full enhancement roadmap, including 16 feature proposals inspired by [Lucent AI](https://lucenthq.com/) and [Meticulous AI](https://www.meticulous.ai/) covering AI-generated test criteria from code diffs, visual regression detection, self-healing tests, automatic bug reports, and more.
 
 For open-source readiness status, see [`docs/OPEN_SOURCE_ROADMAP.md`](docs/OPEN_SOURCE_ROADMAP.md).
 

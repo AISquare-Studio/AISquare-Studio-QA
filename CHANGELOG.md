@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Enhancement roadmap (`docs/AUTOQA_ENHANCEMENT_ROADMAP.md`) with 15 feature proposals inspired by Lucent AI and Meticulous AI, organized into 4 implementation phases targeting reduced human intervention and tighter QA coverage
+- Enhancement roadmap (`docs/AUTOQA_ENHANCEMENT_ROADMAP.md`) with 16 feature proposals inspired by Lucent AI and Meticulous AI, organized into 4 implementation phases targeting reduced human intervention and tighter QA coverage
+- Proposal 16: AI-Generated PR Test Criteria — AutoQA analyzes code diffs and generates test criteria for developer review, eliminating the need for developers to manually write test steps in PR descriptions
 
 ## [0.1.0] - 2026-03-08
 
