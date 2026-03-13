@@ -66,9 +66,9 @@ inputs:
     default: 'generate'
   
   action-ref:
-    description: 'Git ref (branch, tag, or SHA) to checkout for the AutoQA action repository. Override this when pinning the action to a specific version.'
+    description: 'Git ref (branch, tag, or SHA) to checkout for the AutoQA action repository. When unset, derives from the action invocation ref (github.action_ref) or falls back to main.'
     required: false
-    default: 'main'
+    default: ''
 
 outputs:
   test_generated:
@@ -129,7 +129,7 @@ runs:
         repository: 'AISquare-Studio/AISquare-Studio-QA'
         token: ${{ inputs.qa-github-token }}
         path: '.autoqa-action'
-        ref: ${{ inputs.action-ref }}
+        ref: ${{ inputs.action-ref || github.action_ref || 'main' }}
     
     # Setup Python with pip caching based on requirements.txt hash
     - name: 🐍 Setup Python Environment

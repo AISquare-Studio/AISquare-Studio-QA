@@ -377,9 +377,11 @@ if __name__ == "__main__":
                 check=True,
             )
             current_branch = result.stdout.strip()
+            detached_head = False
 
             # In detached HEAD state (common in CI), --show-current returns empty
             if not current_branch:
+                detached_head = True
                 # Try to determine the branch from GITHUB_HEAD_REF or GITHUB_REF
                 current_branch = os.getenv("GITHUB_HEAD_REF", "")
                 if not current_branch:
@@ -408,9 +410,16 @@ if __name__ == "__main__":
 
             logger.info(f"Pushing changes to origin/{current_branch}...")
 
+            # In detached HEAD, there is no local branch matching the name,
+            # so use HEAD:<branch> refspec to push the current commit.
+            if detached_head:
+                push_refspec = f"HEAD:refs/heads/{current_branch}"
+            else:
+                push_refspec = current_branch
+
             # Push to origin with authentication
             push_result = subprocess.run(
-                ["git", "push", "origin", current_branch],
+                ["git", "push", "origin", push_refspec],
                 cwd=self.target_workspace,
                 capture_output=True,
                 text=True,
