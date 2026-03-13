@@ -7,8 +7,7 @@ comment building, and auto-proceed behaviour.
 """
 
 import json
-from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -16,7 +15,6 @@ from src.autoqa.gap_driven_generator import (
     GAP_CRITERIA_COMMENT_MARKER,
     GapDrivenGenerator,
 )
-from src.autoqa.memory_tracker import CoverageGap, MemoryEntry
 
 # ---------------------------------------------------------------------------
 # Fixtures
