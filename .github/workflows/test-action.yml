@@ -76,6 +76,14 @@ jobs:
           print('✅ AutoQA Parser tests passed')
           "
 
+      - name: 🧠 Run Memory Tracker Tests
+        run: |
+          python -m pytest tests/test_memory_tracker.py -v --tb=short
+
+      - name: 📋 Update AutoQA Memory
+        run: |
+          python qa_runner.py --memory-scan
+
   test-self-autoqa:
     name: 🚀 Test Self AutoQA
     runs-on: ubuntu-latest
