@@ -105,10 +105,10 @@ class ActionRunner:
 
             # If no autoqa block found and auto-criteria is not explicitly
             # disabled, try the auto-criteria workflow as a fallback
-            if "error" not in parse_result and "message" in parse_result:
-                # "message" key means no autoqa block was found (not an error)
+            if not parse_result.get("autoqa_block_found", True):
                 if self.config.get("auto_criteria_fallback", False):
                     logger.info("No AutoQA block found — falling back to auto-criteria generation")
+                    return self._execute_auto_criteria_mode()
                     return self._execute_auto_criteria_mode()
 
             if "error" in parse_result:
@@ -349,7 +349,11 @@ class ActionRunner:
         """Parse and validate the PR body. Returns metadata/steps or error dict."""
         if not self.parser.has_autoqa_tag(self.config["pr_body"]):
             logger.info("No AutoQA fenced metadata block found in PR description")
-            return {"test_generated": "false", "message": "No AutoQA metadata block found"}
+            return {
+                "test_generated": "false",
+                "autoqa_block_found": False,
+                "message": "No AutoQA metadata block found",
+            }
 
         autoqa_block = self.parser.extract_autoqa_block(self.config["pr_body"])
         if not autoqa_block:

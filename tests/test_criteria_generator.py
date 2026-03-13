@@ -376,7 +376,7 @@ class TestApprovalInstructions:
 # ---------------------------------------------------------------------------
 
 
-class TestAutoProceeed:
+class TestAutoProceed:
     """Tests for should_auto_proceed logic."""
 
     def test_auto_mode_high_confidence_proceeds(self):

@@ -451,7 +451,10 @@ class TestCriteriaGenerator:
             # Normalise
             item["flow_name"] = re.sub(r"[^\w]+", "_", item["flow_name"]).strip("_").lower()[:50]
             item.setdefault("tier", "C")
-            item["tier"] = item["tier"].upper() if item["tier"] in ("a", "b", "c") else item["tier"]
+            # Normalize tier to uppercase and validate against allowed values
+            item["tier"] = str(item["tier"]).upper()
+            if item["tier"] not in ("A", "B", "C"):
+                item["tier"] = "C"
             item.setdefault("area", "general")
             item["area"] = re.sub(r"[^\w]+", "_", item["area"]).strip("_").lower()[:30]
             item.setdefault("confidence", 50)
