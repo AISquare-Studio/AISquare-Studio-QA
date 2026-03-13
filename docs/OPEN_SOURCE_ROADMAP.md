@@ -2,6 +2,8 @@
 
 This document catalogues the current limitations of AISquare Studio AutoQA and proposes improvements organized by priority. It is intended to guide contributors and inform potential adopters about what works well, what needs attention, and where the largest opportunities for contribution lie.
 
+> **See also**: [`AUTOQA_ENHANCEMENT_ROADMAP.md`](AUTOQA_ENHANCEMENT_ROADMAP.md) for the comprehensive feature enhancement roadmap with 16 proposals inspired by Lucent AI and Meticulous AI.
+
 ---
 
 ## Table of Contents

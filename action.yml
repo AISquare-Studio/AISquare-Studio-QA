@@ -61,7 +61,7 @@ inputs:
     default: 'false'
   
   execution-mode:
-    description: 'Mode of operation: "generate" (new test only), "suite" (run all tests), or "all" (generate + run all)'
+    description: 'Mode of operation: "generate" (new test only), "suite" (run all tests), "all" (generate + run all), or "auto-criteria" (AI generates test criteria from PR diff for developer review)'
     required: false
     default: 'generate'
   
@@ -69,6 +69,26 @@ inputs:
     description: 'Git ref (branch, tag, or SHA) to checkout for the AutoQA action repository. When unset, derives from the action invocation ref (github.action_ref) or falls back to main.'
     required: false
     default: ''
+
+  auto-criteria-fallback:
+    description: 'When true, if no autoqa block is found in the PR description, automatically generate test criteria from the PR diff (Proposal 16)'
+    required: false
+    default: 'false'
+
+  auto-criteria-mode:
+    description: 'Auto-criteria mode: "suggest" (post for review) or "auto" (proceed if high confidence)'
+    required: false
+    default: 'suggest'
+
+  auto-criteria-threshold:
+    description: 'Confidence score threshold (0-100) for auto-proceed mode'
+    required: false
+    default: '85'
+
+  auto-criteria-approval:
+    description: 'Approval mechanism: "reaction" (👍), "comment" (/autoqa approve), or "label" (autoqa:approved)'
+    required: false
+    default: 'reaction'
 
 outputs:
   test_generated:
@@ -110,6 +130,14 @@ outputs:
   error:
     description: 'Error message if test generation or validation failed'
     value: ${{ steps.autoqa.outputs.error }}
+
+  auto_criteria_results:
+    description: 'JSON string of auto-criteria generation results (when using auto-criteria mode)'
+    value: ${{ steps.autoqa.outputs.auto_criteria_results }}
+
+  criteria:
+    description: 'JSON string of generated test criteria (when using auto-criteria mode, before approval)'
+    value: ${{ steps.autoqa.outputs.criteria }}
 
 runs:
   using: 'composite'
@@ -197,6 +225,13 @@ runs:
         TEST_DIRECTORY: ${{ inputs.test-directory }}
         CREATE_PR: ${{ inputs.create-pr }}
         EXECUTION_MODE: ${{ inputs.execution-mode }}
+        
+        # Auto-criteria settings (Proposal 16)
+        AUTO_CRITERIA_FALLBACK: ${{ inputs.auto-criteria-fallback }}
+        AUTO_CRITERIA_MODE: ${{ inputs.auto-criteria-mode }}
+        AUTO_CRITERIA_THRESHOLD: ${{ inputs.auto-criteria-threshold }}
+        AUTO_CRITERIA_APPROVAL: ${{ inputs.auto-criteria-approval }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
         
         # GitHub context for cross-repo operations
         TARGET_REPOSITORY: ${{ github.repository }}

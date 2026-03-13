@@ -172,6 +172,22 @@ autoqa:
         - "class"
         - "text"
       failure_mode: "stop_on_error"  # Options: stop_on_error, continue_on_error, partial_commit
+
+  # Auto-criteria generation (Proposal 16)
+  # When enabled, AutoQA analyzes PR diffs and generates test criteria
+  # automatically, requiring only developer review/approval.
+  auto_criteria:
+    enabled: true
+    mode: "suggest"                # "suggest" (post for review) | "auto" (proceed if high confidence)
+    auto_proceed_threshold: 85     # Confidence score threshold for auto mode
+    include_existing_tests: true   # Use existing tests as context for generation
+    max_flows_per_pr: 5            # Cap on number of flows to suggest per PR
+    max_diff_length: 12000         # Maximum diff characters to send to LLM
+    approval_mechanism: "reaction" # "reaction" (👍) | "comment" (/autoqa approve) | "label" (autoqa:approved)
+    tier_inference:
+      critical_paths: ["auth", "payment", "checkout", "signup", "login"]
+      important_paths: ["dashboard", "settings", "profile", "search", "account"]
+      # Everything else defaults to Tier C
   
   # Reporting
   reporting:
