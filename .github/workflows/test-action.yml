@@ -60,8 +60,11 @@ jobs:
           test_pr_body = '''
           ## Feature Test
           
-          AutoQA
-          1. Navigate to login page at "/login"
+          \`\`\`autoqa
+          flow_name: feature_test
+          tier: B
+          \`\`\`
+          1. Navigate to login page at \"/login\"
           2. Enter valid credentials
           3. Click login button
           4. Verify dashboard appears
@@ -109,7 +112,11 @@ jobs:
           pr-body: |
             ## Test PR for AutoQA
             
-            AutoQA
+            ```autoqa
+            flow_name: login_test
+            tier: A
+            area: auth
+            ```
             1. Navigate to login page at "/login"
             2. Enter valid email credentials
             3. Enter valid password

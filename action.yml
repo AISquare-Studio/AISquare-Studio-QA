@@ -124,7 +124,7 @@ runs:
         repository: 'AISquare-Studio/AISquare-Studio-QA'
         token: ${{ inputs.qa-github-token }}
         path: '.autoqa-action'
-        ref: ${{ github.action_ref || 'main' }}
+        ref: 'main'
     
     # Setup Python with pip caching based on requirements.txt hash
     - name: 🐍 Setup Python Environment
