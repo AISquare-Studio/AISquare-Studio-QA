@@ -155,6 +155,94 @@ Error: STAGING_URL is required but not provided
 3. Verify the staging environment is accessible
 ```
 
+## 📈 Memory & Coverage Stats
+
+AutoQA tracks test results and source-module coverage over time via its **Memory Tracker**. This section explains where to find these stats for your frontend repository.
+
+### Where Stats Are Stored
+
+| Location | What You'll Find |
+|----------|-----------------|
+| `reports/autoqa_memory.json` | Persistent JSON file with per-test results, history, and coverage gaps |
+| PR comments | Summary table posted automatically when `report_on_pr` is enabled |
+| GitHub Actions run summary | Step summary attached to each workflow run |
+| GitHub Actions artifacts | Full HTML/JSON reports and screenshots (retained for 14 days) |
+
+### Viewing Stats on Pull Requests
+
+When memory tracking is enabled (default), AutoQA posts a **Memory Report** comment on each PR that includes:
+
+- **Test Results Summary** — total tests, pass/fail/error/skip counts
+- **Coverage Percentage** — how many source modules have corresponding test files
+- **Failing Tests** — list of failing or erroring tests with error messages
+- **Missing Tests** — source modules that lack a test file, with suggested file names
+
+This is controlled by the `report_on_pr: true` setting in `config/autoqa_config.yaml`:
+
+```yaml
+autoqa:
+  memory:
+    enabled: true
+    report_on_pr: true      # Post memory report as PR comment
+    update_on_ci: true      # Update memory on CI runs
+```
+
+### Viewing Stats in GitHub Actions
+
+1. Go to the **Actions** tab in your frontend repository
+2. Select the AutoQA workflow run you want to inspect
+3. Open the **run summary** — the memory report is included in the step summary
+4. Click **Artifacts** to download full reports (`report.html`, `autoqa_memory.json`, screenshots)
+
+### Viewing Stats Locally
+
+Use the `qa_runner.py` CLI to generate memory and coverage stats from your local machine:
+
+```bash
+# Scan tests and source files for coverage gaps (no test execution)
+python qa_runner.py --memory-scan
+
+# Run tests and update the memory file with results
+python qa_runner.py --memory-update
+
+# Print a markdown report from the current memory file
+python qa_runner.py --memory-report
+```
+
+**Example output from `--memory-report`:**
+
+```
+📋 AutoQA Memory Report
+
+📊 Test Results Summary
+| Metric        | Count |
+|---------------|-------|
+| Total Tests   | 12    |
+| ✅ Passed     | 10    |
+| ❌ Failed     | 1     |
+| ⏭️ Skipped    | 1     |
+
+🔍 Test Coverage
+| Metric           | Value |
+|------------------|-------|
+| Source Modules    | 30    |
+| Covered           | 12    |
+| Uncovered         | 18    |
+| Coverage          | 40.0% |
+```
+
+### Memory File Location
+
+The memory file is saved at `reports/autoqa_memory.json` inside your repository (configurable via `memory_file` in `config/autoqa_config.yaml`). It contains:
+
+- **test_entries** — per-test status, last run timestamp, duration, error messages, and history (up to 10 runs)
+- **coverage_gaps** — list of source modules and whether they have a corresponding test file
+- **summary** — aggregate counts (total tests, status breakdown, coverage percentage)
+
+> **Tip:** Commit `reports/autoqa_memory.json` to your repository so the memory persists across CI runs and team members can view the latest stats.
+
+---
+
 ## 🎯 Best Practices
 
 ### 1. Writing Effective AutoQA Steps
