@@ -11,10 +11,7 @@ from unittest.mock import patch
 
 import pytest
 
-from src.autoqa.gap_driven_generator import (
-    GAP_CRITERIA_COMMENT_MARKER,
-    GapDrivenGenerator,
-)
+from src.autoqa.gap_driven_generator import GAP_CRITERIA_COMMENT_MARKER, GapDrivenGenerator
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -31,9 +28,7 @@ def tmp_project(tmp_path):
     (src_dir / "parser.py").write_text(
         "class Parser:\n    def parse(self, text):\n        return text.split()\n"
     )
-    (src_dir / "runner.py").write_text(
-        "class Runner:\n    def run(self):\n        return True\n"
-    )
+    (src_dir / "runner.py").write_text("class Runner:\n    def run(self):\n        return True\n")
     (src_dir / "reporter.py").write_text(
         "class Reporter:\n    def report(self, data):\n        return str(data)\n"
     )
@@ -274,10 +269,7 @@ class TestGenerateCriteriaForGaps:
     def test_max_criteria_per_module_cap(self, mock_llm, generator):
         """Should cap criteria per module."""
         mock_llm.return_value = json.dumps(
-            [
-                {"flow_name": f"flow_{i}", "steps": ["s"], "confidence": 80}
-                for i in range(10)
-            ]
+            [{"flow_name": f"flow_{i}", "steps": ["s"], "confidence": 80} for i in range(10)]
         )
 
         generator.config["max_criteria_per_module"] = 2

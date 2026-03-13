@@ -327,8 +327,7 @@ class ActionRunner:
         # Check if we should auto-proceed
         if generator.should_auto_proceed(criteria):
             logger.info(
-                "All gap-driven criteria meet auto-proceed threshold — "
-                "proceeding without approval"
+                "All gap-driven criteria meet auto-proceed threshold — proceeding without approval"
             )
             return self._run_criteria_flows(criteria)
 
@@ -350,8 +349,7 @@ class ActionRunner:
             {
                 "test_generated": "false",
                 "message": (
-                    "Gap-driven criteria posted for review. "
-                    "Approve to trigger test generation."
+                    "Gap-driven criteria posted for review. Approve to trigger test generation."
                 ),
                 "criteria": json.dumps(criteria),
                 "gaps_found": str(result.get("gaps_found", 0)),
