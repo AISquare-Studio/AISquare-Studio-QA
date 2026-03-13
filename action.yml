@@ -61,7 +61,7 @@ inputs:
     default: 'false'
   
   execution-mode:
-    description: 'Mode of operation: "generate" (new test only), "suite" (run all tests), "all" (generate + run all), or "auto-criteria" (AI generates test criteria from PR diff for developer review)'
+    description: 'Mode of operation: "generate" (new test only), "suite" (run all tests), "all" (generate + run all), "auto-criteria" (AI generates test criteria from PR diff for developer review), or "gap-driven" (uses memory coverage gaps to generate test criteria for uncovered modules)'
     required: false
     default: 'generate'
   

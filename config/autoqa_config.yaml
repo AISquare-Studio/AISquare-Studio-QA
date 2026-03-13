@@ -206,6 +206,18 @@ autoqa:
     update_on_ci: true      # Update memory on CI runs
     report_on_pr: true      # Post memory report as PR comment
 
+  # Gap-driven test generation
+  # Uses memory tracker coverage gaps to automatically generate test criteria
+  # for source modules that lack tests.
+  gap_driven:
+    enabled: true
+    max_modules_per_run: 10           # Max uncovered modules to process per run
+    max_source_length: 8000           # Max source characters to send to LLM
+    max_criteria_per_module: 3        # Max criteria to generate per module
+    mode: "suggest"                   # "suggest" (post for review) | "auto" (proceed if high confidence)
+    auto_proceed_threshold: 85        # Confidence score for auto mode
+    approval_mechanism: "reaction"    # "reaction" (👍) | "comment" (/autoqa approve) | "label"
+
 # Cross-repository settings
 cross_repo:
   action_repository: "AISquare-Studio/AISquare-Studio-QA"

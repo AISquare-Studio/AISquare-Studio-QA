@@ -243,6 +243,89 @@ The memory file is saved at `reports/autoqa_memory.json` inside your repository 
 
 ---
 
+## 🔍 Gap-Driven Test Generation
+
+AutoQA can automatically generate tests for uncovered source modules by
+analysing the memory tracker's coverage data.  Instead of writing test steps
+manually, you can let AutoQA read the source code of modules that lack tests
+and generate criteria for them.
+
+### How It Works
+
+1. The **memory tracker** scans your source and test directories to identify coverage gaps
+2. The **gap-driven generator** reads the source code of each uncovered module
+3. An **LLM** analyses the code and produces structured test criteria
+4. The criteria are posted as a **PR comment** for developer review
+5. After **approval** (👍 reaction, `/autoqa approve` comment, or label), tests are generated and executed
+
+### Using Gap-Driven Mode in CI
+
+Set `execution-mode: gap-driven` in your workflow:
+
+```yaml
+- name: 🤖 Generate Tests for Uncovered Modules
+  uses: AISquare-Studio/AISquare-Studio-QA@main
+  with:
+    openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+    staging-url: ${{ secrets.STAGING_URL }}
+    staging-email: ${{ secrets.STAGING_EMAIL }}
+    staging-password: ${{ secrets.STAGING_PASSWORD }}
+    execution-mode: 'gap-driven'
+```
+
+### Using Gap-Driven Mode Locally
+
+```bash
+# First, scan for coverage gaps
+python qa_runner.py --memory-scan
+
+# Then, generate criteria for uncovered modules
+python qa_runner.py --gap-driven
+```
+
+### Configuration
+
+The gap-driven feature is configured in `config/autoqa_config.yaml`:
+
+```yaml
+autoqa:
+  gap_driven:
+    enabled: true
+    max_modules_per_run: 10        # Max modules to process
+    max_source_length: 8000        # Max source chars sent to LLM
+    max_criteria_per_module: 3     # Max criteria per module
+    mode: "suggest"                # "suggest" or "auto"
+    auto_proceed_threshold: 85     # Confidence for auto mode
+    approval_mechanism: "reaction" # "reaction", "comment", or "label"
+```
+
+### PR Comment Preview
+
+After running in gap-driven mode, AutoQA posts a comment like:
+
+```markdown
+## 🔍 AutoQA Gap-Driven Test Criteria
+
+Based on the memory tracker analysis, the following source modules
+lack test coverage.
+
+**Coverage:** 40.0% (12/30 modules)
+**Uncovered modules:** 18
+
+### Flow 1: `test_parser_validation`
+**Source:** `src/autoqa/parser.py` · **Tier:** B · **Area:** autoqa
+
+1. Initialize AutoQAParser instance
+2. Call parse method with a valid autoqa block
+3. Verify metadata is extracted correctly
+4. Call parse method with an invalid block
+5. Verify appropriate error is returned
+
+**Confidence:** 85/100 ✅ High
+```
+
+---
+
 ## 🎯 Best Practices
 
 ### 1. Writing Effective AutoQA Steps

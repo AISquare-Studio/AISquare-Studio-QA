@@ -153,6 +153,46 @@ def run_memory_report():
     return True
 
 
+def run_gap_driven():
+    """Generate test criteria for uncovered modules based on memory gaps."""
+    from src.autoqa.gap_driven_generator import GapDrivenGenerator
+
+    generator = GapDrivenGenerator(project_root=str(project_root))
+    result = generator.generate_criteria_for_gaps()
+
+    if not result.get("success"):
+        print(f"❌ Gap-driven generation failed: {result.get('error', 'unknown')}")
+        return False
+
+    criteria = result.get("criteria", [])
+    gaps_found = result.get("gaps_found", 0)
+
+    print("📋 AutoQA Gap-Driven Test Criteria")
+    print(f"   Uncovered modules: {gaps_found}")
+    print(f"   Criteria generated: {len(criteria)}")
+    print()
+
+    if not criteria:
+        print("   ✅ No testable flows found in uncovered modules.")
+        return True
+
+    for i, c in enumerate(criteria, 1):
+        confidence = c.get("confidence", 0)
+        print(f"   {i}. {c['flow_name']} (Tier {c['tier']}, Area: {c['area']})")
+        print(f"      Source: {c.get('source_module', 'unknown')}")
+        print(f"      Confidence: {confidence}/100")
+        print(f"      Steps: {len(c.get('steps', []))}")
+        print()
+
+    # Print full comment body
+    comment_body = result.get("comment_body", "")
+    if comment_body:
+        print("---")
+        print(comment_body)
+
+    return True
+
+
 def show_help():
     """Show detailed help information."""
     print_banner()
@@ -168,6 +208,7 @@ def show_help():
     print("   --memory-scan       Scan tests and source files for coverage gaps")
     print("   --memory-update     Run tests and update memory with results")
     print("   --memory-report     Print a markdown report from current memory")
+    print("   --gap-driven        Generate test criteria for uncovered modules")
     print()
     print("📁 PROJECT STRUCTURE:")
     print("   config/             Configuration files (YAML)")
@@ -203,6 +244,7 @@ Examples:
     python qa_runner.py --memory-scan      # Scan for coverage gaps
     python qa_runner.py --memory-update    # Run tests and update memory
     python qa_runner.py --memory-report    # Print memory report
+    python qa_runner.py --gap-driven       # Generate tests for uncovered modules
         """,
     )
 
@@ -224,6 +266,11 @@ Examples:
         action="store_true",
         help="Print a markdown report from current memory",
     )
+    parser.add_argument(
+        "--gap-driven",
+        action="store_true",
+        help="Generate test criteria for uncovered modules based on memory gaps",
+    )
 
     args = parser.parse_args()
 
@@ -243,6 +290,10 @@ Examples:
 
     if args.memory_report:
         return run_memory_report()
+
+    if args.gap_driven:
+        print_banner()
+        return run_gap_driven()
 
     # Default: run staging tests
     print("🎯 Running AI-powered tests against staging environment...")
