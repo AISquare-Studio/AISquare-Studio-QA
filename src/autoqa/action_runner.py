@@ -114,7 +114,6 @@ class ActionRunner:
                 if self.config.get("auto_criteria_fallback", False):
                     logger.info("No AutoQA block found — falling back to auto-criteria generation")
                     return self._execute_auto_criteria_mode()
-                    return self._execute_auto_criteria_mode()
 
             if "error" in parse_result:
                 return self._set_outputs(parse_result)
