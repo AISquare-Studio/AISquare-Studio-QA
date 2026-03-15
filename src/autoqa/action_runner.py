@@ -19,6 +19,7 @@ sys.path.insert(0, str(action_path))
 from src.autoqa.action_reporter import ActionReporter  # noqa: E402
 from src.autoqa.criteria_generator import TestCriteriaGenerator  # noqa: E402
 from src.autoqa.cross_repo_manager import CrossRepoManager  # noqa: E402
+from src.autoqa.gap_analysis_db import GapAnalysisDB  # noqa: E402
 from src.autoqa.gap_driven_generator import GapDrivenGenerator  # noqa: E402
 from src.autoqa.parser import AutoQAParser  # noqa: E402
 from src.crews.qa_crew import QACrew  # noqa: E402
@@ -104,6 +105,10 @@ class ActionRunner:
             # Handle 'gap-driven' mode (memory-based coverage gap testing)
             if self.config["execution_mode"] == "gap-driven":
                 return self._execute_gap_driven_mode()
+
+            # Handle 'gap-analysis' mode (database-backed workflow gap report)
+            if self.config["execution_mode"] == "gap-analysis":
+                return self._execute_gap_analysis_mode()
 
             # Parse and validate PR body
             parse_result = self._parse_and_validate_pr()
@@ -353,6 +358,43 @@ class ActionRunner:
                 ),
                 "criteria": json.dumps(criteria),
                 "gaps_found": str(result.get("gaps_found", 0)),
+            }
+        )
+
+    def _execute_gap_analysis_mode(self) -> Dict[str, Any]:
+        """Execute gap analysis and persist results to a SQLite database.
+
+        Similar to suite mode, this scans the repository for existing and
+        missing test workflows and writes the findings into a local SQLite
+        database.  The database is created automatically if it does not
+        already exist, making this safe to run on repositories that have
+        AutoQA tests but have never used the gap-analysis feature.
+
+        Returns:
+            Action outputs with ``gap_analysis_results`` JSON string.
+        """
+        logger.info("Running gap analysis (database-backed workflow report)...")
+
+        gap_db = GapAnalysisDB(
+            project_root=str(self.target_workspace),
+            test_dir=self.config.get("test_directory", "tests"),
+            source_dirs=["src"],
+        )
+
+        results = gap_db.run_analysis()
+
+        logger.info(
+            f"Gap analysis complete — "
+            f"{results['present_count']} present, "
+            f"{results['missing_count']} missing, "
+            f"{results['coverage_pct']}% coverage"
+        )
+
+        return self._set_outputs(
+            {
+                "test_generated": "false",
+                "gap_analysis_results": json.dumps(results),
+                "error": None,
             }
         )
 

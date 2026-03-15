@@ -193,6 +193,38 @@ def run_gap_driven():
     return True
 
 
+def run_gap_analysis():
+    """Run gap analysis and persist results to a SQLite database."""
+    from src.autoqa.gap_analysis_db import GapAnalysisDB
+
+    db = GapAnalysisDB(project_root=str(project_root))
+    results = db.run_analysis()
+
+    print("📋 AutoQA Gap Analysis Complete")
+    print(f"   Database:        {db.db_path}")
+    print(f"   Total modules:   {results['total_modules']}")
+    print(f"   Present:         {results['present_count']}")
+    print(f"   Missing:         {results['missing_count']}")
+    print(f"   Coverage:        {results['coverage_pct']}%")
+    print()
+
+    if results["workflows_present"]:
+        print("   ✅ Workflows Present:")
+        for w in results["workflows_present"]:
+            test = w.get("test_file") or "N/A"
+            print(f"      • {w['module_name']} ({w['source_path']}) → {test}")
+        print()
+
+    if results["workflows_missing"]:
+        print("   ❌ Workflows Missing:")
+        for w in results["workflows_missing"]:
+            suggested = w.get("suggested_test") or "N/A"
+            print(f"      • {w['module_name']} ({w['source_path']}) → {suggested}")
+        print()
+
+    return True
+
+
 def show_help():
     """Show detailed help information."""
     print_banner()
@@ -209,6 +241,7 @@ def show_help():
     print("   --memory-update     Run tests and update memory with results")
     print("   --memory-report     Print a markdown report from current memory")
     print("   --gap-driven        Generate test criteria for uncovered modules")
+    print("   --gap-analysis      Run gap analysis and persist results to database")
     print()
     print("📁 PROJECT STRUCTURE:")
     print("   config/             Configuration files (YAML)")
@@ -245,6 +278,7 @@ Examples:
     python qa_runner.py --memory-update    # Run tests and update memory
     python qa_runner.py --memory-report    # Print memory report
     python qa_runner.py --gap-driven       # Generate tests for uncovered modules
+    python qa_runner.py --gap-analysis     # Run gap analysis to database
         """,
     )
 
@@ -271,6 +305,11 @@ Examples:
         action="store_true",
         help="Generate test criteria for uncovered modules based on memory gaps",
     )
+    parser.add_argument(
+        "--gap-analysis",
+        action="store_true",
+        help="Run gap analysis and persist present/missing workflows to a SQLite database",
+    )
 
     args = parser.parse_args()
 
@@ -294,6 +333,10 @@ Examples:
     if args.gap_driven:
         print_banner()
         return run_gap_driven()
+
+    if args.gap_analysis:
+        print_banner()
+        return run_gap_analysis()
 
     # Default: run staging tests
     print("🎯 Running AI-powered tests against staging environment...")
