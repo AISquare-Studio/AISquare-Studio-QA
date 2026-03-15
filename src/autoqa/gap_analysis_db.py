@@ -163,7 +163,7 @@ class GapAnalysisDB:
                 )
 
             for g in missing:
-                suggested = f"tests/test_{g.module_name}.py"
+                suggested = self._suggested_test_path(g.module_name)
                 cur.execute(
                     """INSERT INTO workflows_missing
                        (run_id, module_name, source_path, reason, suggested_test)
@@ -188,7 +188,7 @@ class GapAnalysisDB:
                 "module_name": g.module_name,
                 "source_path": g.source_path,
                 "reason": g.reason,
-                "suggested_test": f"tests/test_{g.module_name}.py",
+                "suggested_test": self._suggested_test_path(g.module_name),
             }
             for g in missing
         ]
@@ -284,6 +284,11 @@ class GapAnalysisDB:
             if kw in lowered:
                 return "B"
         return "C"
+
+    @staticmethod
+    def _suggested_test_path(module_name: str) -> str:
+        """Return the conventional test file path for a module."""
+        return f"tests/test_{module_name}.py"
 
     @staticmethod
     def _infer_area(source_path: str) -> str:

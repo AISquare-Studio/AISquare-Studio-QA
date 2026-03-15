@@ -211,14 +211,14 @@ def run_gap_analysis():
     if results["workflows_present"]:
         print("   ✅ Workflows Present:")
         for w in results["workflows_present"]:
-            test = w.get("test_file", "—")
+            test = w.get("test_file") or "N/A"
             print(f"      • {w['module_name']} ({w['source_path']}) → {test}")
         print()
 
     if results["workflows_missing"]:
         print("   ❌ Workflows Missing:")
         for w in results["workflows_missing"]:
-            suggested = w.get("suggested_test", "—")
+            suggested = w.get("suggested_test") or "N/A"
             print(f"      • {w['module_name']} ({w['source_path']}) → {suggested}")
         print()
 
