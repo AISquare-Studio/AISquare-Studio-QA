@@ -384,7 +384,7 @@ class ActionRunner:
         results = gap_db.run_analysis()
 
         logger.info(
-            f"Gap analysis complete — "
+            "Gap analysis complete — "
             f"{results['present_count']} present, "
             f"{results['missing_count']} missing, "
             f"{results['coverage_pct']}% coverage"

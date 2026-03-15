@@ -217,9 +217,7 @@ class GapAnalysisDB:
         conn = sqlite3.connect(str(self.db_path))
         conn.row_factory = sqlite3.Row
         try:
-            row = conn.execute(
-                "SELECT * FROM analysis_runs ORDER BY id DESC LIMIT 1"
-            ).fetchone()
+            row = conn.execute("SELECT * FROM analysis_runs ORDER BY id DESC LIMIT 1").fetchone()
             if not row:
                 return None
 
