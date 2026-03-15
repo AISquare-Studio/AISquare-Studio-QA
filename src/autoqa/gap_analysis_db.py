@@ -16,7 +16,6 @@ analysis_runs
     Metadata for each gap-analysis execution.
 """
 
-import json
 import sqlite3
 from datetime import datetime
 from pathlib import Path

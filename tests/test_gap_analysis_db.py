@@ -5,9 +5,7 @@ Tests database creation, analysis execution, querying, persistence,
 and integration with the memory tracker.
 """
 
-import json
 import sqlite3
-from pathlib import Path
 
 import pytest
 
@@ -88,7 +86,7 @@ class TestDatabaseCreation:
             conn.close()
 
     def test_creates_parent_directories(self, tmp_path):
-        db = GapAnalysisDB(
+        GapAnalysisDB(
             project_root=str(tmp_path),
             db_path="deep/nested/dir/gap.db",
         )
