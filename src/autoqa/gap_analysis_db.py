@@ -179,6 +179,8 @@ class GapAnalysisDB:
                 "module_name": g.module_name,
                 "source_path": g.source_path,
                 "test_file": g.test_file,
+                "tier": self._infer_tier(g.source_path),
+                "area": self._infer_area(g.source_path),
             }
             for g in present
         ]

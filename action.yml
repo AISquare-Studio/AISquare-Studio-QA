@@ -143,6 +143,10 @@ outputs:
     description: 'JSON string of gap analysis results including present and missing workflows (when using gap-analysis mode)'
     value: ${{ steps.autoqa.outputs.gap_analysis_results }}
 
+  dashboard_results:
+    description: 'JSON string conforming to the AutoQA Dashboard schema (gap_analysis, summary, test_cases) for populating the dashboard UI'
+    value: ${{ steps.autoqa.outputs.dashboard_results }}
+
 runs:
   using: 'composite'
   steps:
@@ -265,5 +269,16 @@ runs:
           .autoqa-action/reports/**
           ${{ github.workspace }}/reports/**
           ${{ inputs.test-directory }}/**
+        if-no-files-found: warn
+        retention-days: 30
+
+    - name: 📈 Upload Dashboard Results
+      if: always() && steps.autoqa.outputs.dashboard_results != ''
+      uses: actions/upload-artifact@v7
+      with:
+        name: autoqa-dashboard-${{ github.run_number }}
+        path: |
+          .autoqa-action/reports/dashboard_results.json
+          ${{ github.workspace }}/reports/dashboard_results.json
         if-no-files-found: warn
         retention-days: 30

@@ -19,6 +19,7 @@ sys.path.insert(0, str(action_path))
 from src.autoqa.action_reporter import ActionReporter  # noqa: E402
 from src.autoqa.criteria_generator import TestCriteriaGenerator  # noqa: E402
 from src.autoqa.cross_repo_manager import CrossRepoManager  # noqa: E402
+from src.autoqa.dashboard_results import DashboardResultsBuilder  # noqa: E402
 from src.autoqa.gap_analysis_db import GapAnalysisDB  # noqa: E402
 from src.autoqa.gap_driven_generator import GapDrivenGenerator  # noqa: E402
 from src.autoqa.parser import AutoQAParser  # noqa: E402
@@ -172,10 +173,16 @@ class ActionRunner:
         logger.info("Generating Suite Result comment...")
         self.reporter.create_suite_comment(suite_results)
 
+        # Generate dashboard results JSON
+        dashboard_payload = self._generate_dashboard_results(
+            suite_results=suite_results,
+        )
+
         return self._set_outputs(
             {
                 "test_generated": "false",
                 "suite_results": json.dumps(suite_results),
+                "dashboard_results": json.dumps(dashboard_payload),
                 "error": None if suite_results.get("success", False) else "Test suite failed",
             }
         )
@@ -390,10 +397,16 @@ class ActionRunner:
             f"{results['coverage_pct']}% coverage"
         )
 
+        # Generate dashboard results JSON
+        dashboard_payload = self._generate_dashboard_results(
+            gap_results=results,
+        )
+
         return self._set_outputs(
             {
                 "test_generated": "false",
                 "gap_analysis_results": json.dumps(results),
+                "dashboard_results": json.dumps(dashboard_payload),
                 "error": None,
             }
         )
@@ -647,12 +660,19 @@ class ActionRunner:
     ) -> Dict[str, Any]:
         """Build and set final action outputs."""
         test_generated = "true" if execution_result["success"] else "false"
+
+        # Generate dashboard results JSON
+        dashboard_payload = self._generate_dashboard_results(
+            suite_results=suite_results if suite_results else None,
+        )
+
         outputs = {
             "test_generated": test_generated,
             "test_file_path": str(test_file_path) if test_file_path else "",
             "test_results": json.dumps(execution_result),
             "suite_results": json.dumps(suite_results),
             "generation_metadata": json.dumps(metadata),
+            "dashboard_results": json.dumps(dashboard_payload),
             "screenshot_path": execution_result.get("screenshot_path", ""),
             "etag": etag,
             "flow_name": metadata.get("flow_name", ""),
@@ -900,6 +920,41 @@ class ActionRunner:
         logger.error(f"Test generation failed: {result.get('error', 'Unknown error')}")
         return self._set_outputs(
             {"test_generated": "false", "error": result.get("error", "Test generation failed")}
+        )
+
+    def _generate_dashboard_results(
+        self,
+        gap_results: Optional[Dict[str, Any]] = None,
+        suite_results: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """Build dashboard-ready JSON and save it to reports/.
+
+        Parameters
+        ----------
+        gap_results : dict, optional
+            Output of ``GapAnalysisDB.run_analysis()``.
+        suite_results : dict, optional
+            Output of ``_run_test_suite()``.
+
+        Returns
+        -------
+        dict
+            The dashboard payload that was written.
+        """
+        pr_number = self._get_pr_number()
+        commit_sha = os.getenv("GITHUB_SHA", "")
+
+        builder = DashboardResultsBuilder(
+            pr_number=pr_number,
+            commit_sha=commit_sha,
+            execution_mode=self.config.get("execution_mode", "pr_validation"),
+        )
+
+        output_path = str(self.target_workspace / "reports" / "dashboard_results.json")
+        return builder.build_and_save(
+            gap_results=gap_results,
+            suite_results=suite_results,
+            output_path=output_path,
         )
 
     def _set_outputs(self, outputs: Dict[str, str]) -> Dict[str, Any]:
