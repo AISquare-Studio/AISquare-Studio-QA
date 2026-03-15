@@ -218,6 +218,16 @@ autoqa:
     auto_proceed_threshold: 85        # Confidence score for auto mode
     approval_mechanism: "reaction"    # "reaction" (👍) | "comment" (/autoqa approve) | "label"
 
+  # Gap analysis (database-backed)
+  # Scans for present and missing test workflows and persists results to a
+  # local SQLite database.  The database is created if it does not exist,
+  # making this safe to run on repos that already have AutoQA tests.
+  gap_analysis:
+    enabled: true
+    db_path: "reports/gap_analysis.db"
+    test_dir: "tests"
+    source_dirs: ["src"]
+
 # Cross-repository settings
 cross_repo:
   action_repository: "AISquare-Studio/AISquare-Studio-QA"
