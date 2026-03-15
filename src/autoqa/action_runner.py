@@ -19,6 +19,7 @@ sys.path.insert(0, str(action_path))
 from src.autoqa.action_reporter import ActionReporter  # noqa: E402
 from src.autoqa.criteria_generator import TestCriteriaGenerator  # noqa: E402
 from src.autoqa.cross_repo_manager import CrossRepoManager  # noqa: E402
+from src.autoqa.gap_driven_generator import GapDrivenGenerator  # noqa: E402
 from src.autoqa.parser import AutoQAParser  # noqa: E402
 from src.crews.qa_crew import QACrew  # noqa: E402
 from src.utils.logger import get_logger  # noqa: E402
@@ -100,6 +101,10 @@ class ActionRunner:
             if self.config["execution_mode"] == "auto-criteria":
                 return self._execute_auto_criteria_mode()
 
+            # Handle 'gap-driven' mode (memory-based coverage gap testing)
+            if self.config["execution_mode"] == "gap-driven":
+                return self._execute_gap_driven_mode()
+
             # Parse and validate PR body
             parse_result = self._parse_and_validate_pr()
 
@@ -108,7 +113,6 @@ class ActionRunner:
             if not parse_result.get("autoqa_block_found", True):
                 if self.config.get("auto_criteria_fallback", False):
                     logger.info("No AutoQA block found — falling back to auto-criteria generation")
-                    return self._execute_auto_criteria_mode()
                     return self._execute_auto_criteria_mode()
 
             if "error" in parse_result:
@@ -261,6 +265,94 @@ class ActionRunner:
                 "test_generated": "false",
                 "message": "Auto-criteria posted for review. Approve to trigger test generation.",
                 "criteria": json.dumps(criteria),
+            }
+        )
+
+    def _execute_gap_driven_mode(self) -> Dict[str, Any]:
+        """Generate tests for uncovered modules identified by the memory tracker.
+
+        Workflow:
+          1. Load memory and identify coverage gaps
+          2. Read source code of uncovered modules
+          3. Use LLM to generate test criteria for each gap
+          4. Post suggested criteria as a PR comment
+          5. If auto-proceed is enabled and confidence is high, generate tests
+          6. Otherwise wait for developer approval
+        """
+        logger.info("Running gap-driven test generation from memory coverage gaps...")
+
+        gap_config = {
+            "mode": self.config.get("auto_criteria_mode", "suggest"),
+            "auto_proceed_threshold": self.config.get("auto_criteria_threshold", 85),
+            "approval_mechanism": self.config.get("auto_criteria_approval", "reaction"),
+        }
+
+        generator = GapDrivenGenerator(
+            project_root=str(self.target_workspace),
+            github_token=self.config["github_token"],
+            target_repo=self.target_repo,
+            config=gap_config,
+        )
+
+        # Generate criteria from coverage gaps
+        result = generator.generate_criteria_for_gaps()
+
+        if not result.get("success"):
+            error = result.get("error", "Gap-driven generation failed")
+            logger.error(f"Gap-driven generation failed: {error}")
+            return self._set_outputs({"test_generated": "false", "error": error})
+
+        criteria = result.get("criteria", [])
+
+        if not criteria:
+            logger.info("No testable flows found in uncovered modules")
+            pr_number = self._get_pr_number()
+            if pr_number and result.get("comment_body"):
+                generator.post_criteria_comment(pr_number, result["comment_body"])
+            return self._set_outputs(
+                {
+                    "test_generated": "false",
+                    "message": result.get("message", "No testable flows in uncovered modules"),
+                    "gaps_found": str(result.get("gaps_found", 0)),
+                }
+            )
+
+        # Post criteria comment on the PR
+        pr_number = self._get_pr_number()
+        comment_body = result.get("comment_body", "")
+        if pr_number and comment_body:
+            generator.post_criteria_comment(pr_number, comment_body)
+            logger.info("Posted gap-driven criteria comment on PR")
+
+        # Check if we should auto-proceed
+        if generator.should_auto_proceed(criteria):
+            logger.info(
+                "All gap-driven criteria meet auto-proceed threshold — proceeding without approval"
+            )
+            return self._run_criteria_flows(criteria)
+
+        # If no PR context, just return the criteria
+        if not pr_number:
+            logger.info("No PR context — returning criteria for manual review")
+            return self._set_outputs(
+                {
+                    "test_generated": "false",
+                    "message": "Gap-driven criteria generated. No PR to post to.",
+                    "criteria": json.dumps(criteria),
+                    "gaps_found": str(result.get("gaps_found", 0)),
+                }
+            )
+
+        # Not yet approved — exit and wait for next trigger
+        logger.info("Gap-driven criteria posted — waiting for developer approval")
+        return self._set_outputs(
+            {
+                "test_generated": "false",
+                "message": (
+                    "Gap-driven criteria posted for review. Approve to trigger test generation."
+                ),
+                "criteria": json.dumps(criteria),
+                "gaps_found": str(result.get("gaps_found", 0)),
             }
         )
 

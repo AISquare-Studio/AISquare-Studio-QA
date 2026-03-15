@@ -155,6 +155,177 @@ Error: STAGING_URL is required but not provided
 3. Verify the staging environment is accessible
 ```
 
+## 📈 Memory & Coverage Stats
+
+AutoQA tracks test results and source-module coverage over time via its **Memory Tracker**. This section explains where to find these stats for your frontend repository.
+
+### Where Stats Are Stored
+
+| Location | What You'll Find |
+|----------|-----------------|
+| `reports/autoqa_memory.json` | Persistent JSON file with per-test results, history, and coverage gaps |
+| PR comments | Summary table posted automatically when `report_on_pr` is enabled |
+| GitHub Actions run summary | Step summary attached to each workflow run |
+| GitHub Actions artifacts | Full HTML/JSON reports and screenshots (retained for 14 days) |
+
+### Viewing Stats on Pull Requests
+
+When memory tracking is enabled (default), AutoQA posts a **Memory Report** comment on each PR that includes:
+
+- **Test Results Summary** — total tests, pass/fail/error/skip counts
+- **Coverage Percentage** — how many source modules have corresponding test files
+- **Failing Tests** — list of failing or erroring tests with error messages
+- **Missing Tests** — source modules that lack a test file, with suggested file names
+
+This is controlled by the `report_on_pr: true` setting in `config/autoqa_config.yaml`:
+
+```yaml
+autoqa:
+  memory:
+    enabled: true
+    report_on_pr: true      # Post memory report as PR comment
+    update_on_ci: true      # Update memory on CI runs
+```
+
+### Viewing Stats in GitHub Actions
+
+1. Go to the **Actions** tab in your frontend repository
+2. Select the AutoQA workflow run you want to inspect
+3. Open the **run summary** — the memory report is included in the step summary
+4. Click **Artifacts** to download full reports (`report.html`, `autoqa_memory.json`, screenshots)
+
+### Viewing Stats Locally
+
+Use the `qa_runner.py` CLI to generate memory and coverage stats from your local machine:
+
+```bash
+# Scan tests and source files for coverage gaps (no test execution)
+python qa_runner.py --memory-scan
+
+# Run tests and update the memory file with results
+python qa_runner.py --memory-update
+
+# Print a markdown report from the current memory file
+python qa_runner.py --memory-report
+```
+
+**Example output from `--memory-report`:**
+
+```
+📋 AutoQA Memory Report
+
+📊 Test Results Summary
+| Metric        | Count |
+|---------------|-------|
+| Total Tests   | 12    |
+| ✅ Passed     | 10    |
+| ❌ Failed     | 1     |
+| ⏭️ Skipped    | 1     |
+
+🔍 Test Coverage
+| Metric           | Value |
+|------------------|-------|
+| Source Modules    | 30    |
+| Covered           | 12    |
+| Uncovered         | 18    |
+| Coverage          | 40.0% |
+```
+
+### Memory File Location
+
+The memory file is saved at `reports/autoqa_memory.json` inside your repository (configurable via `memory_file` in `config/autoqa_config.yaml`). It contains:
+
+- **test_entries** — per-test status, last run timestamp, duration, error messages, and history (up to 10 runs by default, configurable via `history_limit` in `config/autoqa_config.yaml`)
+- **coverage_gaps** — list of source modules and whether they have a corresponding test file
+- **summary** — aggregate counts (total tests, status breakdown, coverage percentage)
+
+> **Tip:** Commit `reports/autoqa_memory.json` to your repository so the memory persists across CI runs and team members can view the latest stats.
+
+---
+
+## 🔍 Gap-Driven Test Generation
+
+AutoQA can automatically generate tests for uncovered source modules by
+analysing the memory tracker's coverage data.  Instead of writing test steps
+manually, you can let AutoQA read the source code of modules that lack tests
+and generate criteria for them.
+
+### How It Works
+
+1. The **memory tracker** scans your source and test directories to identify coverage gaps
+2. The **gap-driven generator** reads the source code of each uncovered module
+3. An **LLM** analyses the code and produces structured test criteria
+4. The criteria are posted as a **PR comment** for developer review
+5. After **approval** (👍 reaction, `/autoqa approve` comment, or label), tests are generated and executed
+
+### Using Gap-Driven Mode in CI
+
+Set `execution-mode: gap-driven` in your workflow:
+
+```yaml
+- name: 🤖 Generate Tests for Uncovered Modules
+  uses: AISquare-Studio/AISquare-Studio-QA@main
+  with:
+    openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+    staging-url: ${{ secrets.STAGING_URL }}
+    staging-email: ${{ secrets.STAGING_EMAIL }}
+    staging-password: ${{ secrets.STAGING_PASSWORD }}
+    execution-mode: 'gap-driven'
+```
+
+### Using Gap-Driven Mode Locally
+
+```bash
+# First, scan for coverage gaps
+python qa_runner.py --memory-scan
+
+# Then, generate criteria for uncovered modules
+python qa_runner.py --gap-driven
+```
+
+### Configuration
+
+The gap-driven feature is configured in `config/autoqa_config.yaml`:
+
+```yaml
+autoqa:
+  gap_driven:
+    enabled: true
+    max_modules_per_run: 10        # Max modules to process
+    max_source_length: 8000        # Max source chars sent to LLM
+    max_criteria_per_module: 3     # Max criteria per module
+    mode: "suggest"                # "suggest" or "auto"
+    auto_proceed_threshold: 85     # Confidence for auto mode
+    approval_mechanism: "reaction" # "reaction", "comment", or "label"
+```
+
+### PR Comment Preview
+
+After running in gap-driven mode, AutoQA posts a comment like:
+
+```markdown
+## 🔍 AutoQA Gap-Driven Test Criteria
+
+Based on the memory tracker analysis, the following source modules
+lack test coverage.
+
+**Coverage:** 40.0% (12/30 modules)
+**Uncovered modules:** 18
+
+### Flow 1: `test_parser_validation`
+**Source:** `src/autoqa/parser.py` · **Tier:** B · **Area:** autoqa
+
+1. Initialize AutoQAParser instance
+2. Call parse method with a valid autoqa block
+3. Verify metadata is extracted correctly
+4. Call parse method with an invalid block
+5. Verify appropriate error is returned
+
+**Confidence:** 85/100 ✅ High
+```
+
+---
+
 ## 🎯 Best Practices
 
 ### 1. Writing Effective AutoQA Steps
