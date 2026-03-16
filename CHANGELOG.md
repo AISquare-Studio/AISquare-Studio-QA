@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated deprecated `actions/checkout@v4` to `@v6` in `action.yml`, examples, and docs — resolves CI failures caused by Node.js 20 deprecation on GitHub Actions runners
 - Updated `actions/upload-artifact@v4` to `@v7` in examples and docs for consistency with `action.yml`
 - Aligned all action version references in `docs/ARCHITECTURE.md` (`actions/cache@v3`→`@v5`, `actions/setup-python@v4`→`@v6`)
+- Fixed upstream repo checkout failure caused by `github.action_ref` resolving to `v6` (from `actions/checkout@v6` step ref) inside the composite action instead of the composite action's own invocation ref — removed unreliable `github.action_ref` from the checkout ref fallback chain and changed `action-ref` input default to `main`
 
 ## [0.1.0] - 2026-03-08
 
@@ -69,7 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Expanded `CONTRIBUTING.md` with development setup, testing, and coding standards
 - Updated `README.md` license section to reference Apache 2.0 license
 - Enhanced issue templates with labels and GitHub Action-specific context
-- Fixed `action.yml` checkout ref to use `github.action_ref` for version-pinned releases
+- Updated `action.yml` checkout ref to derive from `action-ref` input (defaults to `main`); removed `github.action_ref` which resolved incorrectly inside composite actions
 - Bumped `actions/cache` from 3 to 5 ([#10](https://github.com/AISquare-Studio/AISquare-Studio-QA/pull/10))
 - Bumped `actions/setup-python` from 4 to 6 ([#11](https://github.com/AISquare-Studio/AISquare-Studio-QA/pull/11))
 - Bumped `actions/upload-artifact` from 4 to 7 ([#12](https://github.com/AISquare-Studio/AISquare-Studio-QA/pull/12))

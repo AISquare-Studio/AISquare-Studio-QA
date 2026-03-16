@@ -66,9 +66,9 @@ inputs:
     default: 'generate'
   
   action-ref:
-    description: 'Git ref (branch, tag, or SHA) to checkout for the AutoQA action repository. When unset, derives from the action invocation ref (github.action_ref) or falls back to main.'
+    description: 'Git ref (branch, tag, or SHA) to checkout for the AutoQA action repository. Defaults to main when not provided.'
     required: false
-    default: ''
+    default: 'main'
 
   auto-criteria-fallback:
     description: 'When true, if no autoqa block is found in the PR description, automatically generate test criteria from the PR diff (Proposal 16)'
@@ -174,7 +174,7 @@ runs:
         repository: 'AISquare-Studio/AISquare-Studio-QA'
         token: ${{ inputs.qa-github-token }}
         path: '.autoqa-action'
-        ref: ${{ inputs.action-ref || github.action_ref || 'main' }}
+        ref: ${{ inputs.action-ref }}
     
     # Setup Python with pip caching based on requirements.txt hash
     - name: 🐍 Setup Python Environment
