@@ -172,11 +172,13 @@ class ActionRunner:
         logger.info("Generating Suite Result comment...")
         self.reporter.create_suite_comment(suite_results)
 
+        suite_failed = not suite_results.get("success", False)
         return self._set_outputs(
             {
                 "test_generated": "false",
                 "suite_results": json.dumps(suite_results),
-                "error": None if suite_results.get("success", False) else "Test suite failed",
+                "tests_failed": "true" if suite_failed else "false",
+                "error": "Test suite failed" if suite_failed else "",
             }
         )
 
@@ -662,6 +664,9 @@ class ActionRunner:
 
         if not execution_result["success"]:
             outputs["error"] = execution_result.get("error", "Test execution failed")
+            outputs["tests_failed"] = "true"
+        else:
+            outputs["tests_failed"] = "false"
 
         return self._set_outputs(outputs)
 
@@ -929,11 +934,17 @@ def main():
     result = runner.execute()
 
     # Exit with appropriate code
-    # Only fail if there is an actual error message (not None)
+    # Test failures exit 0 so subsequent steps (artifact uploads, commits) still run.
+    # The action.yml has a final step that re-checks tests_failed and fails the action.
+    if result.get("tests_failed") == "true":
+        logger.warning("Tests failed — deferring failure to final action step")
+        sys.exit(0)
+
+    # Non-test errors (config, generation, unexpected) fail immediately
     if result.get("test_generated") == "false" and result.get("error"):
         sys.exit(1)
-    else:
-        sys.exit(0)
+
+    sys.exit(0)
 
 
 if __name__ == "__main__":
