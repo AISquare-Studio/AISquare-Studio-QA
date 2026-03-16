@@ -1,27 +1,10 @@
-# Agent Instructions — AISquare Studio AutoQA
+# AISquare Studio AutoQA — Repository Custom Instructions
 
-> **Purpose:** Reference for AI agent sessions working on this repository.
-> Read this file first to understand the architecture, conventions, and mandatory
-> steps before making changes. This avoids redundant exploration on every session.
+<!-- This file is automatically read by GitHub Copilot when working in this
+     repository. It provides project-specific context so that Copilot and AI
+     agents can work efficiently without redundant codebase exploration. -->
 
----
 
-## Table of Contents
-
-- [Project Overview](#project-overview)
-- [Repository Layout](#repository-layout)
-- [Architecture](#architecture)
-- [Key Files Quick Reference](#key-files-quick-reference)
-- [GitHub Actions & CI/CD](#github-actions--cicd)
-- [Current Action Versions](#current-action-versions)
-- [Configuration](#configuration)
-- [Development Setup](#development-setup)
-- [Linting & Formatting](#linting--formatting)
-- [Testing](#testing)
-- [Security Model](#security-model)
-- [Session Checklist](#session-checklist)
-
----
 
 ## Project Overview
 
@@ -155,6 +138,7 @@ AISquare-Studio-QA/
 ├── scripts/                       # Utility scripts
 │
 ├── .github/
+│   ├── copilot-instructions.md    # ← This file (Copilot custom instructions)
 │   └── workflows/
 │       ├── lint.yml               # Auto-fix linting on PRs (black, isort, flake8)
 │       ├── test-action.yml        # Tests: parser, memory tracker, self-test, action.yml validation
@@ -162,7 +146,6 @@ AISquare-Studio-QA/
 │
 ├── CHANGELOG.md                   # Keep-a-Changelog format
 ├── README.md                      # Project documentation
-├── INSTRUCTIONS.md                # ← This file (agent reference)
 ├── CONTRIBUTING.md                # Contribution guidelines
 ├── CODE_OF_CONDUCT.md             # Contributor Covenant
 ├── SECURITY.md                    # Security policy
@@ -392,7 +375,7 @@ pytest -m "not slow"
 
 ### Before making changes
 
-- [ ] Read this `INSTRUCTIONS.md` file
+- [ ] Read this `.github/copilot-instructions.md` file
 - [ ] Understand the area of code you're modifying
 - [ ] Run existing tests/lint to establish a baseline
 
@@ -404,7 +387,7 @@ pytest -m "not slow"
       structure, or examples, update the relevant README section
 - [ ] **Update `examples/`** — If the change affects workflow syntax, action inputs,
       or versions, update example files to stay consistent
-- [ ] **Update `INSTRUCTIONS.md`** — If the change affects architecture, file
+- [ ] **Update `.github/copilot-instructions.md`** — If the change affects architecture, file
       layout, versions, or conventions documented here, update this file
 - [ ] **Update `docs/`** — If the change affects a topic covered by a specific
       doc file, update that doc
@@ -430,4 +413,4 @@ When changing GitHub Action versions, update **all** of these locations:
 
 ---
 
-*Last updated: 2026-03-16 — Added during deprecated action version fix session.*
+*Last updated: 2026-03-16 — Migrated from `INSTRUCTIONS.md` to `.github/copilot-instructions.md` per GitHub best practices.*

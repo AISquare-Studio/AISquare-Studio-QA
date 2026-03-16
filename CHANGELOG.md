@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `INSTRUCTIONS.md` — comprehensive agent reference documenting architecture, file layout, CI/CD, configuration, linting, testing, security model, and a mandatory session checklist so that future agent sessions can work without redundant codebase exploration
+- `.github/copilot-instructions.md` — repository custom instructions file for GitHub Copilot, providing architecture reference, file layout, CI/CD, configuration, linting, testing, security model, and a mandatory session checklist so that AI agents can work without redundant codebase exploration
 - Enhancement roadmap (`docs/AUTOQA_ENHANCEMENT_ROADMAP.md`) with 16 feature proposals inspired by Lucent AI and Meticulous AI, organized into 4 implementation phases targeting reduced human intervention and tighter QA coverage
 - Proposal 16: AI-Generated PR Test Criteria — AutoQA analyzes code diffs and generates test criteria for developer review, eliminating the need for developers to manually write test steps in PR descriptions
 - `TestCriteriaGenerator` module (`src/autoqa/criteria_generator.py`) implementing Proposal 16: auto-generates test criteria from PR diffs using LLM, posts suggestions as PR comments, supports approval via reaction/comment/label, tier inference from file paths, and auto-proceed for high-confidence criteria
@@ -18,6 +18,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New action inputs: `auto-criteria-fallback`, `auto-criteria-mode`, `auto-criteria-threshold`, `auto-criteria-approval`
 - New action outputs: `auto_criteria_results`, `criteria`
 - Comprehensive test suite for `TestCriteriaGenerator` with 51 unit tests (`tests/test_criteria_generator.py`)
+
+### Changed
+
+- Migrated agent instructions from root `INSTRUCTIONS.md` to `.github/copilot-instructions.md` per GitHub repository custom instructions best practices — GitHub Copilot now reads these instructions automatically
+- Updated `README.md` contributing section to reference `.github/copilot-instructions.md`
+
+### Removed
+
+- `INSTRUCTIONS.md` — replaced by `.github/copilot-instructions.md`
 
 ### Fixed
 

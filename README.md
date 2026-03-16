@@ -194,6 +194,9 @@ AISquare-Studio-QA/
 ├── pyproject.toml                      # Python project configuration
 ├── pytest.ini                          # Pytest configuration
 ├── env.template                        # Environment variables template
+├── .github/
+│   ├── copilot-instructions.md         # Copilot custom instructions (AI agent reference)
+│   └── workflows/                      # CI/CD workflows (lint, test, release)
 ├── config/
 │   ├── autoqa_config.yaml              # AutoQA policy and settings
 │   └── test_data.yaml                  # Test scenarios and selectors
@@ -364,9 +367,10 @@ Contributions are welcome! Please see [`CONTRIBUTING.md`](CONTRIBUTING.md) for g
 
 Please review the [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) before contributing.
 
-> **AI agent sessions:** Read [`INSTRUCTIONS.md`](INSTRUCTIONS.md) before making
-> changes. It contains architecture reference, version tables, and a mandatory
-> session checklist (update CHANGELOG, README, examples, etc.).
+> **AI agent sessions:** This repository includes a
+> [`.github/copilot-instructions.md`](.github/copilot-instructions.md) file that
+> GitHub Copilot reads automatically. It contains architecture reference, version
+> tables, and a mandatory session checklist (update CHANGELOG, README, examples, etc.).
 
 ---
 
