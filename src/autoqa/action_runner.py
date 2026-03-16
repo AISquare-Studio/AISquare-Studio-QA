@@ -451,12 +451,21 @@ class ActionRunner:
         """Return the list of files changed in the current PR.
 
         Uses ``git diff`` against the PR base to determine changed
-        files.  Returns ``None`` if the diff cannot be computed.
+        files.  Fetches the base ref first to ensure it is available
+        locally.  Returns ``None`` if the diff cannot be computed.
         """
         try:
             base_ref = os.getenv("GITHUB_BASE_REF", "")
             if not base_ref:
                 return None
+
+            # Ensure the base ref is available locally
+            subprocess.run(
+                ["git", "fetch", "origin", base_ref],
+                capture_output=True,
+                text=True,
+                cwd=str(self.target_workspace),
+            )
 
             result = subprocess.run(
                 ["git", "diff", "--name-only", f"origin/{base_ref}...HEAD"],

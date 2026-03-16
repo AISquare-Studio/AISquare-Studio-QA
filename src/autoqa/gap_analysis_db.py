@@ -203,6 +203,10 @@ class GapAnalysisDB:
                 )
 
             # Persist test-ID coverage rows
+            # Build lookup from all registry entries for covered IDs
+            all_registry = scanner.load_registry()
+            entry_by_id = {e.testid: e for e in all_registry}
+
             for entry in testid_result.uncovered_entries:
                 cur.execute(
                     """INSERT INTO testid_coverage
@@ -211,11 +215,18 @@ class GapAnalysisDB:
                     (run_id, entry.testid, entry.flow, entry.area, entry.tier),
                 )
             for tid in testid_result.covered_ids:
+                reg = entry_by_id.get(tid)
                 cur.execute(
                     """INSERT INTO testid_coverage
                        (run_id, testid, flow, area, tier, covered)
                        VALUES (?, ?, ?, ?, ?, 1)""",
-                    (run_id, tid, "", "", "", 1),
+                    (
+                        run_id,
+                        tid,
+                        reg.flow if reg else "",
+                        reg.area if reg else "",
+                        reg.tier if reg else "",
+                    ),
                 )
 
             conn.commit()
