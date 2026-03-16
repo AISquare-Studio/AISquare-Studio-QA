@@ -14,6 +14,8 @@ workflows_missing
     Records of source modules / functional areas that lack tests.
 analysis_runs
     Metadata for each gap-analysis execution.
+testid_coverage
+    Records of ``data-testid`` coverage from the test-ID registry.
 """
 
 import sqlite3
@@ -22,6 +24,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from src.autoqa.memory_tracker import AutoQAMemoryTracker
+from src.autoqa.testid_scanner import TestIdScanner
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -43,11 +46,17 @@ class GapAnalysisDB:
         db_path: Optional[str] = None,
         test_dir: Optional[str] = None,
         source_dirs: Optional[List[str]] = None,
+        scope: str = "full",
+        changed_files: Optional[List[str]] = None,
+        registry_path: Optional[str] = None,
     ):
         self.project_root = Path(project_root) if project_root else Path.cwd()
         self.db_path = self.project_root / (db_path or DEFAULT_DB_PATH)
         self.test_dir = test_dir or "tests"
         self.source_dirs = source_dirs or ["src"]
+        self.scope = scope
+        self.changed_files = changed_files
+        self.registry_path = registry_path
         self._ensure_db()
 
     # ------------------------------------------------------------------
@@ -92,6 +101,17 @@ class GapAnalysisDB:
                     suggested_test TEXT,
                     FOREIGN KEY (run_id) REFERENCES analysis_runs(id)
                 );
+
+                CREATE TABLE IF NOT EXISTS testid_coverage (
+                    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                    run_id      INTEGER NOT NULL,
+                    testid      TEXT    NOT NULL,
+                    flow        TEXT    NOT NULL,
+                    area        TEXT    NOT NULL DEFAULT 'general',
+                    tier        TEXT    NOT NULL DEFAULT 'C',
+                    covered     INTEGER NOT NULL DEFAULT 0,
+                    FOREIGN KEY (run_id) REFERENCES analysis_runs(id)
+                );
                 """
             )
             conn.commit()
@@ -112,13 +132,14 @@ class GapAnalysisDB:
 
         Scans source directories and test directories using the memory
         tracker, then writes the results into the ``workflows_present``
-        and ``workflows_missing`` tables.
+        and ``workflows_missing`` tables.  Additionally scans for
+        ``data-testid`` coverage from the test-ID registry.
 
         Returns:
             Summary dict with keys ``run_id``, ``timestamp``,
             ``total_modules``, ``present_count``, ``missing_count``,
-            ``coverage_pct``, ``workflows_present``, and
-            ``workflows_missing``.
+            ``coverage_pct``, ``workflows_present``,
+            ``workflows_missing``, and ``testid_coverage``.
         """
         tracker = AutoQAMemoryTracker(
             project_root=str(self.project_root),
@@ -133,6 +154,17 @@ class GapAnalysisDB:
         total = len(gaps)
         coverage_pct = round(len(present) / total * 100, 1) if total > 0 else 0.0
         timestamp = datetime.now().isoformat()
+
+        # ---- test-ID coverage ------------------------------------------
+        scanner = TestIdScanner(
+            project_root=str(self.project_root),
+            registry_path=self.registry_path,
+            test_dir=self.test_dir,
+        )
+        testid_result = scanner.calculate_coverage(
+            scope=self.scope,
+            changed_files=self.changed_files,
+        )
 
         # Persist to database
         conn = sqlite3.connect(str(self.db_path))
@@ -168,6 +200,33 @@ class GapAnalysisDB:
                        (run_id, module_name, source_path, reason, suggested_test)
                        VALUES (?, ?, ?, ?, ?)""",
                     (run_id, g.module_name, g.source_path, g.reason, suggested),
+                )
+
+            # Persist test-ID coverage rows
+            # Build lookup from all registry entries for covered IDs
+            all_registry = scanner.load_registry()
+            entry_by_id = {e.testid: e for e in all_registry}
+
+            for entry in testid_result.uncovered_entries:
+                cur.execute(
+                    """INSERT INTO testid_coverage
+                       (run_id, testid, flow, area, tier, covered)
+                       VALUES (?, ?, ?, ?, ?, 0)""",
+                    (run_id, entry.testid, entry.flow, entry.area, entry.tier),
+                )
+            for tid in testid_result.covered_ids:
+                reg = entry_by_id.get(tid)
+                cur.execute(
+                    """INSERT INTO testid_coverage
+                       (run_id, testid, flow, area, tier, covered)
+                       VALUES (?, ?, ?, ?, ?, 1)""",
+                    (
+                        run_id,
+                        tid,
+                        reg.flow if reg else "",
+                        reg.area if reg else "",
+                        reg.tier if reg else "",
+                    ),
                 )
 
             conn.commit()
@@ -208,6 +267,7 @@ class GapAnalysisDB:
             "coverage_pct": coverage_pct,
             "workflows_present": present_list,
             "workflows_missing": missing_list,
+            "testid_coverage": testid_result.to_dict(),
         }
 
     # ------------------------------------------------------------------

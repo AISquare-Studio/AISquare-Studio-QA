@@ -227,6 +227,10 @@ autoqa:
     db_path: "reports/gap_analysis.db"
     test_dir: "tests"
     source_dirs: ["src"]
+    # Test-ID registry for data-testid based user-flow coverage
+    testid_registry: "config/testid_registry.yaml"
+    # Scope: "auto" (detect from event), "pr", or "full"
+    scope: "auto"
 
 # Cross-repository settings
 cross_repo:

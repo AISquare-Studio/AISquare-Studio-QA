@@ -90,6 +90,11 @@ inputs:
     required: false
     default: 'reaction'
 
+  gap-analysis-scope:
+    description: 'Scope for gap-analysis mode: "auto" (detect from event), "pr" (PR changed files only), or "full" (entire repo)'
+    required: false
+    default: 'auto'
+
 outputs:
   test_generated:
     description: 'Whether a test was successfully generated'
@@ -244,6 +249,11 @@ runs:
         AUTO_CRITERIA_THRESHOLD: ${{ inputs.auto-criteria-threshold }}
         AUTO_CRITERIA_APPROVAL: ${{ inputs.auto-criteria-approval }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
+        
+        # Gap analysis scope (auto-detected from event, or forced)
+        GAP_ANALYSIS_SCOPE: ${{ inputs.gap-analysis-scope }}
+        GITHUB_EVENT_NAME: ${{ github.event_name }}
+        GITHUB_BASE_REF: ${{ github.event.pull_request.base.ref }}
         
         # GitHub context for cross-repo operations
         TARGET_REPOSITORY: ${{ github.repository }}

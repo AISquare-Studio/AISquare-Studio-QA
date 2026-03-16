@@ -81,6 +81,7 @@ class TestDatabaseCreation:
             assert "analysis_runs" in tables
             assert "workflows_present" in tables
             assert "workflows_missing" in tables
+            assert "testid_coverage" in tables
         finally:
             conn.close()
 
@@ -122,6 +123,16 @@ class TestRunAnalysis:
         assert "coverage_pct" in result
         assert "workflows_present" in result
         assert "workflows_missing" in result
+        assert "testid_coverage" in result
+
+    def test_testid_coverage_included(self, gap_db):
+        result = gap_db.run_analysis()
+        tc = result["testid_coverage"]
+        assert "total_testids" in tc
+        assert "covered_ids" in tc
+        assert "uncovered_ids" in tc
+        assert "coverage_pct" in tc
+        assert "scope" in tc
 
     def test_identifies_present_workflows(self, gap_db):
         result = gap_db.run_analysis()
