@@ -277,7 +277,7 @@ runs:
         retention-days: 30
 
     - name: 📈 Upload Dashboard Results
-      if: always() && steps.autoqa.outputs.dashboard_results != ''
+      if: always()
       uses: actions/upload-artifact@v7
       with:
         name: autoqa-dashboard-${{ github.run_number }}

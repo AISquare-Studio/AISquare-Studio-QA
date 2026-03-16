@@ -177,6 +177,16 @@ class ActionRunner:
         dashboard_payload = self._generate_dashboard_results(
             suite_results=suite_results,
         )
+        suite_failed = not suite_results.get("success", False)
+        outputs = {
+            "test_generated": "false",
+            "suite_results": json.dumps(suite_results),
+            "tests_failed": "true" if suite_failed else "false",
+        }
+        if suite_failed:
+            outputs["error"] = "Test suite failed"
+
+        return self._set_outputs(outputs)
 
         suite_failed = not suite_results.get("success", False)
         outputs = {
