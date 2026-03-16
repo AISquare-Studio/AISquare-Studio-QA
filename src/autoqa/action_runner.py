@@ -178,14 +178,17 @@ class ActionRunner:
             suite_results=suite_results,
         )
 
-        return self._set_outputs(
-            {
-                "test_generated": "false",
-                "suite_results": json.dumps(suite_results),
-                "dashboard_results": json.dumps(dashboard_payload),
-                "error": None if suite_results.get("success", False) else "Test suite failed",
-            }
-        )
+        suite_failed = not suite_results.get("success", False)
+        outputs = {
+            "test_generated": "false",
+            "suite_results": json.dumps(suite_results),
+            "dashboard_results": json.dumps(dashboard_payload),
+            "tests_failed": "true" if suite_failed else "false",
+        }
+        if suite_failed:
+            outputs["error"] = "Test suite failed"
+
+        return self._set_outputs(outputs)
 
     def _execute_auto_criteria_mode(self) -> Dict[str, Any]:
         """Generate test criteria from PR diff and post for review (Proposal 16).
@@ -682,6 +685,9 @@ class ActionRunner:
 
         if not execution_result["success"]:
             outputs["error"] = execution_result.get("error", "Test execution failed")
+            outputs["tests_failed"] = "true"
+        else:
+            outputs["tests_failed"] = "false"
 
         return self._set_outputs(outputs)
 
@@ -984,8 +990,13 @@ def main():
     result = runner.execute()
 
     # Exit with appropriate code
-    # Only fail if there is an actual error message (not None)
-    if result.get("test_generated") == "false" and result.get("error"):
+    # Test failures exit 0 so subsequent steps (artifact uploads, commits) still run.
+    # The action.yml has a final step that re-checks tests_failed and fails the action.
+    if result.get("tests_failed") == "true":
+        logger.warning("Tests failed — deferring failure to final action step")
+        sys.exit(0)
+    elif result.get("test_generated") == "false" and result.get("error"):
+        # Non-test errors (config, generation, unexpected) fail immediately
         sys.exit(1)
     else:
         sys.exit(0)

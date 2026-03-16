@@ -147,6 +147,10 @@ outputs:
     description: 'JSON string conforming to the AutoQA Dashboard schema (gap_analysis, summary, test_cases) for populating the dashboard UI'
     value: ${{ steps.autoqa.outputs.dashboard_results }}
 
+  tests_failed:
+    description: 'Whether tests failed during execution (true/false). When true, the action defers failure to the final step so that artifacts are still uploaded.'
+    value: ${{ steps.autoqa.outputs.tests_failed }}
+
 runs:
   using: 'composite'
   steps:
@@ -250,7 +254,7 @@ runs:
         ACTION_PATH: ${{ github.workspace }}/.autoqa-action
     
     - name: 📸 Upload Screenshots as Artifacts
-      if: always() && steps.autoqa.outputs.test_generated == 'true'
+      if: always()
       uses: actions/upload-artifact@v7
       with:
         name: autoqa-screenshots-${{ github.run_number }}
@@ -261,7 +265,7 @@ runs:
         retention-days: 30
     
     - name: 📊 Upload Test Reports
-      if: always() && steps.autoqa.outputs.test_generated == 'true'
+      if: always()
       uses: actions/upload-artifact@v7
       with:
         name: autoqa-reports-${{ github.run_number }}
@@ -282,3 +286,10 @@ runs:
           ${{ github.workspace }}/reports/dashboard_results.json
         if-no-files-found: warn
         retention-days: 30
+
+    - name: ❌ Fail if tests failed
+      if: always() && steps.autoqa.outputs.tests_failed == 'true'
+      shell: bash
+      run: |
+        echo "::error::Tests failed — see uploaded artifacts for screenshots and reports"
+        exit 1
