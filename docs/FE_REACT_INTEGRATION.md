@@ -155,6 +155,110 @@ Error: STAGING_URL is required but not provided
 3. Verify the staging environment is accessible
 ```
 
+## 📊 Dashboard Results JSON (NEW)
+
+Every AutoQA run now produces a **`dashboard_results`** JSON payload that conforms to the [Dashboard JSON Schema](./DASHBOARD_JSON_SCHEMA.md). This payload is designed to be consumed by the **AutoQA Dashboard** (Phase 1 — Lovable Prototype).
+
+### What's in the Payload
+
+The JSON has **three top-level sections**:
+
+| Section | What It Contains |
+|---------|-----------------|
+| `gap_analysis` | Coverage % · tested/missing workflow counts · per-workflow details with tier/area |
+| `summary` | PR number · commit SHA · timestamp · pass/fail/skip counts · duration |
+| `test_cases` | Per-test: test_id, flow_name, tier, area, status, duration, error_message, screenshots |
+
+### Accessing Dashboard Results
+
+**Option 1 — GitHub Action Output:**
+
+```yaml
+- name: 🤖 Run AutoQA
+  id: autoqa
+  uses: AISquare-Studio/AISquare-Studio-QA@main
+  with:
+    openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+    staging-url: ${{ secrets.STAGING_URL }}
+    execution-mode: 'suite'
+
+# dashboard_results is a JSON string
+- name: Print dashboard payload
+  run: echo '${{ steps.autoqa.outputs.dashboard_results }}' | jq .
+```
+
+**Option 2 — Build Artifact:**
+
+The file `reports/dashboard_results.json` is uploaded as the artifact `autoqa-dashboard-{run_number}` and retained for 30 days.
+
+**Option 3 — Upload to a Dashboard API:**
+
+```yaml
+- name: 📤 Upload to Dashboard
+  if: steps.autoqa.outputs.dashboard_results != ''
+  run: |
+    curl -X POST https://autoqa.aisquare.studio/api/results \
+      -H "Content-Type: application/json" \
+      -d '${{ steps.autoqa.outputs.dashboard_results }}'
+```
+
+### Example Payload (abbreviated)
+
+```json
+{
+  "gap_analysis": {
+    "coverage_percent": 68.5,
+    "total_workflows": 127,
+    "tested_workflows": 87,
+    "missing_workflows": 40,
+    "present_workflows": [
+      { "module": "registration", "source_path": "src/auth/registration.py",
+        "test_file": "tests/test_registration.py", "tier": "A", "area": "auth" }
+    ],
+    "missing_workflows_list": [
+      { "module": "password_reset", "source_path": "src/auth/password_reset.py" }
+    ]
+  },
+  "summary": {
+    "timestamp": "2026-03-03T14:30:00Z",
+    "execution_mode": "pr_validation",
+    "pr_number": 42,
+    "commit_sha": "abc123def456",
+    "total_tests": 22,
+    "passed": 19,
+    "failed": 3,
+    "skipped": 0,
+    "duration_seconds": 145.2
+  },
+  "test_cases": [
+    {
+      "test_id": "tests/autoqa/A/auth/test_login.py::test_login_success",
+      "flow_name": "login",
+      "tier": "A",
+      "area": "auth",
+      "status": "passed",
+      "duration_seconds": 2.1,
+      "screenshots": []
+    },
+    {
+      "test_id": "tests/autoqa/A/auth/test_login.py::test_login_invalid",
+      "flow_name": "login",
+      "tier": "A",
+      "area": "auth",
+      "status": "failed",
+      "duration_seconds": 5.1,
+      "screenshots": ["https://storage.example.com/screenshot.png"],
+      "error_message": "AssertionError: Expected error message not displayed",
+      "error_type": "AssertionError"
+    }
+  ]
+}
+```
+
+> **📖 Full schema reference:** See [`docs/DASHBOARD_JSON_SCHEMA.md`](./DASHBOARD_JSON_SCHEMA.md) for complete field descriptions, type info, and the copy-paste FE React agent prompt.
+
+---
+
 ## 📈 Memory & Coverage Stats
 
 AutoQA tracks test results and source-module coverage over time via its **Memory Tracker**. This section explains where to find these stats for your frontend repository.
