@@ -173,14 +173,15 @@ class ActionRunner:
         self.reporter.create_suite_comment(suite_results)
 
         suite_failed = not suite_results.get("success", False)
-        return self._set_outputs(
-            {
-                "test_generated": "false",
-                "suite_results": json.dumps(suite_results),
-                "tests_failed": "true" if suite_failed else "false",
-                "error": "Test suite failed" if suite_failed else "",
-            }
-        )
+        outputs = {
+            "test_generated": "false",
+            "suite_results": json.dumps(suite_results),
+            "tests_failed": "true" if suite_failed else "false",
+        }
+        if suite_failed:
+            outputs["error"] = "Test suite failed"
+
+        return self._set_outputs(outputs)
 
     def _execute_auto_criteria_mode(self) -> Dict[str, Any]:
         """Generate test criteria from PR diff and post for review (Proposal 16).
@@ -939,12 +940,11 @@ def main():
     if result.get("tests_failed") == "true":
         logger.warning("Tests failed — deferring failure to final action step")
         sys.exit(0)
-
-    # Non-test errors (config, generation, unexpected) fail immediately
-    if result.get("test_generated") == "false" and result.get("error"):
+    elif result.get("test_generated") == "false" and result.get("error"):
+        # Non-test errors (config, generation, unexpected) fail immediately
         sys.exit(1)
-
-    sys.exit(0)
+    else:
+        sys.exit(0)
 
 
 if __name__ == "__main__":
