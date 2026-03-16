@@ -32,13 +32,13 @@ GitHub Pull Request
 ┌─────────────────────────────────────────────────────────┐
 │  action.yml (Composite Action)                          │
 │                                                         │
-│  1. Cache pip & Playwright ─── actions/cache@v3         │
-│  2. Checkout AutoQA repo   ─── actions/checkout@v4      │
-│  3. Setup Python 3.11      ─── actions/setup-python@v4  │
+│  1. Cache pip & Playwright ─── actions/cache@v5         │
+│  2. Checkout AutoQA repo   ─── actions/checkout@v6      │
+│  3. Setup Python 3.11      ─── actions/setup-python@v6  │
 │  4. Install dependencies   ─── pip install              │
 │  5. Install browsers       ─── playwright install       │
 │  6. Execute main runner    ─── python action_runner.py   │
-│  7. Upload artifacts       ─── actions/upload-artifact@v4│
+│  7. Upload artifacts       ─── actions/upload-artifact@v7│
 └─────────────────────────────────────────────────────────┘
         │
         ▼

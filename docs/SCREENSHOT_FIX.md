@@ -54,7 +54,7 @@ def _resolve_screenshot_path(self, screenshot_path: str) -> Optional[Path]:
 ```yaml
 - name: 📸 Upload Screenshots as Artifacts
   if: always() && steps.autoqa.outputs.test_generated == 'true'
-  uses: actions/upload-artifact@v4
+  uses: actions/upload-artifact@v7
   with:
     name: autoqa-screenshots-${{ github.run_number }}
     path: |
@@ -65,7 +65,7 @@ def _resolve_screenshot_path(self, screenshot_path: str) -> Optional[Path]:
 
 - name: 📊 Upload Test Reports
   if: always() && steps.autoqa.outputs.test_generated == 'true'
-  uses: actions/upload-artifact@v4
+  uses: actions/upload-artifact@v7
   with:
     name: autoqa-reports-${{ github.run_number }}
     path: |

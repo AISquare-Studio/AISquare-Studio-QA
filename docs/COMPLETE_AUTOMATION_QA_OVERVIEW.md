@@ -212,7 +212,7 @@ jobs:
   autoqa:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: AISquare-Studio/AISquare-Studio-QA@main
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
