@@ -169,7 +169,7 @@ runs:
           ${{ runner.os }}-autoqa-repo-v1
           
     - name: 🔍 Checkout AutoQA Action Repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@v4
       with:
         repository: 'AISquare-Studio/AISquare-Studio-QA'
         token: ${{ inputs.qa-github-token }}
@@ -298,8 +298,14 @@ runs:
         retention-days: 30
 
     - name: ❌ Fail if tests failed
-      if: always() && steps.autoqa.outputs.tests_failed == 'true'
+      if: always() && (steps.autoqa.outputs.tests_failed == 'true' || steps.autoqa.outcome == 'failure' || steps.autoqa.outcome == 'skipped')
       shell: bash
       run: |
-        echo "::error::Tests failed — see uploaded artifacts for screenshots and reports"
+        if [ "${{ steps.autoqa.outcome }}" = "skipped" ]; then
+          echo "::error::AutoQA step was skipped — a prior step (e.g. checkout) likely failed. Check the logs above."
+        elif [ "${{ steps.autoqa.outcome }}" = "failure" ]; then
+          echo "::error::AutoQA step failed — see logs above for details"
+        else
+          echo "::error::Tests failed — see uploaded artifacts for screenshots and reports"
+        fi
         exit 1
