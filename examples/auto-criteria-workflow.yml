@@ -1,0 +1,36 @@
+name: 🤖 AutoQA Auto-Criteria
+
+on:
+  pull_request:
+    types: [opened, synchronize, edited]
+
+jobs:
+  auto-criteria:
+    name: 🔍 Auto-Criteria Generation
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Auto-Criteria Generation
+        # ⚠️ Do NOT add continue-on-error: true — this masks real failures
+        # (e.g. checkout errors, missing secrets) and makes broken runs appear
+        # as "passed". The action already defers test failures internally so
+        # that artifacts are uploaded before failing the step.
+        uses: AISquare-Studio/AISquare-Studio-QA@main
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          staging-url: ${{ secrets.STAGING_URL }}
+          staging-email: ${{ secrets.STAGING_EMAIL }}
+          staging-password: ${{ secrets.STAGING_PASSWORD }}
+          qa-github-token: ${{ secrets.QA_GITHUB_TOKEN }}
+          execution-mode: auto-criteria
+          auto-criteria-fallback: "true"
+          auto-criteria-mode: suggest
+          auto-criteria-threshold: "85"
+          auto-criteria-approval: reaction

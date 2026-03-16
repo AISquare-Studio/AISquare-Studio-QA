@@ -46,6 +46,9 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
       - name: 🤖 Generate AutoQA Tests
+        # ⚠️ Do NOT add continue-on-error: true — this masks real failures and
+        # makes broken runs appear as "passed". The action already defers test
+        # failures internally so that artifacts are uploaded before failing.
         uses: AISquare-Studio/AISquare-Studio-QA@main
         with:
           # Required: OpenAI API key for test generation
