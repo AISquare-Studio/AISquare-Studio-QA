@@ -4,8 +4,6 @@
      repository. It provides project-specific context so that Copilot and AI
      agents can work efficiently without redundant codebase exploration. -->
 
-
-
 ## Project Overview
 
 **AISquare Studio AutoQA** is an AI-powered GitHub Action that converts natural
@@ -410,6 +408,7 @@ When changing GitHub Action versions, update **all** of these locations:
 9. `docs/COMPLETE_AUTOMATION_QA_OVERVIEW.md`
 10. `docs/SCREENSHOT_FIX.md`
 11. `README.md`
+12. `.github/copilot-instructions.md`
 
 ---
 
