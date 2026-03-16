@@ -1,0 +1,65 @@
+# AutoQA Test-ID Registry
+#
+# Defines every `data-testid` attribute used in the application, organised
+# by user flow.  Each flow groups the interactive elements that participate
+# in that flow, along with an area tag and a tier (A/B/C).
+#
+# Coverage is calculated by comparing this registry against the set of
+# `data-testid` references found in the test suite.
+#
+# Structure
+# ---------
+# flows:
+#   - name: <snake_case flow identifier>
+#     area: <functional area tag>
+#     tier: A | B | C
+#     testids:
+#       - <kebab-case test id>                  # shorthand
+#       - id: <kebab-case test id>              # explicit form
+#         description: "Human-readable purpose"
+
+flows:
+  # ── Authentication ────────────────────────────────────────────
+  - name: login
+    area: auth
+    tier: A
+    testids:
+      - id: login-email-input
+        description: "Email input field on the login page"
+      - id: login-password-input
+        description: "Password input field on the login page"
+      - id: login-submit-button
+        description: "Submit / Sign-In button on the login form"
+      - id: login-error-message
+        description: "Error banner shown on invalid credentials"
+      - id: login-forgot-password-link
+        description: "Forgot-password link on the login page"
+
+  - name: signup
+    area: auth
+    tier: A
+    testids:
+      - id: signup-email-input
+        description: "Email field on the signup form"
+      - id: signup-password-input
+        description: "Password field on the signup form"
+      - id: signup-confirm-password-input
+        description: "Confirm password field on the signup form"
+      - id: signup-submit-button
+        description: "Submit button on the signup form"
+      - id: signup-error-message
+        description: "Error banner shown on signup failure"
+
+  # ── Dashboard ─────────────────────────────────────────────────
+  - name: dashboard
+    area: dashboard
+    tier: B
+    testids:
+      - id: dashboard-header
+        description: "Main heading on the dashboard page"
+      - id: dashboard-user-menu
+        description: "User dropdown / avatar menu"
+      - id: dashboard-logout-button
+        description: "Logout action in the user menu"
+      - id: dashboard-nav-sidebar
+        description: "Left-hand navigation sidebar"

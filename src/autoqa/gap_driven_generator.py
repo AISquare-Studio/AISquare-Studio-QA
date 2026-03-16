@@ -46,6 +46,10 @@ For each testable flow or behaviour in this module, produce a JSON object with:
 - "area": a short snake_case tag for the functional area (max 30 chars)
 - "steps": a list of numbered natural-language test steps
 - "confidence": an integer 0-100 indicating how confident you are
+- "testids": a list of kebab-case data-testid identifiers for UI elements
+  exercised by this flow (e.g. ["login-email-input", "login-submit-button"]).
+  These IDs should follow the pattern "<flow>-<element>-<type>" where type
+  is input, button, link, message, etc.
 
 Return a JSON array.  If the module contains no testable logic, return [].
 Do NOT wrap the JSON in markdown fences.
@@ -389,6 +393,15 @@ class GapDrivenGenerator:
             item.setdefault("confidence", 50)
             if not isinstance(item["steps"], list):
                 item["steps"] = [str(item["steps"])]
+            # Normalise testids list
+            raw_testids = item.get("testids", [])
+            if not isinstance(raw_testids, list):
+                raw_testids = [str(raw_testids)]
+            item["testids"] = [
+                re.sub(r"[^a-z0-9\-]", "-", str(t).lower().strip()).strip("-")
+                for t in raw_testids
+                if t
+            ]
             valid.append(item)
         return valid
 
@@ -428,6 +441,10 @@ class GapDrivenGenerator:
             )
             steps_md = "\n".join(f"{j}. {s}" for j, s in enumerate(c["steps"], 1))
             source = c.get("source_module", "unknown")
+            testids = c.get("testids", [])
+            testids_md = (
+                "\n**Test IDs:** " + ", ".join(f"`{t}`" for t in testids) if testids else ""
+            )
             sections.append(
                 f"### Flow {i}: `{c['flow_name']}`\n"
                 f"**Source:** `{source}` · **Tier:** {c['tier']} · **Area:** {c['area']}\n\n"
@@ -436,7 +453,8 @@ class GapDrivenGenerator:
                 f"tier: {c['tier']}\n"
                 f"area: {c['area']}\n"
                 "```\n"
-                f"{steps_md}\n\n"
+                f"{steps_md}\n"
+                f"{testids_md}\n\n"
                 f"**Confidence:** {confidence}/100 {confidence_label}\n"
             )
 

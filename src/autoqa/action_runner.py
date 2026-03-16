@@ -384,21 +384,28 @@ class ActionRunner:
     def _execute_gap_analysis_mode(self) -> Dict[str, Any]:
         """Execute gap analysis and persist results to a SQLite database.
 
-        Similar to suite mode, this scans the repository for existing and
-        missing test workflows and writes the findings into a local SQLite
-        database.  The database is created automatically if it does not
-        already exist, making this safe to run on repositories that have
-        AutoQA tests but have never used the gap-analysis feature.
+        Determines scope automatically: when triggered by a PR event the
+        analysis is scoped to the PR's changed files; on schedule or
+        manual dispatch the entire repository is analysed.  The scope
+        can also be forced via the ``GAP_ANALYSIS_SCOPE`` env var.
 
         Returns:
             Action outputs with ``gap_analysis_results`` JSON string.
         """
-        logger.info("Running gap analysis (database-backed workflow report)...")
+        scope = self._resolve_gap_analysis_scope()
+        changed_files = self._get_pr_changed_files() if scope == "pr" else None
+
+        logger.info(
+            f"Running gap analysis (scope={scope}, "
+            f"changed_files={len(changed_files) if changed_files else 'all'})..."
+        )
 
         gap_db = GapAnalysisDB(
             project_root=str(self.target_workspace),
             test_dir=self.config.get("test_directory", "tests"),
             source_dirs=["src"],
+            scope=scope,
+            changed_files=changed_files,
         )
 
         results = gap_db.run_analysis()
@@ -423,6 +430,45 @@ class ActionRunner:
                 "error": None,
             }
         )
+
+    def _resolve_gap_analysis_scope(self) -> str:
+        """Return ``'pr'`` or ``'full'`` based on the trigger event.
+
+        * Explicit override via ``GAP_ANALYSIS_SCOPE`` env var wins.
+        * ``pull_request*`` events → ``'pr'``.
+        * ``schedule`` / ``workflow_dispatch`` / push → ``'full'``.
+        """
+        explicit = os.getenv("GAP_ANALYSIS_SCOPE", "").lower()
+        if explicit in ("pr", "full"):
+            return explicit
+
+        event = os.getenv("GITHUB_EVENT_NAME", "")
+        if event.startswith("pull_request"):
+            return "pr"
+        return "full"
+
+    def _get_pr_changed_files(self) -> Optional[List[str]]:
+        """Return the list of files changed in the current PR.
+
+        Uses ``git diff`` against the PR base to determine changed
+        files.  Returns ``None`` if the diff cannot be computed.
+        """
+        try:
+            base_ref = os.getenv("GITHUB_BASE_REF", "")
+            if not base_ref:
+                return None
+
+            result = subprocess.run(
+                ["git", "diff", "--name-only", f"origin/{base_ref}...HEAD"],
+                capture_output=True,
+                text=True,
+                cwd=str(self.target_workspace),
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                return [f.strip() for f in result.stdout.strip().split("\n") if f.strip()]
+        except Exception as exc:
+            logger.warning(f"Could not determine PR changed files: {exc}")
+        return None
 
     def _get_pr_number(self) -> Optional[str]:
         """Resolve the current PR number from config or environment."""
