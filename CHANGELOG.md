@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `INSTRUCTIONS.md` — comprehensive agent reference documenting architecture, file layout, CI/CD, configuration, linting, testing, security model, and a mandatory session checklist so that future agent sessions can work without redundant codebase exploration
 - Enhancement roadmap (`docs/AUTOQA_ENHANCEMENT_ROADMAP.md`) with 16 feature proposals inspired by Lucent AI and Meticulous AI, organized into 4 implementation phases targeting reduced human intervention and tighter QA coverage
 - Proposal 16: AI-Generated PR Test Criteria — AutoQA analyzes code diffs and generates test criteria for developer review, eliminating the need for developers to manually write test steps in PR descriptions
 - `TestCriteriaGenerator` module (`src/autoqa/criteria_generator.py`) implementing Proposal 16: auto-generates test criteria from PR diffs using LLM, posts suggestions as PR comments, supports approval via reaction/comment/label, tier inference from file paths, and auto-proceed for high-confidence criteria
@@ -17,6 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New action inputs: `auto-criteria-fallback`, `auto-criteria-mode`, `auto-criteria-threshold`, `auto-criteria-approval`
 - New action outputs: `auto_criteria_results`, `criteria`
 - Comprehensive test suite for `TestCriteriaGenerator` with 51 unit tests (`tests/test_criteria_generator.py`)
+
+### Fixed
+
+- Updated deprecated `actions/checkout@v4` to `@v6` in `action.yml`, examples, and docs — resolves CI failures caused by Node.js 20 deprecation on GitHub Actions runners
+- Updated `actions/upload-artifact@v4` to `@v7` in examples and docs for consistency with `action.yml`
+- Aligned all action version references in `docs/ARCHITECTURE.md` (`actions/cache@v3`→`@v5`, `actions/setup-python@v4`→`@v6`)
 
 ## [0.1.0] - 2026-03-08
 

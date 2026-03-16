@@ -364,6 +364,10 @@ Contributions are welcome! Please see [`CONTRIBUTING.md`](CONTRIBUTING.md) for g
 
 Please review the [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) before contributing.
 
+> **AI agent sessions:** Read [`INSTRUCTIONS.md`](INSTRUCTIONS.md) before making
+> changes. It contains architecture reference, version tables, and a mandatory
+> session checklist (update CHANGELOG, README, examples, etc.).
+
 ---
 
 ## License
