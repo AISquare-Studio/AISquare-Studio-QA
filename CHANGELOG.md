@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-03-16
+
 ### Added
 
 - `.github/copilot-instructions.md` — repository custom instructions file for GitHub Copilot, providing architecture reference, file layout, CI/CD, configuration, linting, testing, security model, and a mandatory session checklist so that AI agents can work without redundant codebase exploration
