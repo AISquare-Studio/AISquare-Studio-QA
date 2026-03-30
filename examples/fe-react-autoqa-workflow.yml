@@ -18,7 +18,10 @@ jobs:
     name: 🧪 Generate & Execute AutoQA Tests
     runs-on: ubuntu-latest
     # Only run if PR body contains "AutoQA" or manual trigger
-    if: contains(github.event.pull_request.body, 'AutoQA') || github.event_name == 'workflow_dispatch'
+    # Skip fork PRs where secrets (OPENAI_API_KEY) are unavailable
+    if: |
+      (github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.body, 'AutoQA'))
+      && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
     
     steps:
       - name: 📋 Checkout FE-REACT Repository

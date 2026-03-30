@@ -8,8 +8,9 @@ branding:
 
 inputs:
   openai-api-key:
-    description: 'OpenAI API key for test generation'
-    required: true
+    description: 'OpenAI API key for test generation. When not provided (e.g. fork PRs where secrets are unavailable), the action exits gracefully and skips test generation.'
+    required: false
+    default: ''
   
   qa-github-token:
     description: 'GitHub token with access to AutoQA repository (required for private repos)'

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `openai-api-key` action input is now optional (`required: false`) — the action exits gracefully when the key is missing instead of hard-failing, which is the expected behavior for fork PRs where repository secrets are unavailable
+- `test-self-autoqa` CI job now skips on fork PRs using `github.event.pull_request.head.repo.full_name` check, since secrets are intentionally unavailable for security
+- Improved `action_runner.py` error message for missing `OPENAI_API_KEY` to explain fork PR behavior and suggest alternatives (merge first, or use `workflow_dispatch`)
+- Updated example workflows (`fe-react-autoqa-workflow.yml`, `auto-criteria-workflow.yml`) with fork-safe `if` conditions
+- Updated `README.md` quick-start workflow example and secrets table with fork PR guidance
+
 ## [0.2.0] - 2026-03-16
 
 ### Added

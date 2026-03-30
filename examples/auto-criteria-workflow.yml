@@ -8,6 +8,8 @@ jobs:
   auto-criteria:
     name: 🔍 Auto-Criteria Generation
     runs-on: ubuntu-latest
+    # Skip fork PRs where secrets (OPENAI_API_KEY) are unavailable
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     permissions:
       contents: read
       pull-requests: write

@@ -87,7 +87,8 @@ jobs:
   test-self-autoqa:
     name: 🚀 Test Self AutoQA
     runs-on: ubuntu-latest
-    # if: contains(github.event.pull_request.body, 'AutoQA') || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+    # Skip on fork PRs where repository secrets (OPENAI_API_KEY) are unavailable
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     
     steps:
       - name: 📋 Checkout Code

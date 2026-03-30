@@ -152,10 +152,19 @@ class ActionRunner:
     def _validate_config(self):
         """Validate required configuration. Returns error output or None."""
         if not self.config["openai_api_key"]:
+            logger.warning(
+                "OPENAI_API_KEY not found. This is expected for fork PRs where "
+                "repository secrets are not available. Skipping test generation."
+            )
             return self._set_outputs(
                 {
                     "test_generated": "false",
-                    "error": "OPENAI_API_KEY not found in repository secrets",
+                    "error": (
+                        "OPENAI_API_KEY not found in repository secrets. "
+                        "If this is a fork PR, secrets are intentionally "
+                        "unavailable for security. The repository maintainer "
+                        "can run the tests after merging or via workflow_dispatch."
+                    ),
                 }
             )
 

@@ -69,6 +69,8 @@ on:
 jobs:
   autoqa:
     runs-on: ubuntu-latest
+    # Skip fork PRs where secrets are unavailable
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - uses: actions/checkout@v6
         with:
@@ -93,6 +95,12 @@ Add the following secrets in your repository's **Settings → Secrets and variab
 | `STAGING_URL`      | Staging environment login URL     |
 | `STAGING_EMAIL`    | Test account email                |
 | `STAGING_PASSWORD` | Test account password             |
+
+> **Note on fork PRs:** GitHub Actions prevents pull requests from forks from
+> accessing repository secrets. The workflow example above includes an `if`
+> condition that skips AutoQA on fork PRs. If the key is missing, the action
+> exits gracefully instead of failing. Maintainers can run tests on fork
+> contributions after merging or via `workflow_dispatch`.
 
 ### 3. Write test steps in a PR
 
