@@ -154,7 +154,8 @@ class ActionRunner:
         if not self.config["openai_api_key"]:
             logger.warning(
                 "OPENAI_API_KEY not found. This is expected for fork PRs where "
-                "repository secrets are not available. Skipping test generation."
+                "repository secrets are unavailable, or if the secret has not "
+                "been configured. Skipping test generation."
             )
             return self._set_outputs(
                 {
