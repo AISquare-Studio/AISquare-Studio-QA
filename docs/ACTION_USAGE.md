@@ -355,6 +355,20 @@ To use this action, your repository needs:
 - 🔒 Tests only run against staging environments
 
 ---
+### Model Selection
+
+By default, AutoQA uses `openai/gpt-4.1` for test generation. You can override this with the `openai-model` input:
+
+```yaml
+- name: Generate and Execute Tests
+  uses: AISquare-Studio/AISquare-Studio-QA@main
+  with:
+    openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+    openai-model: 'openai/gpt-4o'
+    staging-url: ${{ secrets.STAGING_URL }}
+```
+
+Supported models include any OpenAI chat model accessible via your API key, such as `openai/gpt-4.1`, `openai/gpt-4o`, or `openai/gpt-3.5-turbo`.
 
 **🎉 You're ready to use AISquare Studio AutoQA in your repository!**
 
