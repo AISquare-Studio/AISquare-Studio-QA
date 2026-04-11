@@ -70,8 +70,7 @@ class GapAnalysisDB:
         conn = sqlite3.connect(str(self.db_path))
         try:
             conn.execute("PRAGMA journal_mode=WAL;")
-            conn.executescript(
-                """
+            conn.executescript("""
                 CREATE TABLE IF NOT EXISTS analysis_runs (
                     id          INTEGER PRIMARY KEY AUTOINCREMENT,
                     timestamp   TEXT    NOT NULL,
@@ -112,8 +111,7 @@ class GapAnalysisDB:
                     covered     INTEGER NOT NULL DEFAULT 0,
                     FOREIGN KEY (run_id) REFERENCES analysis_runs(id)
                 );
-                """
-            )
+                """)
             conn.commit()
         finally:
             conn.close()
