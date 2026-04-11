@@ -11,6 +11,8 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from src.exceptions import AutoQAError, AutoQAGenerationError, AutoQAParseError
+
 # Add action components to path - must be before other src imports
 action_path = Path(os.getenv("ACTION_PATH", "."))
 sys.path.insert(0, str(action_path))
@@ -142,8 +144,17 @@ class ActionRunner:
                 etag,
             )
 
+        except AutoQAParseError as e:
+            logger.error(f"PR parsing failed: {e}")
+            return self._set_outputs({"test_generated": "false", "error": str(e)})
+        except AutoQAGenerationError as e:
+            logger.error(f"Code generation failed: {e}")
+            return self._set_outputs({"test_generated": "false", "error": str(e)})
+        except AutoQAError as e:
+            logger.error(f"AutoQA failed: {e}")
+            return self._set_outputs({"test_generated": "false", "error": str(e)})
         except Exception as e:
-            logger.error(f"AutoQA Action failed: {str(e)}")
+            logger.critical(f"Unexpected error: {str(e)}")
             import traceback
 
             logger.error(traceback.format_exc())
