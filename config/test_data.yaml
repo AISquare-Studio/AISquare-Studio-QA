@@ -22,6 +22,599 @@ test_scenarios:
         - "Verify error message is displayed"
       expected_result: "Error message should be shown for invalid credentials"
 
+  create_studio:
+    create_studio_basic:
+      name: "Create Studio Test"
+      description: "Test that a new studio can be created successfully through the UI"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address"
+        - "Enter valid password"
+        - "Click login button"
+        - "Verify successful login (check for dashboard/home page)"
+        - "Navigate to studio creation page (click 'Create Studio' or equivalent button)"
+        - "Enter a studio name"
+        - "Enter a studio description"
+        - "Configure any required studio settings"
+        - "Click the create/submit button to create the studio"
+        - "Verify the studio was created successfully (check for success message or redirect to the new studio page)"
+      expected_result: "Studio should be created successfully and user should see confirmation or be redirected to the new studio"
+
+    create_studio_empty_name:
+      name: "Create Studio With Empty Name Test"
+      description: "Test that creating a studio without a name shows a validation error"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address"
+        - "Enter valid password"
+        - "Click login button"
+        - "Verify successful login"
+        - "Navigate to studio creation page"
+        - "Leave the studio name field empty"
+        - "Click the create/submit button"
+        - "Verify that a validation error is displayed for the missing studio name"
+      expected_result: "Validation error should be shown indicating that the studio name is required"
+
+  studio_manager:
+    # --- Page rendering tests (small, focused) ---
+    page_loads_successfully:
+      name: "Studio Manager Page Loads"
+      description: "Verify that the studio manager page loads without errors after login"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Studio Manager page"
+        - "Verify the Studio Manager page has loaded (check for the page title or main heading)"
+      expected_result: "Studio Manager page should load and display its main heading or title"
+
+    header_section_renders:
+      name: "Studio Manager Header Renders"
+      description: "Verify the header section of Studio Manager renders with title and action buttons"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Studio Manager page"
+        - "Verify the page header area is visible (title text, any action buttons like 'Create Studio')"
+      expected_result: "Header section should be visible with title text and action buttons"
+
+    studio_list_section_renders:
+      name: "Studio Manager List Section Renders"
+      description: "Verify the main studio list or grid area renders with studio items"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Studio Manager page"
+        - "Verify the main content area is visible (studio cards, list items, or grid of studios)"
+        - "Verify at least one studio item is displayed, or an empty state message is shown"
+      expected_result: "Studio list/grid section should render with studio items or an empty state"
+
+    sidebar_navigation_renders:
+      name: "Studio Manager Sidebar Renders"
+      description: "Verify the sidebar or navigation panel renders within Studio Manager"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Studio Manager page"
+        - "Verify the sidebar or left navigation panel is visible"
+        - "Verify sidebar contains navigation links or menu items"
+      expected_result: "Sidebar or navigation panel should be visible with menu items"
+
+    # --- Tab rendering tests (one per tab to isolate failures) ---
+    default_tab_is_active:
+      name: "Studio Manager Default Tab Active"
+      description: "Verify that the default/first tab is active when the page loads"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Studio Manager page"
+        - "Verify that tabs are visible in the Studio Manager"
+        - "Verify the first/default tab is in an active or selected state"
+        - "Verify the content area corresponding to the default tab is visible"
+      expected_result: "Default tab should be active and its content should be displayed"
+
+    second_tab_renders:
+      name: "Studio Manager Second Tab Renders"
+      description: "Verify the second tab can be clicked and its content renders"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Studio Manager page"
+        - "Verify that tabs are visible"
+        - "Click on the second tab"
+        - "Verify the second tab becomes active or selected"
+        - "Verify the content area updates to show the second tab's content"
+      expected_result: "Second tab should become active and display its content"
+
+    third_tab_renders:
+      name: "Studio Manager Third Tab Renders"
+      description: "Verify the third tab can be clicked and its content renders"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Studio Manager page"
+        - "Verify that tabs are visible"
+        - "Click on the third tab"
+        - "Verify the third tab becomes active or selected"
+        - "Verify the content area updates to show the third tab's content"
+      expected_result: "Third tab should become active and display its content"
+
+    tab_switching_preserves_state:
+      name: "Studio Manager Tab Switching Works"
+      description: "Verify switching between tabs works and each tab renders its own content"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Studio Manager page"
+        - "Note the content displayed in the default tab"
+        - "Click on the second tab and verify its content loads"
+        - "Click back on the first tab and verify it still displays its content"
+      expected_result: "Switching between tabs should show different content and switching back should restore the previous tab's content"
+
+    # --- Search tests ---
+    search_input_visible:
+      name: "Studio Manager Search Input Visible"
+      description: "Verify the search input field is present and interactable"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Studio Manager page"
+        - "Verify a search input field is visible on the page"
+        - "Click on the search input to verify it is interactable"
+      expected_result: "Search input should be visible and focusable"
+
+    search_filters_studios:
+      name: "Studio Manager Search Filters Results"
+      description: "Verify typing in the search bar filters the displayed studios"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Studio Manager page"
+        - "Observe the initial number of studio items displayed"
+        - "Click on the search input field"
+        - "Type a search query (e.g., a partial studio name)"
+        - "Verify the displayed studios update to match the search query"
+      expected_result: "Studio list should filter to show only studios matching the search query"
+
+    search_no_results_state:
+      name: "Studio Manager Search No Results"
+      description: "Verify searching for a non-existent term shows an appropriate empty state"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Studio Manager page"
+        - "Click on the search input field"
+        - "Type a search query that will match nothing (e.g., 'zzz_nonexistent_xyz')"
+        - "Verify an empty state or 'no results' message is displayed"
+      expected_result: "A no-results or empty state message should be displayed"
+
+    search_clear_restores_results:
+      name: "Studio Manager Search Clear Restores List"
+      description: "Verify clearing the search input restores the full studio list"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Studio Manager page"
+        - "Observe the initial studio items"
+        - "Type a search query to filter results"
+        - "Clear the search input field (select all and delete, or click a clear button)"
+        - "Verify the full list of studios is restored"
+      expected_result: "Clearing the search should restore the original unfiltered studio list"
+
+  # =====================================================================
+  # Teams
+  # =====================================================================
+
+  teams_page:
+    # --- Page rendering (each section isolated) ---
+    page_loads_successfully:
+      name: "Teams Page Loads"
+      description: "Verify the Teams page loads without errors after login"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Teams page"
+        - "Verify the Teams page has loaded (check for the page title or heading)"
+      expected_result: "Teams page should load and display its main heading"
+
+    header_section_renders:
+      name: "Teams Page Header Renders"
+      description: "Verify the header section renders with title and action buttons"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Teams page"
+        - "Verify the header area is visible with a title (e.g., 'Teams')"
+        - "Verify action buttons are present (e.g., 'Create Team', 'New Team', or 'Invite')"
+      expected_result: "Header section should be visible with title and action buttons"
+
+    teams_list_renders:
+      name: "Teams List Section Renders"
+      description: "Verify the teams list or grid renders with team items or empty state"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Teams page"
+        - "Verify the main content area is visible (team cards, list rows, or a grid)"
+        - "Verify at least one team is displayed, or an empty state message is shown"
+      expected_result: "Teams list should render with team items or an appropriate empty state"
+
+    team_card_details_render:
+      name: "Team Card Details Render"
+      description: "Verify an individual team card shows name, member count, and description"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Teams page"
+        - "Locate the first team card or list item"
+        - "Verify the team name is visible"
+        - "Verify a member count or member avatar section is visible"
+      expected_result: "Team card should display the team name and member count"
+
+    search_teams_works:
+      name: "Teams Search Works"
+      description: "Verify the search/filter on the Teams page works correctly"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Teams page"
+        - "Verify a search input field is visible"
+        - "Type a search query into the search input"
+        - "Verify the displayed teams are filtered to match the search query"
+      expected_result: "Teams list should filter to show only teams matching the search query"
+
+  # --- Teams creation ---
+  teams_creation:
+    create_team_form_renders:
+      name: "Create Team Form Renders"
+      description: "Verify the team creation form or modal opens with all required fields"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Teams page"
+        - "Click the 'Create Team' or 'New Team' button"
+        - "Verify a team creation form or modal appears"
+        - "Verify the form contains a team name input field"
+        - "Verify the form contains a description or details field"
+        - "Verify a submit/create button is present"
+      expected_result: "Team creation form should open with name, description fields and a submit button"
+
+    create_team_basic:
+      name: "Create Team Basic Flow"
+      description: "Test the full happy path of creating a new team"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Teams page"
+        - "Click the 'Create Team' or 'New Team' button"
+        - "Enter a team name (e.g., 'Test Team AutoQA')"
+        - "Enter a team description"
+        - "Click the submit/create button"
+        - "Verify the team was created successfully (check for success message, toast, or redirect to the new team page)"
+      expected_result: "Team should be created successfully and user should see confirmation"
+
+    create_team_empty_name:
+      name: "Create Team Empty Name Validation"
+      description: "Verify creating a team without a name shows a validation error"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Teams page"
+        - "Click the 'Create Team' or 'New Team' button"
+        - "Leave the team name field empty"
+        - "Click the submit/create button"
+        - "Verify a validation error is displayed indicating the team name is required"
+      expected_result: "Validation error should appear for the missing team name"
+
+    create_team_duplicate_name:
+      name: "Create Team Duplicate Name Validation"
+      description: "Verify creating a team with a duplicate name shows an error"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Teams page"
+        - "Identify the name of an existing team"
+        - "Click the 'Create Team' or 'New Team' button"
+        - "Enter the same name as the existing team"
+        - "Click the submit/create button"
+        - "Verify an error message is displayed about the duplicate team name"
+      expected_result: "Error should indicate a team with that name already exists"
+
+    create_team_cancel:
+      name: "Create Team Cancel Closes Form"
+      description: "Verify cancelling the team creation form closes it without creating a team"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Teams page"
+        - "Note the current number of teams displayed"
+        - "Click the 'Create Team' or 'New Team' button"
+        - "Enter some data in the form fields"
+        - "Click the cancel button or close the form/modal"
+        - "Verify the form is no longer visible"
+        - "Verify the number of teams has not changed"
+      expected_result: "Form should close and no new team should be created"
+
+  # --- Teams settings ---
+  teams_settings:
+    settings_page_loads:
+      name: "Team Settings Page Loads"
+      description: "Verify the team settings page loads after navigating to it"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Teams page"
+        - "Click on a team to open it"
+        - "Navigate to the team's Settings page (click 'Settings' tab or link)"
+        - "Verify the Settings page loads with a heading or title"
+      expected_result: "Team settings page should load and display settings content"
+
+    general_settings_section_renders:
+      name: "Team General Settings Section Renders"
+      description: "Verify the general settings section renders with name and description fields"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Teams page"
+        - "Click on a team to open it"
+        - "Navigate to the team's Settings page"
+        - "Verify a 'General' or basic info section is visible"
+        - "Verify the team name field is present and populated"
+        - "Verify a description or details field is present"
+      expected_result: "General settings section should show editable name and description fields"
+
+    members_section_renders:
+      name: "Team Members Section Renders"
+      description: "Verify the members or permissions section renders in team settings"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Teams page"
+        - "Click on a team to open it"
+        - "Navigate to the team's Settings page"
+        - "Verify a 'Members' or 'Permissions' section is visible"
+        - "Verify at least one member is listed, or an invite/add member button is visible"
+      expected_result: "Members section should display team members or an option to add members"
+
+    update_team_name:
+      name: "Update Team Name"
+      description: "Verify the team name can be updated through settings"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Teams page"
+        - "Click on a team to open it"
+        - "Navigate to the team's Settings page"
+        - "Clear the team name field and enter a new name"
+        - "Click the save or update button"
+        - "Verify a success message is shown or the page reloads with the new name"
+      expected_result: "Team name should be updated and confirmation shown"
+
+    update_team_description:
+      name: "Update Team Description"
+      description: "Verify the team description can be updated through settings"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Teams page"
+        - "Click on a team to open it"
+        - "Navigate to the team's Settings page"
+        - "Clear the description field and enter a new description"
+        - "Click the save or update button"
+        - "Verify a success message is shown or the description is updated"
+      expected_result: "Team description should be updated and confirmation shown"
+
+    save_button_visible:
+      name: "Team Settings Save Button Visible"
+      description: "Verify the save/update button is present and interactable in settings"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Teams page"
+        - "Click on a team to open it"
+        - "Navigate to the team's Settings page"
+        - "Verify a save or update button is visible on the page"
+        - "Verify the button is clickable (not disabled)"
+      expected_result: "Save/update button should be visible and enabled"
+
+    danger_zone_renders:
+      name: "Team Settings Danger Zone Renders"
+      description: "Verify the danger zone section renders with delete or archive options"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Teams page"
+        - "Click on a team to open it"
+        - "Navigate to the team's Settings page"
+        - "Scroll to the bottom of the settings page"
+        - "Verify a 'Danger Zone' or destructive action section is visible"
+        - "Verify a delete or archive team button is present"
+      expected_result: "Danger zone section should be visible with delete/archive option"
+
+  # --- Teams invite ---
+  teams_invite:
+    invite_button_visible:
+      name: "Team Invite Button Visible"
+      description: "Verify the invite button is visible on the team page"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Teams page"
+        - "Click on a team to open it"
+        - "Verify an 'Invite' or 'Add Member' button is visible on the team page"
+      expected_result: "Invite or Add Member button should be visible"
+
+    invite_modal_opens:
+      name: "Team Invite Modal Opens"
+      description: "Verify clicking the invite button opens a modal or form with the required fields"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Teams page"
+        - "Click on a team to open it"
+        - "Click the 'Invite' or 'Add Member' button"
+        - "Verify an invite modal or form appears"
+        - "Verify the modal contains an email input field"
+        - "Verify a role selector or dropdown is present"
+        - "Verify a send/invite/submit button is present"
+      expected_result: "Invite modal should open with email input, role selector, and submit button"
+
+    invite_role_selector_renders:
+      name: "Team Invite Role Selector Renders"
+      description: "Verify the role selector in the invite form shows available roles"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Teams page"
+        - "Click on a team to open it"
+        - "Click the 'Invite' or 'Add Member' button"
+        - "Verify the role selector or dropdown is visible"
+        - "Click on the role selector to open it"
+        - "Verify at least two role options are available (e.g., 'Admin', 'Member', 'Viewer')"
+      expected_result: "Role selector should display multiple role options"
+
+    invite_member_by_email:
+      name: "Team Invite Member By Email"
+      description: "Test the full happy path of inviting a member by email"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Teams page"
+        - "Click on a team to open it"
+        - "Note the current team/workspace name and URL"
+        - "Click the 'Invite' or 'Add Member' button"
+        - "Enter a valid email address in the email input"
+        - "Select a role from the role selector"
+        - "Click the send/invite/submit button"
+        - "Verify a success message or toast is shown confirming the invite was sent"
+        - "Verify the page redirects back to the correct workspace (the same team page, not a different workspace)"
+      expected_result: "Invite should be sent successfully and the user should remain in or be redirected to the correct team workspace"
+
+    invite_redirects_to_correct_workspace:
+      name: "Team Invite Redirects To Correct Workspace"
+      description: "Verify that after sending an invite the user is redirected to the correct workspace"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Teams page"
+        - "Click on a team to open it"
+        - "Note the current team name and workspace URL"
+        - "Click the 'Invite' or 'Add Member' button"
+        - "Enter a valid email address in the email input"
+        - "Click the send/invite/submit button"
+        - "Verify the page URL still belongs to the same team workspace"
+        - "Verify the team name displayed on the page matches the original team"
+        - "Verify the members or invite section is visible in the current workspace context"
+      expected_result: "After sending the invite the user should be on the correct team workspace page, not redirected to a different workspace"
+
+    invite_invalid_email:
+      name: "Team Invite Invalid Email Validation"
+      description: "Verify entering an invalid email shows a validation error"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Teams page"
+        - "Click on a team to open it"
+        - "Click the 'Invite' or 'Add Member' button"
+        - "Enter an invalid email address (e.g., 'not-an-email')"
+        - "Click the send/invite/submit button"
+        - "Verify a validation error is displayed for the invalid email format"
+      expected_result: "Validation error should indicate the email format is invalid"
+
+    invite_empty_email:
+      name: "Team Invite Empty Email Validation"
+      description: "Verify submitting with an empty email field shows a validation error"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Teams page"
+        - "Click on a team to open it"
+        - "Click the 'Invite' or 'Add Member' button"
+        - "Leave the email input field empty"
+        - "Click the send/invite/submit button"
+        - "Verify a validation error is displayed indicating the email is required"
+      expected_result: "Validation error should indicate the email field is required"
+
+    invite_duplicate_member:
+      name: "Team Invite Duplicate Member"
+      description: "Verify inviting an already-existing team member shows an error"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Teams page"
+        - "Click on a team to open it"
+        - "Identify the email of an existing team member from the members list"
+        - "Click the 'Invite' or 'Add Member' button"
+        - "Enter the existing member's email address"
+        - "Click the send/invite/submit button"
+        - "Verify an error message indicates the user is already a team member"
+      expected_result: "Error should indicate the user is already a member of the team"
+
+    invite_cancel_closes_modal:
+      name: "Team Invite Cancel Closes Modal"
+      description: "Verify cancelling the invite modal closes it without sending an invite"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Teams page"
+        - "Click on a team to open it"
+        - "Click the 'Invite' or 'Add Member' button"
+        - "Enter some data in the email input"
+        - "Click the cancel button or close the modal"
+        - "Verify the invite modal is no longer visible"
+      expected_result: "Modal should close without sending an invite"
+
+    pending_invites_visible:
+      name: "Team Pending Invites Visible"
+      description: "Verify the pending invites section displays sent invitations"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the Teams page"
+        - "Click on a team to open it"
+        - "Look for a 'Pending Invites', 'Invitations', or 'Pending' section on the team or members page"
+        - "Verify the pending invites section is visible"
+        - "Verify pending invite entries show the invitee email and status"
+      expected_result: "Pending invites section should be visible and display invite details"
+
 selectors:
   login_page:
     email_input: "input[name='email'], input[type='email'], #email"
@@ -29,3 +622,77 @@ selectors:
     login_button: "button[type='submit'], input[type='submit'], button:has-text('Login'), button:has-text('Sign In')"
     error_message: "#errorMessage, .error, .alert-danger, [data-testid='error'], .error-message"
     success_indicator: "body, .dashboard, .profile, [data-testid='dashboard'], h1:has-text('Dashboard')"
+
+  studio_manager_page:
+    page_title: "h1, h2, [data-testid='studio-manager-title'], .page-title, .page-header h1"
+    header_section: "header, .page-header, [data-testid='studio-manager-header'], .header-section"
+    action_buttons: "button:has-text('Create'), button:has-text('New'), [data-testid='create-studio-btn'], .header-actions button"
+    studio_list: ".studio-list, .studio-grid, [data-testid='studio-list'], .card-grid, .list-container, table tbody"
+    studio_item: ".studio-card, .studio-item, [data-testid='studio-item'], .card, .list-item, table tbody tr"
+    sidebar: "nav, aside, .sidebar, [data-testid='sidebar'], .side-nav, .navigation-panel"
+    sidebar_links: "nav a, aside a, .sidebar a, .side-nav a, [data-testid='sidebar'] a"
+    tabs_container: "[role='tablist'], .tabs, .tab-bar, [data-testid='tabs'], .nav-tabs"
+    tab_item: "[role='tab'], .tab, .tab-item, [data-testid='tab'], .nav-tabs li, .nav-tabs button"
+    active_tab: "[role='tab'][aria-selected='true'], .tab.active, .tab-item.active, [data-testid='tab'].active, .nav-tabs .active"
+    tab_content: "[role='tabpanel'], .tab-content, .tab-panel, [data-testid='tab-content'], .tab-pane.active"
+    search_input: "input[type='search'], input[placeholder*='search' i], input[placeholder*='Search' i], [data-testid='search-input'], .search-input, input[name='search']"
+    search_clear_button: "button[aria-label*='clear' i], .search-clear, [data-testid='search-clear'], .clear-search"
+    empty_state: ".empty-state, .no-results, [data-testid='empty-state'], p:has-text('No results'), p:has-text('no studios'), .no-data"
+
+  teams_page_page:
+    page_title: "h1, h2, [data-testid='teams-title'], .page-title, .page-header h1, h1:has-text('Teams')"
+    header_section: "header, .page-header, [data-testid='teams-header'], .header-section"
+    action_buttons: "button:has-text('Create Team'), button:has-text('New Team'), button:has-text('Invite'), [data-testid='create-team-btn'], .header-actions button"
+    teams_list: ".teams-list, .teams-grid, [data-testid='teams-list'], .card-grid, .list-container, table tbody"
+    team_item: ".team-card, .team-item, [data-testid='team-item'], .card, .list-item, table tbody tr"
+    team_name: ".team-name, [data-testid='team-name'], .card-title, h3, h4"
+    member_count: ".member-count, [data-testid='member-count'], .members, .avatar-group, span:has-text('member')"
+    search_input: "input[type='search'], input[placeholder*='search' i], [data-testid='search-input'], .search-input, input[name='search']"
+    empty_state: ".empty-state, .no-results, [data-testid='empty-state'], p:has-text('No teams'), .no-data"
+
+  teams_creation_page:
+    create_team_button: "button:has-text('Create Team'), button:has-text('New Team'), a:has-text('Create Team'), [data-testid='create-team'], [data-testid='create-team-btn']"
+    team_name_input: "input[name='name'], input[name='team_name'], input[placeholder*='name' i], [data-testid='team-name-input']"
+    team_description_input: "textarea[name='description'], textarea[name='team_description'], input[name='description'], textarea[placeholder*='description' i], [data-testid='team-description-input']"
+    submit_button: "button[type='submit'], button:has-text('Create'), button:has-text('Submit'), button:has-text('Save'), [data-testid='create-team-submit']"
+    cancel_button: "button:has-text('Cancel'), button[type='button']:has-text('Cancel'), [data-testid='cancel-btn'], .modal-close"
+    form_modal: ".modal, [role='dialog'], [data-testid='create-team-modal'], .dialog, .form-container"
+    success_message: ".success, .alert-success, [data-testid='success'], [role='alert']:has-text('success'), .toast-success"
+    validation_error: ".error, .alert-danger, .field-error, [data-testid='validation-error'], [role='alert']:has-text('required'), .form-error"
+
+  teams_settings_page:
+    settings_link: "a:has-text('Settings'), button:has-text('Settings'), [data-testid='team-settings'], .nav-item:has-text('Settings'), [role='tab']:has-text('Settings')"
+    settings_title: "h1, h2, h3, [data-testid='settings-title'], .settings-header"
+    general_section: ".general-settings, [data-testid='general-settings'], .settings-section:first-child, section:has-text('General')"
+    team_name_field: "input[name='name'], input[name='team_name'], [data-testid='settings-team-name'], .settings-form input[type='text']:first-of-type"
+    team_description_field: "textarea[name='description'], textarea[name='team_description'], [data-testid='settings-team-description'], .settings-form textarea"
+    members_section: ".members-section, [data-testid='members-section'], section:has-text('Members'), .team-members, div:has-text('Members')"
+    member_item: ".member-item, .member-row, [data-testid='member-item'], .members-list tr, .members-list li"
+    add_member_button: "button:has-text('Add'), button:has-text('Invite'), [data-testid='add-member'], [data-testid='invite-member']"
+    save_button: "button[type='submit'], button:has-text('Save'), button:has-text('Update'), [data-testid='save-settings']"
+    danger_zone: ".danger-zone, [data-testid='danger-zone'], section:has-text('Danger'), .destructive-section"
+    delete_button: "button:has-text('Delete'), button:has-text('Archive'), [data-testid='delete-team'], .danger-zone button, .btn-danger"
+
+  teams_invite_page:
+    invite_button: "button:has-text('Invite'), button:has-text('Add Member'), button:has-text('Add member'), a:has-text('Invite'), [data-testid='invite-member'], [data-testid='add-member']"
+    invite_modal: ".modal, [role='dialog'], [data-testid='invite-modal'], .dialog, .invite-form"
+    email_input: "input[type='email'], input[name='email'], input[placeholder*='email' i], [data-testid='invite-email'], .invite-modal input[type='email']"
+    role_selector: "select[name='role'], [data-testid='role-selector'], .role-select, [role='listbox'], button:has-text('Role'), button:has-text('Select role')"
+    role_option: "option, [role='option'], [data-testid='role-option'], .role-option, li[role='option']"
+    send_button: "button:has-text('Send'), button:has-text('Invite'), button:has-text('Submit'), button[type='submit'], [data-testid='send-invite']"
+    cancel_button: "button:has-text('Cancel'), [data-testid='cancel-invite'], .modal-close, button[aria-label='Close']"
+    success_message: ".success, .alert-success, [data-testid='invite-success'], [role='alert']:has-text('success'), .toast-success, [role='alert']:has-text('invited')"
+    validation_error: ".error, .alert-danger, .field-error, [data-testid='invite-error'], [role='alert']:has-text('required'), [role='alert']:has-text('invalid'), .form-error"
+    duplicate_error: ".error, .alert-danger, [data-testid='duplicate-error'], [role='alert']:has-text('already'), [role='alert']:has-text('exists')"
+    pending_invites_section: ".pending-invites, [data-testid='pending-invites'], section:has-text('Pending'), .invitations, div:has-text('Pending Invites')"
+    pending_invite_item: ".pending-invite, .invite-item, [data-testid='pending-invite'], .pending-invites li, .pending-invites tr"
+    pending_invite_email: ".invite-email, [data-testid='invite-email-display'], .pending-invite .email"
+    pending_invite_status: ".invite-status, [data-testid='invite-status'], .pending-invite .status, .badge:has-text('Pending')"
+
+  create_studio_page:
+    create_studio_button: "button:has-text('Create Studio'), button:has-text('New Studio'), a:has-text('Create Studio'), [data-testid='create-studio']"
+    studio_name_input: "input[name='name'], input[name='studio_name'], input[placeholder*='name' i], [data-testid='studio-name']"
+    studio_description_input: "textarea[name='description'], textarea[name='studio_description'], textarea[placeholder*='description' i], [data-testid='studio-description']"
+    submit_button: "button[type='submit'], button:has-text('Create'), button:has-text('Submit'), button:has-text('Save'), [data-testid='create-submit']"
+    success_message: ".success, .alert-success, [data-testid='success'], [role='alert']:has-text('success')"
+    validation_error: ".error, .alert-danger, .field-error, [data-testid='validation-error'], [role='alert']:has-text('required')"

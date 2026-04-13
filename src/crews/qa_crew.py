@@ -137,24 +137,23 @@ class QACrew:
 
         # Get the specific scenario
         scenario = test_data["test_scenarios"][scenario_type][scenario_name]
-        selectors = test_data["selectors"]["login_page"]
+
+        # Look up selectors by scenario type, fall back to login_page for backwards compatibility
+        selector_key = f"{scenario_type}_page"
+        selectors = test_data["selectors"].get(selector_key, test_data["selectors"].get("login_page", {}))
 
         # Create test configuration
         test_config = env_config.copy()
         test_config.update({"scenario_name": scenario_name, "scenario_type": scenario_type})
 
-        # Set credentials based on scenario
-        if scenario_name == "valid_login":
-            test_config.update(
-                {"email": test_config["valid_email"], "password": test_config["valid_password"]}
-            )
-        elif scenario_name == "invalid_login":
-            test_config.update(
-                {
-                    "email": test_config["valid_email"],  # Use valid email but invalid password
-                    "password": test_config["invalid_password"],
-                }
-            )
+        # Default to valid credentials (most scenarios need an authenticated user)
+        test_config.update(
+            {"email": test_config["valid_email"], "password": test_config["valid_password"]}
+        )
+
+        # Override with invalid credentials for specific login scenarios
+        if scenario_type == "login" and scenario_name == "invalid_login":
+            test_config["password"] = test_config["invalid_password"]
 
         # Step 1: Generate test code using Planner Agent
         logger.info(f"Generating test code for: {scenario['name']}")
