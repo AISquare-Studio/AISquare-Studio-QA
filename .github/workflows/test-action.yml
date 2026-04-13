@@ -87,7 +87,8 @@ jobs:
   test-self-autoqa:
     name: 🚀 Test Self AutoQA
     runs-on: ubuntu-latest
-    # if: contains(github.event.pull_request.body, 'AutoQA') || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+    # Skip on Dependabot PRs — they cannot access repository secrets (OPENAI_API_KEY etc.)
+    if: github.actor != 'dependabot[bot]'
     
     steps:
       - name: 📋 Checkout Code
