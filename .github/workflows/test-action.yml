@@ -87,9 +87,10 @@ jobs:
   test-self-autoqa:
     name: 🚀 Test Self AutoQA
     runs-on: ubuntu-latest
-    # Skip on Dependabot-authored PRs — they cannot access repository secrets (OPENAI_API_KEY etc.)
-    # For non-PR triggers (push/workflow_dispatch), continue running normally.
-    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.user.login != 'dependabot[bot]' }}
+    # Skip on Dependabot-authored PRs and fork-based PRs — they cannot access repository secrets
+    # (OPENAI_API_KEY, STAGING_* etc.). For non-PR triggers (push/workflow_dispatch),
+    # continue running normally.
+    if: ${{ github.event_name != 'pull_request' || (github.event.pull_request.user.login != 'dependabot[bot]' && github.event.pull_request.head.repo.full_name == github.repository) }}
     
     steps:
       - name: 📋 Checkout Code
