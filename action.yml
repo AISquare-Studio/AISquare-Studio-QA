@@ -10,7 +10,12 @@ inputs:
   openai-api-key:
     description: 'OpenAI API key for test generation'
     required: true
-  
+
+  openai-model:
+    description: 'OpenAI model to use for test generation (e.g., openai/gpt-4.1, openai/gpt-4o, openai/gpt-3.5-turbo)'
+    required: false
+    default: 'openai/gpt-4.1'
+
   qa-github-token:
     description: 'GitHub token with access to AutoQA repository (required for private repos)'
     required: false
@@ -230,6 +235,7 @@ runs:
         # Core configuration
         GITHUB_TOKEN: ${{ github.token }}
         OPENAI_API_KEY: ${{ inputs.openai-api-key }}
+        OPENAI_MODEL_NAME: ${{ inputs.openai-model }}
         STAGING_URL: ${{ inputs.staging-url }}
         STAGING_EMAIL: ${{ inputs.staging-email }}
         STAGING_PASSWORD: ${{ inputs.staging-password }}
