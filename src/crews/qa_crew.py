@@ -84,6 +84,11 @@ class QACrew:
             "valid_password": os.getenv("STAGING_PASSWORD", "password123"),
             "invalid_email": os.getenv("INVALID_EMAIL", "invalid@example.com"),
             "invalid_password": os.getenv("INVALID_PASSWORD", "wrongpassword"),
+            "reset_token_api": os.getenv(
+                "RESET_TOKEN_API",
+                f"{base_url}/api/test/reset-token",
+            ),
+            "mailhog_api": os.getenv("MAILHOG_API", ""),
             "headless": os.getenv("HEADLESS_MODE", "false").lower() == "true",
             "timeout": int(os.getenv("TIMEOUT", "30000")),
         }

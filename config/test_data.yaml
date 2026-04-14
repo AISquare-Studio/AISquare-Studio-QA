@@ -213,6 +213,175 @@ test_scenarios:
       expected_result: "Clearing the search should restore the original unfiltered studio list"
 
   # =====================================================================
+  # Password Reset / Recovery
+  # =====================================================================
+
+  password_reset:
+    # --- Forgot password page UI ---
+    forgot_password_link_visible:
+      name: "Forgot Password Link Visible"
+      description: "Verify the forgot password link is visible on the login page"
+      steps:
+        - "Navigate to the login page"
+        - "Verify a 'Forgot Password', 'Forgot your password?', or 'Reset Password' link is visible on the login page"
+      expected_result: "Forgot password link should be visible on the login page"
+
+    forgot_password_page_loads:
+      name: "Forgot Password Page Loads"
+      description: "Verify clicking the forgot password link navigates to the reset request page"
+      steps:
+        - "Navigate to the login page"
+        - "Click the 'Forgot Password' or 'Reset Password' link"
+        - "Verify the forgot password page loads with a heading or title"
+        - "Verify an email input field is visible"
+        - "Verify a submit/send button is present"
+      expected_result: "Forgot password page should load with an email input and submit button"
+
+    forgot_password_submit_valid_email:
+      name: "Forgot Password Submit Valid Email"
+      description: "Verify submitting a valid email shows a success message"
+      steps:
+        - "Navigate to the login page"
+        - "Click the 'Forgot Password' link"
+        - "Enter a valid registered email address"
+        - "Click the submit/send button"
+        - "Verify a success message is shown (e.g., 'Check your email', 'Reset link sent')"
+      expected_result: "Success message should confirm a reset email was sent"
+
+    forgot_password_submit_invalid_email:
+      name: "Forgot Password Submit Invalid Email Format"
+      description: "Verify submitting an invalid email format shows a validation error"
+      steps:
+        - "Navigate to the login page"
+        - "Click the 'Forgot Password' link"
+        - "Enter an invalid email format (e.g., 'not-an-email')"
+        - "Click the submit/send button"
+        - "Verify a validation error is shown for the invalid email format"
+      expected_result: "Validation error should indicate the email format is invalid"
+
+    forgot_password_submit_empty_email:
+      name: "Forgot Password Submit Empty Email"
+      description: "Verify submitting with an empty email field shows a validation error"
+      steps:
+        - "Navigate to the login page"
+        - "Click the 'Forgot Password' link"
+        - "Leave the email field empty"
+        - "Click the submit/send button"
+        - "Verify a validation error is shown indicating the email is required"
+      expected_result: "Validation error should indicate the email field is required"
+
+    forgot_password_unregistered_email:
+      name: "Forgot Password Unregistered Email"
+      description: "Verify submitting an unregistered email shows an appropriate message"
+      steps:
+        - "Navigate to the login page"
+        - "Click the 'Forgot Password' link"
+        - "Enter an email that is not registered (e.g., 'unregistered_user_zzz@example.com')"
+        - "Click the submit/send button"
+        - "Verify either an error message is shown or a generic success message is shown (some apps show success for security reasons)"
+      expected_result: "An appropriate message should be shown (either error or generic success for security)"
+
+    forgot_password_back_to_login:
+      name: "Forgot Password Back To Login"
+      description: "Verify the user can navigate back to the login page from the forgot password page"
+      steps:
+        - "Navigate to the login page"
+        - "Click the 'Forgot Password' link"
+        - "Verify the forgot password page is displayed"
+        - "Click the 'Back to Login', 'Sign In', or 'Cancel' link"
+        - "Verify the login page is displayed again"
+      expected_result: "User should be navigated back to the login page"
+
+    # --- Reset page (token-based, via staging backend hook) ---
+    reset_page_loads_with_token:
+      name: "Reset Password Page Loads With Token"
+      description: "Verify the password reset page loads when accessed with a valid token from the staging backend"
+      steps:
+        - "Navigate to the login page"
+        - "Click the 'Forgot Password' link"
+        - "Enter the test account email address"
+        - "Click the submit/send button"
+        - "Retrieve the reset token from the staging backend API (RESET_TOKEN_API or MAILHOG_API)"
+        - "Navigate to the password reset page using the retrieved token URL"
+        - "Verify the reset password page loads with a new password input field"
+        - "Verify a confirm password input field is present"
+        - "Verify a submit/reset button is present"
+      expected_result: "Reset password page should load with new password, confirm password fields and a submit button"
+
+    reset_password_success:
+      name: "Reset Password Full Flow Success"
+      description: "Test the full password reset flow using a token from the staging backend"
+      steps:
+        - "Navigate to the login page"
+        - "Click the 'Forgot Password' link"
+        - "Enter the test account email address"
+        - "Click the submit/send button"
+        - "Retrieve the reset token from the staging backend API (RESET_TOKEN_API or MAILHOG_API)"
+        - "Navigate to the password reset page using the retrieved token URL"
+        - "Enter a new valid password in the new password field"
+        - "Enter the same password in the confirm password field"
+        - "Click the submit/reset button"
+        - "Verify a success message is shown confirming the password was reset"
+        - "Verify the user is redirected to the login page or can log in with the new password"
+      expected_result: "Password should be reset successfully and user should be able to log in with the new password"
+
+    reset_password_mismatch:
+      name: "Reset Password Mismatch Validation"
+      description: "Verify entering mismatched passwords shows a validation error"
+      steps:
+        - "Navigate to the login page"
+        - "Click the 'Forgot Password' link"
+        - "Enter the test account email address"
+        - "Click the submit/send button"
+        - "Retrieve the reset token from the staging backend API"
+        - "Navigate to the password reset page using the retrieved token URL"
+        - "Enter a password in the new password field"
+        - "Enter a different password in the confirm password field"
+        - "Click the submit/reset button"
+        - "Verify a validation error is shown indicating the passwords do not match"
+      expected_result: "Validation error should indicate passwords do not match"
+
+    reset_password_too_short:
+      name: "Reset Password Too Short Validation"
+      description: "Verify entering a password that is too short shows a validation error"
+      steps:
+        - "Navigate to the login page"
+        - "Click the 'Forgot Password' link"
+        - "Enter the test account email address"
+        - "Click the submit/send button"
+        - "Retrieve the reset token from the staging backend API"
+        - "Navigate to the password reset page using the retrieved token URL"
+        - "Enter a very short password (e.g., '12') in the new password field"
+        - "Enter the same short password in the confirm password field"
+        - "Click the submit/reset button"
+        - "Verify a validation error is shown indicating the password is too short or does not meet requirements"
+      expected_result: "Validation error should indicate the password does not meet minimum requirements"
+
+    reset_password_empty_fields:
+      name: "Reset Password Empty Fields Validation"
+      description: "Verify submitting the reset form with empty password fields shows validation errors"
+      steps:
+        - "Navigate to the login page"
+        - "Click the 'Forgot Password' link"
+        - "Enter the test account email address"
+        - "Click the submit/send button"
+        - "Retrieve the reset token from the staging backend API"
+        - "Navigate to the password reset page using the retrieved token URL"
+        - "Leave both password fields empty"
+        - "Click the submit/reset button"
+        - "Verify validation errors are shown for the required password fields"
+      expected_result: "Validation errors should indicate password fields are required"
+
+    reset_password_expired_token:
+      name: "Reset Password Expired Token"
+      description: "Verify accessing the reset page with an expired or invalid token shows an error"
+      steps:
+        - "Navigate to the password reset page with an invalid or expired token (e.g., append '?token=invalid_expired_token_xyz' to the reset URL)"
+        - "Verify an error message is shown indicating the token is invalid or expired"
+        - "Verify a link to request a new reset email is present"
+      expected_result: "Error should indicate the reset link is invalid or expired with an option to request a new one"
+
+  # =====================================================================
   # Teams
   # =====================================================================
 
@@ -622,6 +791,22 @@ selectors:
     login_button: "button[type='submit'], input[type='submit'], button:has-text('Login'), button:has-text('Sign In')"
     error_message: "#errorMessage, .error, .alert-danger, [data-testid='error'], .error-message"
     success_indicator: "body, .dashboard, .profile, [data-testid='dashboard'], h1:has-text('Dashboard')"
+
+  password_reset_page:
+    forgot_password_link: "a:has-text('Forgot'), a:has-text('Reset'), a:has-text('forgot'), [data-testid='forgot-password'], .forgot-password-link"
+    forgot_password_title: "h1, h2, h3, [data-testid='forgot-password-title'], .page-title"
+    email_input: "input[type='email'], input[name='email'], input[placeholder*='email' i], [data-testid='reset-email']"
+    submit_button: "button[type='submit'], button:has-text('Send'), button:has-text('Submit'), button:has-text('Reset'), [data-testid='reset-submit']"
+    success_message: ".success, .alert-success, [data-testid='reset-success'], [role='alert']:has-text('sent'), [role='alert']:has-text('check your email'), .toast-success"
+    validation_error: ".error, .alert-danger, .field-error, [data-testid='reset-error'], [role='alert']:has-text('required'), [role='alert']:has-text('invalid'), .form-error"
+    back_to_login_link: "a:has-text('Login'), a:has-text('Sign In'), a:has-text('Back'), a:has-text('Cancel'), [data-testid='back-to-login']"
+    new_password_input: "input[name='password'], input[name='new_password'], input[name='newPassword'], input[type='password']:first-of-type, [data-testid='new-password']"
+    confirm_password_input: "input[name='confirm_password'], input[name='confirmPassword'], input[name='password_confirmation'], input[type='password']:nth-of-type(2), [data-testid='confirm-password']"
+    reset_submit_button: "button[type='submit'], button:has-text('Reset'), button:has-text('Change'), button:has-text('Update'), button:has-text('Save'), [data-testid='reset-password-submit']"
+    reset_success_message: ".success, .alert-success, [data-testid='password-reset-success'], [role='alert']:has-text('reset'), [role='alert']:has-text('changed'), .toast-success"
+    mismatch_error: ".error, [data-testid='mismatch-error'], [role='alert']:has-text('match'), .field-error:has-text('match')"
+    expired_token_error: ".error, .alert-danger, [data-testid='token-error'], [role='alert']:has-text('expired'), [role='alert']:has-text('invalid'), p:has-text('expired')"
+    request_new_reset_link: "a:has-text('Request'), a:has-text('Resend'), a:has-text('new reset'), button:has-text('Resend'), [data-testid='request-new-reset']"
 
   studio_manager_page:
     page_title: "h1, h2, [data-testid='studio-manager-title'], .page-title, .page-header h1"
