@@ -213,6 +213,211 @@ test_scenarios:
       expected_result: "Clearing the search should restore the original unfiltered studio list"
 
   # =====================================================================
+  # Tooltip Visual Regression
+  # Cross-repo coverage: catches divergence between hardcoded tooltip
+  # implementations (e.g., note editor Tooltip.jsx) and the token-based
+  # design-system tooltip. Each variant tested independently.
+  # =====================================================================
+
+  tooltip_visual:
+    # --- Standard tooltip ---
+    standard_tooltip_renders:
+      name: "Standard Tooltip Renders On Hover"
+      description: "Verify the standard tooltip appears when hovering over a trigger element"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to a page with standard tooltips (e.g., dashboard, toolbar icons)"
+        - "Hover over an element that has a standard tooltip"
+        - "Verify the tooltip becomes visible"
+        - "Take a screenshot/snapshot of the tooltip for visual comparison"
+        - "Verify the tooltip disappears when the cursor moves away"
+      expected_result: "Standard tooltip should appear on hover and disappear when cursor leaves"
+
+    standard_tooltip_styling:
+      name: "Standard Tooltip Matches Design Tokens"
+      description: "Verify the standard tooltip uses design-token colors, border-radius, font-size, and padding"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to a page with standard tooltips"
+        - "Hover over an element to trigger a standard tooltip"
+        - "Inspect the tooltip element's computed styles"
+        - "Verify background-color matches the design token (e.g., dark background like #1a1a1a, #333, or var(--tooltip-bg))"
+        - "Verify text color matches the design token (e.g., white or var(--tooltip-text))"
+        - "Verify border-radius matches the design token"
+        - "Verify font-size matches the design token"
+        - "Verify padding matches the design token"
+      expected_result: "Standard tooltip computed styles should match the design-system token values"
+
+    standard_tooltip_positioning:
+      name: "Standard Tooltip Positions Correctly"
+      description: "Verify the standard tooltip positions correctly relative to its trigger (no overlap, no clipping)"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to a page with standard tooltips"
+        - "Hover over an element to trigger a tooltip"
+        - "Verify the tooltip is positioned near the trigger element (above, below, left, or right)"
+        - "Verify the tooltip does not overlap the trigger element"
+        - "Verify the tooltip is fully visible within the viewport (not clipped)"
+      expected_result: "Tooltip should be correctly positioned near its trigger without overlap or clipping"
+
+    # --- Note editor tooltip (the hardcoded Tooltip.jsx) ---
+    note_editor_tooltip_renders:
+      name: "Note Editor Tooltip Renders On Hover"
+      description: "Verify tooltips in the note editor render when hovering over toolbar actions"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the note editor (open or create a note)"
+        - "Locate the note editor toolbar (bold, italic, formatting buttons)"
+        - "Hover over a toolbar button that has a tooltip"
+        - "Verify the tooltip becomes visible"
+        - "Take a screenshot/snapshot of the tooltip for visual comparison"
+      expected_result: "Note editor toolbar tooltip should appear on hover"
+
+    note_editor_tooltip_styling:
+      name: "Note Editor Tooltip Matches Design Tokens"
+      description: "Verify the note editor tooltip uses the same design tokens as the standard tooltip (catches hardcoded divergence)"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the note editor"
+        - "Hover over a toolbar button to trigger a tooltip"
+        - "Inspect the tooltip element's computed styles"
+        - "Verify background-color matches the design-system standard tooltip (not a hardcoded different value)"
+        - "Verify text color matches the standard tooltip"
+        - "Verify border-radius matches the standard tooltip"
+        - "Verify font-size matches the standard tooltip"
+        - "Verify padding matches the standard tooltip"
+        - "Compare these values against the standard tooltip styles — they must be identical"
+      expected_result: "Note editor tooltip styles must match the design-system token-based tooltip exactly"
+
+    note_editor_tooltip_arrow:
+      name: "Note Editor Tooltip Arrow Renders"
+      description: "Verify the tooltip arrow/caret renders correctly in the note editor"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the note editor"
+        - "Hover over a toolbar button to trigger a tooltip"
+        - "Verify the tooltip has an arrow/caret element pointing toward the trigger"
+        - "Verify the arrow color matches the tooltip background color"
+      expected_result: "Tooltip arrow should render and match the tooltip background color"
+
+    # --- Walkthrough tooltip ---
+    walkthrough_tooltip_renders:
+      name: "Walkthrough Tooltip Renders"
+      description: "Verify the walkthrough/onboarding tooltip renders when triggered"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to a page or trigger an onboarding/walkthrough flow that uses walkthrough tooltips"
+        - "Verify the walkthrough tooltip is visible"
+        - "Verify the tooltip contains step content (text, possibly a step counter)"
+        - "Verify navigation controls are present (Next, Previous, Skip, or Close)"
+      expected_result: "Walkthrough tooltip should render with content and navigation controls"
+
+    walkthrough_tooltip_styling:
+      name: "Walkthrough Tooltip Matches Design Tokens"
+      description: "Verify the walkthrough tooltip styling matches design tokens"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Trigger a walkthrough/onboarding tooltip"
+        - "Inspect the walkthrough tooltip element's computed styles"
+        - "Verify background-color matches the design token for walkthrough tooltips"
+        - "Verify text color matches the design token"
+        - "Verify border-radius, font-size, and padding are consistent with the design system"
+        - "Verify any highlight/overlay around the target element renders correctly"
+      expected_result: "Walkthrough tooltip styles should match design-system tokens"
+
+    walkthrough_tooltip_navigation:
+      name: "Walkthrough Tooltip Navigation Works"
+      description: "Verify Next/Previous/Skip controls work in walkthrough tooltips"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Trigger a walkthrough tooltip flow"
+        - "Verify the first step tooltip is visible"
+        - "Click 'Next' and verify the tooltip advances to the next step"
+        - "Click 'Previous' (if available) and verify the tooltip goes back"
+        - "Click 'Skip' or 'Close' and verify the walkthrough dismisses"
+      expected_result: "Walkthrough navigation controls should advance, go back, and dismiss correctly"
+
+    # --- Themed tooltip (dark/light mode) ---
+    themed_tooltip_light_mode:
+      name: "Tooltip Light Mode Styling"
+      description: "Verify tooltip styling is correct in light theme"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Ensure the application is in light mode (switch theme if needed)"
+        - "Navigate to a page with tooltips"
+        - "Hover over an element to trigger a tooltip"
+        - "Inspect the tooltip's computed styles"
+        - "Verify the tooltip background, text color, and shadow are appropriate for light mode"
+        - "Take a screenshot/snapshot for visual comparison"
+      expected_result: "Tooltip should use light-mode token values for background, text, and shadow"
+
+    themed_tooltip_dark_mode:
+      name: "Tooltip Dark Mode Styling"
+      description: "Verify tooltip styling is correct in dark theme"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Switch the application to dark mode"
+        - "Navigate to a page with tooltips"
+        - "Hover over an element to trigger a tooltip"
+        - "Inspect the tooltip's computed styles"
+        - "Verify the tooltip background, text color, and shadow are appropriate for dark mode"
+        - "Verify dark-mode values differ from light-mode values (not still using light-mode hardcoded colors)"
+        - "Take a screenshot/snapshot for visual comparison"
+      expected_result: "Tooltip should use dark-mode token values, distinct from light-mode values"
+
+    # --- Cross-surface consistency ---
+    tooltip_consistency_dashboard_vs_editor:
+      name: "Tooltip Consistency Dashboard vs Note Editor"
+      description: "Verify tooltips on the dashboard and in the note editor are visually identical"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the dashboard"
+        - "Hover over an element to trigger a standard tooltip"
+        - "Record the tooltip's background-color, text color, border-radius, font-size, and padding"
+        - "Navigate to the note editor"
+        - "Hover over a toolbar button to trigger the note editor tooltip"
+        - "Record the tooltip's background-color, text color, border-radius, font-size, and padding"
+        - "Compare both sets of values — they must be identical"
+      expected_result: "Dashboard tooltip and note editor tooltip should have identical computed styles"
+
+    tooltip_consistency_across_pages:
+      name: "Tooltip Consistency Across Pages"
+      description: "Verify tooltip styling is consistent across at least three different pages"
+      steps:
+        - "Navigate to the login page"
+        - "Enter valid email address and password"
+        - "Click login button and verify successful login"
+        - "Navigate to the first page (e.g., Dashboard) and trigger a tooltip, record its styles"
+        - "Navigate to the second page (e.g., Teams) and trigger a tooltip, record its styles"
+        - "Navigate to the third page (e.g., Settings or Studio Manager) and trigger a tooltip, record its styles"
+        - "Compare all three sets of styles — they must be consistent"
+      expected_result: "Tooltip styles must be identical across all three pages"
+
+  # =====================================================================
   # Password Reset / Recovery
   # =====================================================================
 
@@ -791,6 +996,27 @@ selectors:
     login_button: "button[type='submit'], input[type='submit'], button:has-text('Login'), button:has-text('Sign In')"
     error_message: "#errorMessage, .error, .alert-danger, [data-testid='error'], .error-message"
     success_indicator: "body, .dashboard, .profile, [data-testid='dashboard'], h1:has-text('Dashboard')"
+
+  tooltip_visual_page:
+    # Standard tooltip
+    tooltip_trigger: "[data-tooltip], [title], [aria-describedby], [data-testid*='tooltip-trigger'], .tooltip-trigger, button[title], .icon-button[title]"
+    tooltip_element: "[role='tooltip'], .tooltip, .tippy-box, .tooltip-content, [data-testid*='tooltip'], .rc-tooltip-inner, .MuiTooltip-tooltip"
+    tooltip_arrow: ".tooltip-arrow, .tippy-arrow, [data-popper-arrow], .rc-tooltip-arrow, .MuiTooltip-arrow"
+    tooltip_text: ".tooltip-text, .tooltip-content, [role='tooltip'], .tippy-content"
+    # Note editor toolbar
+    note_editor: ".note-editor, [data-testid='note-editor'], .editor-container, .ProseMirror, .ql-editor, .tiptap"
+    editor_toolbar: ".editor-toolbar, .note-toolbar, [data-testid='editor-toolbar'], .ql-toolbar, .tiptap-toolbar, [role='toolbar']"
+    editor_toolbar_button: ".editor-toolbar button, .note-toolbar button, [data-testid='editor-toolbar'] button, .ql-toolbar button, [role='toolbar'] button"
+    # Walkthrough tooltip
+    walkthrough_tooltip: ".walkthrough-tooltip, .tour-tooltip, .onboarding-tooltip, [data-testid='walkthrough-tooltip'], .shepherd-element, .introjs-tooltip, .joyride-tooltip"
+    walkthrough_content: ".walkthrough-content, .tour-content, [data-testid='walkthrough-content'], .shepherd-text, .introjs-tooltiptext"
+    walkthrough_next: "button:has-text('Next'), [data-testid='walkthrough-next'], .shepherd-button-primary, .introjs-nextbutton"
+    walkthrough_prev: "button:has-text('Previous'), button:has-text('Back'), [data-testid='walkthrough-prev'], .shepherd-button-secondary, .introjs-prevbutton"
+    walkthrough_skip: "button:has-text('Skip'), button:has-text('Close'), button:has-text('Dismiss'), [data-testid='walkthrough-skip'], .shepherd-cancel-icon, .introjs-skipbutton"
+    walkthrough_step_counter: ".step-counter, .step-indicator, [data-testid='step-counter'], .shepherd-progress"
+    walkthrough_overlay: ".walkthrough-overlay, .tour-overlay, .shepherd-modal-overlay-container, .introjs-overlay"
+    # Theme toggle
+    theme_toggle: "button[aria-label*='theme' i], button[aria-label*='mode' i], [data-testid='theme-toggle'], .theme-toggle, .dark-mode-toggle"
 
   password_reset_page:
     forgot_password_link: "a:has-text('Forgot'), a:has-text('Reset'), a:has-text('forgot'), [data-testid='forgot-password'], .forgot-password-link"
