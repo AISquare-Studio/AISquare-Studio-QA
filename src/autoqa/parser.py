@@ -10,7 +10,6 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 
-
 class AutoQAParser:
     """Parser for AutoQA metadata and test steps in PR descriptions"""
 

@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 
-
 # Add action components to path - must be before other src imports
 action_path = Path(os.getenv("ACTION_PATH", "."))
 sys.path.insert(0, str(action_path))
