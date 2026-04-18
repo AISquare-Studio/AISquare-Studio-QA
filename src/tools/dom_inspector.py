@@ -1,7 +1,7 @@
 """
 DOM Inspector Tool: Extracts selectors and inspects page structure from live pages.
 """
-
+from src.exceptions import AutoQABrowserError
 from typing import Any, Dict, List, Optional
 
 from playwright.sync_api import Page

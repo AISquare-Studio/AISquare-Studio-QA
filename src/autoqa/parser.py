@@ -9,7 +9,6 @@ import re
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
-from src.exceptions import AutoQAParseError, AutoQAValidationError
 
 
 class AutoQAParser:

@@ -147,7 +147,6 @@ area: <feature_area>
 | Input               | Required | Default          | Description                                       |
 | ------------------- | -------- | ---------------- | ------------------------------------------------- |
 | `openai-api-key`    | **Yes**  | —                | OpenAI API key
-
 | `openai-model` | No | `openai/gpt-4.1` | OpenAI model for test generation (e.g., openai/gpt-4.1, openai/gpt-4o) |                                   |
 | `staging-url`       | **Yes**  | —                | Staging environment URL                           |
 | `qa-github-token`   | No       | `github.token`   | GitHub token (for private repo access)             |

@@ -50,22 +50,18 @@ def tmp_project(tmp_path):
     # Test file that references some testids
     test_dir = tmp_path / "tests"
     test_dir.mkdir()
-    (test_dir / "test_login.py").write_text(
-        """
+    (test_dir / "test_login.py").write_text("""
 import pytest
 
 def test_login_success(page):
     page.locator('[data-testid="login-email-input"]').fill("user@example.com")
     page.locator('[data-testid="login-password-input"]').fill("secret")
     page.locator('[data-testid="login-submit-button"]').click()
-"""
-    )
-    (test_dir / "test_dashboard.py").write_text(
-        """
+""")
+    (test_dir / "test_dashboard.py").write_text("""
 def test_dashboard_visible(page):
     assert page.locator('[data-testid="dashboard-header"]').is_visible()
-"""
-    )
+""")
 
     return tmp_path
 

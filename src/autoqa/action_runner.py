@@ -11,13 +11,14 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from src.exceptions import AutoQAError, AutoQAGenerationError, AutoQAParseError
+
 
 # Add action components to path - must be before other src imports
 action_path = Path(os.getenv("ACTION_PATH", "."))
 sys.path.insert(0, str(action_path))
 
 # noqa comments tell flake8 these imports are intentionally after path manipulation
+from src.exceptions import AutoQAError, AutoQAGenerationError, AutoQAParseError  # noqa: E402
 from src.autoqa.action_reporter import ActionReporter  # noqa: E402
 from src.autoqa.criteria_generator import TestCriteriaGenerator  # noqa: E402
 from src.autoqa.cross_repo_manager import CrossRepoManager  # noqa: E402
