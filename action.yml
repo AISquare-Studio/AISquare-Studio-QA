@@ -183,7 +183,7 @@ runs:
     
     # Setup Python with pip caching based on requirements.txt hash
     - name: 🐍 Setup Python Environment
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@v7
       with:
         python-version: '3.11'
         cache: 'pip'
