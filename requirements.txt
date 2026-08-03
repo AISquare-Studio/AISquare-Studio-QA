@@ -10,7 +10,7 @@ crewai[tools]
 # Dependabot raises the bump; the `🎭 Smoke: chromium actually launches` step in
 # test-action.yml validates it without needing secrets, so a bump is safe to merge
 # on a green PR even though `test-self-autoqa` skips for Dependabot.
-playwright==1.54.0
+playwright==1.62.0
 pytest
 pytest-html
 pytest-json-report
