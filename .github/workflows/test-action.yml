@@ -23,17 +23,15 @@ jobs:
           cache: 'pip'
           cache-dependency-path: 'requirements.txt'
       
-      # Cache Playwright browsers to speed up test runs (saves ~2-3 minutes)
+      # Exact-match key only, and one canonical key shared by every step that
+      # touches ~/.cache/ms-playwright. Rationale in action.yml.
       - name: 🎭 Cache Playwright Browsers
         uses: actions/cache@v5
         id: playwright-cache
         with:
           path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('requirements.txt') }}-v1
-          restore-keys: |
-            ${{ runner.os }}-playwright-v1
-            ${{ runner.os }}-playwright-
-      
+          key: ${{ runner.os }}-ms-playwright-${{ hashFiles('requirements.txt') }}-v3
+
       - name: 📦 Install Dependencies
         run: |
           pip install -r requirements.txt
@@ -51,6 +49,25 @@ jobs:
         run: |
           playwright install-deps chromium
       
+      # Asserts the pip package and the cached browser build actually agree, which
+      # is the exact failure this workflow's cache fix addresses. It lives in THIS
+      # job on purpose: no secrets are required, so unlike `test-self-autoqa` it
+      # still runs on fork and Dependabot PRs — and a Dependabot bump of the
+      # `playwright==` pin is precisely the change that must not merge unvalidated.
+      - name: "🎭 Smoke: chromium actually launches"
+        run: |
+          python -c "
+          from importlib.metadata import version
+          from playwright.sync_api import sync_playwright
+          with sync_playwright() as p:
+              b = p.chromium.launch()
+              page = b.new_page()
+              page.set_content('<h1 data-testid=ok>ok</h1>')
+              assert page.inner_text('[data-testid=ok]') == 'ok'
+              b.close()
+          print('✅ chromium launched under playwright ' + version('playwright'))
+          "
+
       - name: 🔍 Test AutoQA Parser
         run: |
           python -c "
@@ -87,8 +104,15 @@ jobs:
   test-self-autoqa:
     name: 🚀 Test Self AutoQA
     runs-on: ubuntu-latest
-    # if: contains(github.event.pull_request.body, 'AutoQA') || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
-    
+    # This job needs OPENAI_API_KEY / STAGING_URL / STAGING_EMAIL / STAGING_PASSWORD.
+    # GitHub does not expose repository secrets to pull_request runs from a fork, nor
+    # to Dependabot-authored PRs, so the job could only ever fail there (e.g. #43).
+    # Skip it in exactly those two cases; push and workflow_dispatch are unaffected.
+    # Do NOT "fix" this by switching the trigger to pull_request_target — this repo
+    # is PUBLIC with forks, and pull_request_target would run fork code with those
+    # secrets in scope. A skipped job is the correct outcome, not a workaround.
+    if: ${{ github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login != 'dependabot[bot]' && github.actor != 'dependabot[bot]') }}
+
     steps:
       - name: 📋 Checkout Code
         uses: actions/checkout@v6
@@ -96,17 +120,16 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
       
-      # Cache Playwright browsers for the action test
+      # Same canonical key as the other two steps: all three mount the identical
+      # path, and requirements.txt / .autoqa-action/requirements.txt are the same
+      # file, so a shared key lets them reuse one warm cache instead of paying
+      # three separate ~100MB misses. Rationale in action.yml.
       - name: 🎭 Cache Playwright Browsers (for Action)
         uses: actions/cache@v5
         with:
           path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-action-${{ hashFiles('requirements.txt') }}-v1
-          restore-keys: |
-            ${{ runner.os }}-playwright-action-v1
-            ${{ runner.os }}-playwright-v1
-            ${{ runner.os }}-playwright-
-      
+          key: ${{ runner.os }}-ms-playwright-${{ hashFiles('requirements.txt') }}-v3
+
       - name: 🤖 Test AutoQA Action (Self)
         uses: ./
         with:

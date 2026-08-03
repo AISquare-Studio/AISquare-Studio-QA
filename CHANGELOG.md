@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - unreleased
+
+> Not yet tagged. `release.yml` fires on `v*.*.*` tags only, and its final step
+> runs `git tag -fa v0 && git push origin v0 --force` — the `v0` major tag is
+> force-moved to whatever was tagged last. Consumers who want the current
+> behaviour should pin `AISquare-Studio/AISquare-Studio-QA@v0`, which always
+> resolves to the newest 0.x release; pin `@v0.3.0` only to freeze.
+
+### Fixed
+
+- **Playwright browser launch failures (`BrowserType.launch: Executable doesn't exist`).**
+  `requirements.txt` declared a bare, unversioned `playwright`, so the pip package
+  floated to whatever was newest on the runner while the cached browser build in
+  `~/.cache/ms-playwright` could be arbitrarily older. Pinned `playwright==1.54.0`,
+  the version the code is developed against (only `playwright.sync_api` symbols are
+  used: `sync_playwright`, `Page`, `TimeoutError`).
+- **Stale Playwright browser cache silently satisfying the cache check.** The
+  browser cache in `action.yml` was keyed on `hashFiles('.autoqa-action/requirements.txt')`
+  — a constant, because nothing in that file was pinned — and carried the wildcard
+  restore-key `${{ runner.os }}-playwright-`. Any prior cache entry from any
+  Playwright version would restore, `steps.playwright-cache.outputs.cache-hit`
+  would report `true`, and the `playwright install chromium` step (guarded by
+  `if: cache-hit != 'true'`) would be skipped — leaving no browser binary on disk.
+  Removed all restore-keys (exact-match only) and rotated the key suffix to `-v3`
+  to invalidate every poisoned entry. Applied the same fix to both Playwright
+  cache steps in `.github/workflows/test-action.yml`, which share the same path.
+- **`test-self-autoqa` failing on every fork and Dependabot PR.** The job consumes
+  `OPENAI_API_KEY`, `STAGING_URL`, `STAGING_EMAIL` and `STAGING_PASSWORD`, which
+  GitHub deliberately withholds from fork PRs and from Dependabot, so the job could
+  only ever go red there (e.g. #43). Added a job-level guard that skips it for
+  fork-originated and Dependabot PRs while leaving `push` and `workflow_dispatch`
+  runs untouched. The trigger stays `pull_request`: this repository is public with
+  forks, and `pull_request_target` would execute fork-controlled code with those
+  secrets in scope.
+
 ## [0.2.0] - 2026-03-16
 
 ### Added
