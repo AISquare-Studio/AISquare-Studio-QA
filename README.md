@@ -75,7 +75,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Generate and Execute Tests
-        uses: AISquare-Studio/AISquare-Studio-QA@main
+        uses: AISquare-Studio/AISquare-Studio-QA@v0
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
           staging-url: ${{ secrets.STAGING_URL }}

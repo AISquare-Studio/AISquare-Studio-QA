@@ -23,16 +23,14 @@ jobs:
           cache: 'pip'
           cache-dependency-path: 'requirements.txt'
       
-      # Cache Playwright browsers to speed up test runs (saves ~2-3 minutes).
-      # Exact-match key only — see action.yml: a wildcard restore-key returns a
-      # browser dir for the wrong Playwright version while still reporting
-      # cache-hit == 'true', which skips the install and breaks browser launch.
+      # Exact-match key only, and one canonical key shared by every step that
+      # touches ~/.cache/ms-playwright. Rationale in action.yml.
       - name: 🎭 Cache Playwright Browsers
         uses: actions/cache@v5
         id: playwright-cache
         with:
           path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('requirements.txt') }}-v3
+          key: ${{ runner.os }}-ms-playwright-${{ hashFiles('requirements.txt') }}-v3
 
       - name: 📦 Install Dependencies
         run: |
@@ -51,6 +49,25 @@ jobs:
         run: |
           playwright install-deps chromium
       
+      # Asserts the pip package and the cached browser build actually agree, which
+      # is the exact failure this workflow's cache fix addresses. It lives in THIS
+      # job on purpose: no secrets are required, so unlike `test-self-autoqa` it
+      # still runs on fork and Dependabot PRs — and a Dependabot bump of the
+      # `playwright==` pin is precisely the change that must not merge unvalidated.
+      - name: "🎭 Smoke: chromium actually launches"
+        run: |
+          python -c "
+          from importlib.metadata import version
+          from playwright.sync_api import sync_playwright
+          with sync_playwright() as p:
+              b = p.chromium.launch()
+              page = b.new_page()
+              page.set_content('<h1 data-testid=ok>ok</h1>')
+              assert page.inner_text('[data-testid=ok]') == 'ok'
+              b.close()
+          print('✅ chromium launched under playwright ' + version('playwright'))
+          "
+
       - name: 🔍 Test AutoQA Parser
         run: |
           python -c "
@@ -103,14 +120,15 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
       
-      # Cache Playwright browsers for the action test — exact-match key only.
-      # Note this job shares ~/.cache/ms-playwright with the composite action's own
-      # cache step, so a wildcard restore-key here could poison that path too.
+      # Same canonical key as the other two steps: all three mount the identical
+      # path, and requirements.txt / .autoqa-action/requirements.txt are the same
+      # file, so a shared key lets them reuse one warm cache instead of paying
+      # three separate ~100MB misses. Rationale in action.yml.
       - name: 🎭 Cache Playwright Browsers (for Action)
         uses: actions/cache@v5
         with:
           path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-action-${{ hashFiles('requirements.txt') }}-v3
+          key: ${{ runner.os }}-ms-playwright-${{ hashFiles('requirements.txt') }}-v3
 
       - name: 🤖 Test AutoQA Action (Self)
         uses: ./

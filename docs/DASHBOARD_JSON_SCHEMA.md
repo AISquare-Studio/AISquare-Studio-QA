@@ -43,7 +43,7 @@ The payload has **three top-level keys**:
 ```yaml
 - name: 🤖 Run AutoQA
   id: autoqa
-  uses: AISquare-Studio/AISquare-Studio-QA@main
+  uses: AISquare-Studio/AISquare-Studio-QA@v0
   with:
     openai-api-key: ${{ secrets.OPENAI_API_KEY }}
     staging-url: ${{ secrets.STAGING_URL }}

@@ -190,17 +190,34 @@ runs:
         cache-dependency-path: '.autoqa-action/requirements.txt'
     
     # Cache Playwright browsers to avoid downloading ~100MB each run.
-    # NO restore-keys: a partial-key restore hands back a browser directory built
+    #
+    # THE CANONICAL EXPLANATION for the BROWSER cache — the two cache steps in
+    # .github/workflows/test-action.yml point here rather than repeating it.
+    # (The repo-clone cache above still carries a restore-key; it is a different
+    # shape and is tracked separately, because no cache-hit-gated step depends on
+    # it and the checkout that follows overwrites the path unconditionally.)
+    #
+    # NO restore-keys here. A partial-key restore hands back a browser directory built
     # for a different Playwright version, `cache-hit` still reports 'true', the
     # install step below is skipped, and the run dies with
     # "BrowserType.launch: Executable doesn't exist". Exact-match only — a cache
-    # miss costs ~2-3 min, a wrong hit costs a red run and a bogus QA verdict.
+    # miss costs ~2-3 min, a wrong hit costs a red run and a bogus QA verdict,
+    # which is strictly worse for a tool whose entire output is a verdict.
+    #
+    # ONE key shared by all three steps that mount ~/.cache/ms-playwright. The
+    # hashFiles() inputs differ only by location (requirements.txt here is checked
+    # out as .autoqa-action/requirements.txt), so the content hash is identical and
+    # a shared prefix lets them reuse one warm cache. Distinct prefixes bought
+    # nothing and cost an extra cold miss each.
+    #
+    # The pin in requirements.txt is what makes this key able to rotate at all:
+    # with an unpinned `playwright`, hashFiles() is a constant.
     - name: 🎭 Cache Playwright Browsers
       uses: actions/cache@v5
       id: playwright-cache
       with:
         path: ~/.cache/ms-playwright
-        key: ${{ runner.os }}-autoqa-playwright-${{ hashFiles('.autoqa-action/requirements.txt') }}-v3
+        key: ${{ runner.os }}-ms-playwright-${{ hashFiles('.autoqa-action/requirements.txt') }}-v3
 
     # Install Python dependencies (pip packages cached above)
     - name: 📦 Install AutoQA Dependencies

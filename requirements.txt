@@ -4,6 +4,12 @@ crewai[tools]
 # constant, so the browser cache key in action.yml never rotates and a stale
 # ~/.cache/ms-playwright can be restored for a newer pip package —
 # producing "BrowserType.launch: Executable doesn't exist".
+#
+# UPGRADE CADENCE: bump deliberately, not never — 1.54.0 is several minors behind
+# upstream and a pin left alone just relocates the staleness it was meant to fix.
+# Dependabot raises the bump; the `🎭 Smoke: chromium actually launches` step in
+# test-action.yml validates it without needing secrets, so a bump is safe to merge
+# on a green PR even though `test-self-autoqa` skips for Dependabot.
 playwright==1.54.0
 pytest
 pytest-html

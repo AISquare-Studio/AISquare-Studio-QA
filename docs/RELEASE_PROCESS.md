@@ -19,6 +19,13 @@ Each release creates two types of tags:
 | Full version | `v1.2.3` | Immutable, pinned release |
 | Major version | `v1` | Floating tag, always points to latest `v1.x.x` |
 
+> **This repository is still on 0.x, so the live major tag is `v0`, not `v1`.** The
+> `v1` examples below illustrate the scheme; copy them with `v0` until 1.0.0 ships.
+> Every doc in this repo now pins `@v0` for exactly this reason — see `README.md`
+> and `docs/ACTION_USAGE.md`. Note also that the release job force-moves the major
+> tag (`git tag -fa v0 && git push origin v0 --force`), so `@v0` retargets on every
+> 0.x release; pin a full version to freeze.
+
 Users reference the action by major version for automatic minor/patch updates:
 
 ```yaml

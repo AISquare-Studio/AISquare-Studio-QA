@@ -27,7 +27,7 @@ jobs:
           fetch-depth: 0
       
       - name: 🤖 Run AutoQA
-        uses: AISquare-Studio/AISquare-Studio-QA@main
+        uses: AISquare-Studio/AISquare-Studio-QA@v0
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
           qa-github-token: ${{ secrets.QA_GITHUB_TOKEN }}
@@ -200,7 +200,7 @@ The action provides these outputs for use in subsequent steps:
 ```yaml
 - name: 🤖 Run AutoQA
   id: autoqa
-  uses: AISquare-Studio/AISquare-Studio-QA@main
+  uses: AISquare-Studio/AISquare-Studio-QA@v0
   # ... inputs ...
 
 - name: 📊 Check Results
@@ -222,7 +222,7 @@ Customize action behavior with additional inputs:
 
 ```yaml
 - name: 🤖 Run AutoQA (Advanced)
-  uses: AISquare-Studio/AISquare-Studio-QA@main
+  uses: AISquare-Studio/AISquare-Studio-QA@v0
   with:
     # Required secrets
     openai-api-key: ${{ secrets.OPENAI_API_KEY }}
@@ -361,7 +361,7 @@ By default, AutoQA uses `openai/gpt-4.1` for test generation. You can override t
 
 ```yaml
 - name: Generate and Execute Tests
-  uses: AISquare-Studio/AISquare-Studio-QA@main
+  uses: AISquare-Studio/AISquare-Studio-QA@v0
   with:
     openai-api-key: ${{ secrets.OPENAI_API_KEY }}
     openai-model: 'openai/gpt-4o'
