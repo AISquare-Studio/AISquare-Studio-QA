@@ -189,18 +189,19 @@ runs:
         cache: 'pip'
         cache-dependency-path: '.autoqa-action/requirements.txt'
     
-    # Cache Playwright browsers to avoid downloading ~100MB each run
+    # Cache Playwright browsers to avoid downloading ~100MB each run.
+    # NO restore-keys: a partial-key restore hands back a browser directory built
+    # for a different Playwright version, `cache-hit` still reports 'true', the
+    # install step below is skipped, and the run dies with
+    # "BrowserType.launch: Executable doesn't exist". Exact-match only — a cache
+    # miss costs ~2-3 min, a wrong hit costs a red run and a bogus QA verdict.
     - name: 🎭 Cache Playwright Browsers
       uses: actions/cache@v5
       id: playwright-cache
       with:
         path: ~/.cache/ms-playwright
-        key: ${{ runner.os }}-autoqa-playwright-${{ hashFiles('.autoqa-action/requirements.txt') }}-v2
-        restore-keys: |
-          ${{ runner.os }}-autoqa-playwright-v2
-          ${{ runner.os }}-playwright-v2
-          ${{ runner.os }}-playwright-
-    
+        key: ${{ runner.os }}-autoqa-playwright-${{ hashFiles('.autoqa-action/requirements.txt') }}-v3
+
     # Install Python dependencies (pip packages cached above)
     - name: 📦 Install AutoQA Dependencies
       shell: bash

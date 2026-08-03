@@ -1,5 +1,10 @@
 crewai[tools]
-playwright
+# Pinned: the Playwright pip package and its browser build are version-locked to
+# each other. An unpinned `playwright` also makes hashFiles(requirements.txt) a
+# constant, so the browser cache key in action.yml never rotates and a stale
+# ~/.cache/ms-playwright can be restored for a newer pip package —
+# producing "BrowserType.launch: Executable doesn't exist".
+playwright==1.54.0
 pytest
 pytest-html
 pytest-json-report

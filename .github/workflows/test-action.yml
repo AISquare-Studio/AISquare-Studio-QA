@@ -23,17 +23,17 @@ jobs:
           cache: 'pip'
           cache-dependency-path: 'requirements.txt'
       
-      # Cache Playwright browsers to speed up test runs (saves ~2-3 minutes)
+      # Cache Playwright browsers to speed up test runs (saves ~2-3 minutes).
+      # Exact-match key only — see action.yml: a wildcard restore-key returns a
+      # browser dir for the wrong Playwright version while still reporting
+      # cache-hit == 'true', which skips the install and breaks browser launch.
       - name: 🎭 Cache Playwright Browsers
         uses: actions/cache@v5
         id: playwright-cache
         with:
           path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('requirements.txt') }}-v1
-          restore-keys: |
-            ${{ runner.os }}-playwright-v1
-            ${{ runner.os }}-playwright-
-      
+          key: ${{ runner.os }}-playwright-${{ hashFiles('requirements.txt') }}-v3
+
       - name: 📦 Install Dependencies
         run: |
           pip install -r requirements.txt
@@ -87,8 +87,15 @@ jobs:
   test-self-autoqa:
     name: 🚀 Test Self AutoQA
     runs-on: ubuntu-latest
-    # if: contains(github.event.pull_request.body, 'AutoQA') || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
-    
+    # This job needs OPENAI_API_KEY / STAGING_URL / STAGING_EMAIL / STAGING_PASSWORD.
+    # GitHub does not expose repository secrets to pull_request runs from a fork, nor
+    # to Dependabot-authored PRs, so the job could only ever fail there (e.g. #43).
+    # Skip it in exactly those two cases; push and workflow_dispatch are unaffected.
+    # Do NOT "fix" this by switching the trigger to pull_request_target — this repo
+    # is PUBLIC with forks, and pull_request_target would run fork code with those
+    # secrets in scope. A skipped job is the correct outcome, not a workaround.
+    if: ${{ github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login != 'dependabot[bot]' && github.actor != 'dependabot[bot]') }}
+
     steps:
       - name: 📋 Checkout Code
         uses: actions/checkout@v6
@@ -96,17 +103,15 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
       
-      # Cache Playwright browsers for the action test
+      # Cache Playwright browsers for the action test — exact-match key only.
+      # Note this job shares ~/.cache/ms-playwright with the composite action's own
+      # cache step, so a wildcard restore-key here could poison that path too.
       - name: 🎭 Cache Playwright Browsers (for Action)
         uses: actions/cache@v5
         with:
           path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-action-${{ hashFiles('requirements.txt') }}-v1
-          restore-keys: |
-            ${{ runner.os }}-playwright-action-v1
-            ${{ runner.os }}-playwright-v1
-            ${{ runner.os }}-playwright-
-      
+          key: ${{ runner.os }}-playwright-action-${{ hashFiles('requirements.txt') }}-v3
+
       - name: 🤖 Test AutoQA Action (Self)
         uses: ./
         with:
