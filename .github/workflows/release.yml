@@ -168,11 +168,18 @@ jobs:
           generate_release_notes: true
           make_latest: true
 
-      - name: Update major version tag
+      # The floating major tag (vN) was removed deliberately. Maintaining it required
+      # `git tag -fa` + `git push --force` on every release, which silently retargets
+      # every consumer pinned to @vN the moment a release lands — including a bad one.
+      # Consumers now pin an exact, immutable version (see docs/RELEASE_PROCESS.md) and
+      # bump on purpose. Nothing in this workflow force-pushes anything.
+      - name: Confirm no mutable tag was moved
         run: |
+          TAG="${{ steps.version.outputs.tag }}"
           MAJOR="v${{ steps.version.outputs.major }}"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -fa "$MAJOR" -m "Update $MAJOR tag to ${{ steps.version.outputs.tag }}"
-          git push origin "$MAJOR" --force
-          echo "🏷️ Updated $MAJOR → ${{ steps.version.outputs.tag }}"
+          echo "✅ Released $TAG as an immutable tag."
+          echo "ℹ️  The floating $MAJOR tag is intentionally NOT updated by this workflow."
+          if git ls-remote --exit-code --tags origin "refs/tags/$MAJOR" >/dev/null 2>&1; then
+            POINTS_AT=$(git rev-parse --short "refs/tags/$MAJOR^{commit}" 2>/dev/null || echo unknown)
+            echo "::warning title=Stale floating tag::$MAJOR still exists on origin and now points at $POINTS_AT, which will drift from $TAG. Consumers should pin $TAG. Delete $MAJOR once nothing references it."
+          fi

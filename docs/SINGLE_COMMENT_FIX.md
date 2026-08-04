@@ -214,7 +214,7 @@ For backward compatibility with existing comments:
 
 This fix is **automatically applied** when using:
 ```yaml
-uses: AISquare-Studio/AISquare-Studio-QA@v0
+uses: AISquare-Studio/AISquare-Studio-QA@v0.3.0
 ```
 
 ### For Users with Custom Workflows:
