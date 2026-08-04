@@ -49,8 +49,7 @@ Tag push (v1.2.3)
   ├── Test (parser validation)
   └── Release (after all checks pass)
         ├── Extract release notes from CHANGELOG.md
-        ├── Create GitHub Release
-        └── Update major version tag (v1 → v1.2.3)
+        └── Create GitHub Release   (immutable tag; no mutable tag is moved)
 ```
 
 ### Pre-release Versions
@@ -94,15 +93,16 @@ This triggers the release workflow which will:
 - Validate the action
 - Run linting and tests
 - Create the GitHub Release with notes from the changelog
-- Update the `v1` major version tag
+
+It does **not** move any existing tag.
 
 ### 4. Verify the Release
 
 1. Check the [Actions tab](https://github.com/AISquare-Studio/AISquare-Studio-QA/actions/workflows/release.yml) for the workflow run
 2. Check the [Releases page](https://github.com/AISquare-Studio/AISquare-Studio-QA/releases) for the new release
-3. Verify the major version tag points to the new release:
+3. Confirm no mutable tag was moved — this should list only the frozen legacy `v0`:
    ```bash
-   git ls-remote --tags origin | grep -E 'v[0-9]+$'
+   git ls-remote --tags origin | grep -E 'refs/tags/v[0-9]+$'
    ```
 
 ## GitHub Marketplace
@@ -150,12 +150,19 @@ For critical fixes that need immediate release:
 
 If a release has issues:
 
-1. **Revert the major version tag** to the previous stable release:
-   ```bash
-   git tag -fa v1 v1.2.2 -m "Rollback v1 to v1.2.2"
-   git push origin v1 --force
-   ```
+Tags here are immutable, so there is nothing to move backwards — and that is deliberate. A
+rollback is a **roll forward**:
 
-2. **Mark the bad release as pre-release** on GitHub to warn users
+1. **Mark the bad release as pre-release** on GitHub so it stops being "Latest" and is visibly
+   flagged.
 
-3. **Fix the issue** and release a new patch version
+2. **Fix the issue and release the next patch version** (e.g. `v0.3.1`). Consumers pinned to the
+   bad exact version are unaffected until they bump, which is the whole benefit of exact pins —
+   a bad release cannot reach anyone who did not opt in.
+
+3. **Tell the consumers who already bumped** to pin back to the last good version, e.g.
+   `@v0.2.0`. Because the reference is exact, pinning back is a one-line revert in their repo
+   and needs no cooperation from this one.
+
+Do **not** reintroduce a force-pushed floating tag to make rollback feel faster. A mutable
+reference is what let AutoQA serve a broken build for six months while reporting success.
