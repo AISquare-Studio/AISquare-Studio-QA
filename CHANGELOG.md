@@ -7,12 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Removed the floating major version tag from the release process.** `release.yml` no longer runs
+  `git tag -fa vN` + `git push --force`. A mutable reference that silently retargets every consumer
+  on each release is the same class of failure as the wildcard browser-cache restore-key fixed in
+  0.3.0: it keeps serving stale content while reporting success. Consumers now pin an exact
+  immutable version (`@v0.3.0`) and upgrade deliberately.
+- Repinned every documented reference to `@v0.3.0` — 13 refs across `README.md`, `docs/` and
+  `examples/`. The two `examples/*.yml` files and `awesome-aisquare` were still on `@main` and were
+  missed by the 0.3.0 pass; `awesome-aisquare` lives in another repo and is tracked separately.
+- The `v0` tag on origin is now frozen and unmaintained. `release.yml` emits a warning while it
+  exists so it does not quietly rot.
+
 ## [0.3.0] - unreleased
 
 > Not yet tagged. `release.yml` fires on `v*.*.*` tags only, and its final step
 > runs `git tag -fa v0 && git push origin v0 --force` — the `v0` major tag is
 > force-moved to whatever was tagged last. Consumers who want the current
-> behaviour should pin `AISquare-Studio/AISquare-Studio-QA@v0`, which always
+> behaviour should pin `AISquare-Studio/AISquare-Studio-QA@v0.3.0`, which always
 > resolves to the newest 0.x release; pin `@v0.3.0` only to freeze.
 
 ### Fixed

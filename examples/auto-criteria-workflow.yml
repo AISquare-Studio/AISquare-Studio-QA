@@ -22,7 +22,7 @@ jobs:
         # (e.g. checkout errors, missing secrets) and makes broken runs appear
         # as "passed". The action already defers test failures internally so
         # that artifacts are uploaded before failing the step.
-        uses: AISquare-Studio/AISquare-Studio-QA@main
+        uses: AISquare-Studio/AISquare-Studio-QA@v0.3.0
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
           staging-url: ${{ secrets.STAGING_URL }}

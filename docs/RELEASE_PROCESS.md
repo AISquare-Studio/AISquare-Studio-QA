@@ -12,31 +12,31 @@ This project follows [Semantic Versioning](https://semver.org/):
 
 ### Version Tags
 
-Each release creates two types of tags:
+Each release creates **one** tag, and it never moves:
 
 | Tag | Example | Purpose |
 |-----|---------|---------|
-| Full version | `v1.2.3` | Immutable, pinned release |
-| Major version | `v1` | Floating tag, always points to latest `v1.x.x` |
+| Full version | `v0.3.0` | Immutable. The only thing consumers should reference. |
 
-> **This repository is still on 0.x, so the live major tag is `v0`, not `v1`.** The
-> `v1` examples below illustrate the scheme; copy them with `v0` until 1.0.0 ships.
-> Every doc in this repo now pins `@v0` for exactly this reason — see `README.md`
-> and `docs/ACTION_USAGE.md`. Note also that the release job force-moves the major
-> tag (`git tag -fa v0 && git push origin v0 --force`), so `@v0` retargets on every
-> 0.x release; pin a full version to freeze.
+**There is deliberately no floating major tag.** Maintaining a `vN` tag that always points at the
+newest `vN.x.x` requires `git tag -fa` plus `git push --force` on every release, which silently
+retargets every consumer the instant a release lands — including a bad one. AutoQA sat broken from
+2026-01-15 to 2026-08-03 precisely because a mutable reference kept serving stale content while
+looking current, so this repo does not use that pattern.
 
-Users reference the action by major version for automatic minor/patch updates:
+Consumers pin an exact version:
 
 ```yaml
-- uses: AISquare-Studio/AISquare-Studio-QA@v1
+- uses: AISquare-Studio/AISquare-Studio-QA@v0.3.0
 ```
 
-Or pin to an exact version for maximum stability:
+Upgrading is a deliberate one-line PR in the consuming repo. That is the point: you find out you
+are upgrading, and a bad release cannot reach anyone who did not opt in.
 
-```yaml
-- uses: AISquare-Studio/AISquare-Studio-QA@v1.2.3
-```
+> **Legacy:** a `v0` tag still exists on origin from before this change and currently points at the
+> same commit as `v0.3.0`. It is **frozen** — no workflow updates it any more, so it will drift and
+> become misleading. Do not reference it. It should be deleted once nothing points at it; the
+> release workflow emits a warning on every run while it exists.
 
 ## Release Pipeline
 
@@ -49,8 +49,7 @@ Tag push (v1.2.3)
   ├── Test (parser validation)
   └── Release (after all checks pass)
         ├── Extract release notes from CHANGELOG.md
-        ├── Create GitHub Release
-        └── Update major version tag (v1 → v1.2.3)
+        └── Create GitHub Release   (immutable tag; no mutable tag is moved)
 ```
 
 ### Pre-release Versions
@@ -94,15 +93,16 @@ This triggers the release workflow which will:
 - Validate the action
 - Run linting and tests
 - Create the GitHub Release with notes from the changelog
-- Update the `v1` major version tag
+
+It does **not** move any existing tag.
 
 ### 4. Verify the Release
 
 1. Check the [Actions tab](https://github.com/AISquare-Studio/AISquare-Studio-QA/actions/workflows/release.yml) for the workflow run
 2. Check the [Releases page](https://github.com/AISquare-Studio/AISquare-Studio-QA/releases) for the new release
-3. Verify the major version tag points to the new release:
+3. Confirm no mutable tag was moved — this should list only the frozen legacy `v0`:
    ```bash
-   git ls-remote --tags origin | grep -E 'v[0-9]+$'
+   git ls-remote --tags origin | grep -E 'refs/tags/v[0-9]+$'
    ```
 
 ## GitHub Marketplace
@@ -150,12 +150,19 @@ For critical fixes that need immediate release:
 
 If a release has issues:
 
-1. **Revert the major version tag** to the previous stable release:
-   ```bash
-   git tag -fa v1 v1.2.2 -m "Rollback v1 to v1.2.2"
-   git push origin v1 --force
-   ```
+Tags here are immutable, so there is nothing to move backwards — and that is deliberate. A
+rollback is a **roll forward**:
 
-2. **Mark the bad release as pre-release** on GitHub to warn users
+1. **Mark the bad release as pre-release** on GitHub so it stops being "Latest" and is visibly
+   flagged.
 
-3. **Fix the issue** and release a new patch version
+2. **Fix the issue and release the next patch version** (e.g. `v0.3.1`). Consumers pinned to the
+   bad exact version are unaffected until they bump, which is the whole benefit of exact pins —
+   a bad release cannot reach anyone who did not opt in.
+
+3. **Tell the consumers who already bumped** to pin back to the last good version, e.g.
+   `@v0.2.0`. Because the reference is exact, pinning back is a one-line revert in their repo
+   and needs no cooperation from this one.
+
+Do **not** reintroduce a force-pushed floating tag to make rollback feel faster. A mutable
+reference is what let AutoQA serve a broken build for six months while reporting success.
