@@ -26,7 +26,7 @@ jobs:
       # Exact-match key only, and one canonical key shared by every step that
       # touches ~/.cache/ms-playwright. Rationale in action.yml.
       - name: 🎭 Cache Playwright Browsers
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         id: playwright-cache
         with:
           path: ~/.cache/ms-playwright
@@ -125,7 +125,7 @@ jobs:
       # file, so a shared key lets them reuse one warm cache instead of paying
       # three separate ~100MB misses. Rationale in action.yml.
       - name: 🎭 Cache Playwright Browsers (for Action)
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-ms-playwright-${{ hashFiles('requirements.txt') }}-v3
