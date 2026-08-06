@@ -420,8 +420,9 @@ class GapDrivenGenerator:
             "## 🔍 AutoQA Gap-Driven Test Criteria\n\nBased on the memory tracker analysis, the"
             " following source modules lack test coverage.  AutoQA has generated test criteria for"
             f" them.\n\n**Coverage:** {summary.get('coverage_percentage', 0)}%"
-            f" ({summary.get('covered_modules', 0)}/{summary.get('total_source_modules', 0)} modules)\n**Uncovered"
-            f" modules:** {len(all_gaps)}\n**Modules processed:** {len(gap_details)}\n\n"
+            f" ({summary.get('covered_modules', 0)}/{summary.get('total_source_modules', 0)}"
+            f" modules)\n**Uncovered modules:** {len(all_gaps)}\n**Modules processed:**"
+            f" {len(gap_details)}\n\n"
         )
 
         if not criteria:

@@ -1,7 +1,7 @@
 """
 DOM Inspector Tool: Extracts selectors and inspects page structure from live pages.
 """
-
+from src.exceptions import AutoQABrowserError
 from typing import Any, Dict, List, Optional
 
 from playwright.sync_api import Page
@@ -65,9 +65,11 @@ class DOMInspectorTool:
 
             return discovered
 
+        except AutoQABrowserError:
+            raise
         except Exception as e:
             logger.error(f"Failed to discover selectors: {str(e)}")
-            return {}
+            raise AutoQABrowserError(f"Failed to discover selectors: {str(e)}") from e
 
     def find_best_selector_for_element(self, element_description: str) -> Optional[str]:
         """
